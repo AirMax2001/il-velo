@@ -1,0 +1,242 @@
+{
+  "schema_version": "1.0",
+
+  "meta": {
+    "campaignId": "the-veil",
+    "name": "The Veil",
+    "version": "1.0",
+    "description": "Un continente antico dove tutto sembra funzionare con una precisione quasi innaturale. Le città prosperano, i commerci non si fermano mai, e nessuno si chiede perché. Ma sotto la superficie, qualcosa si sta incrinando.",
+    "author": "Massimiliano Da Fermo",
+    "createdAt": "2026-07-09",
+    "expectedPlayers": 5,
+    "tags": ["dark fantasy", "mistero", "investigazione", "roleplay", "narrativa"]
+  },
+
+  "locations": [
+    {
+      "id": "Asteria",
+      "name": "Asteria",
+      "parent_id": null,
+      "location_type": "world",
+      "description": "Un continente antico, vasto e sorprendentemente tranquillo. Dai porti più affollati alle montagne più remote, ogni luogo segue un ordine naturale e immutabile. Le città prosperano, i commerci non si fermano mai e la vita scorre con una serenità quasi rassicurante. Chi nasce ad Susa raramente sente il bisogno di lasciare la propria casa, e ancora più raramente quello di chiedersi perché il mondo funzioni proprio in quel modo."
+    },
+    {
+      "id": "regno-valdara",
+      "name": "Regno di Valdara",
+      "parent_id": "susa",
+      "location_type": "nation",
+      "description": "Il più prospero dei regni conosciuti. Le sue strade sono sicure, le città ricche e il commercio fiorisce in ogni stagione. I viaggiatori raccontano di un popolo operoso, gentile e incredibilmente organizzato. A Valdara sembra che ogni persona sappia esattamente quale sia il proprio posto nel mondo."
+    },
+    {
+      "id": "regione-capitale",
+      "name": "Regione della Capitale",
+      "parent_id": "regno-valdara",
+      "location_type": "region",
+      "description": "Il cuore politico ed economico del regno. Qui convergono mercanti provenienti da ogni provincia, pellegrini diretti ai templi e viaggiatori in cerca di fortuna. Le strade sono curate, le guardie vigili e la vita sembra procedere senza il minimo imprevisto."
+    },
+    {
+      "id": "valdara",
+      "name": "Valdara",
+      "parent_id": "regione-capitale",
+      "location_type": "city",
+      "description": "La capitale del regno domina la pianura con le sue mura bianche e le alte torri che riflettono la luce del sole. Le sue strade sono sempre animate da mercanti, artigiani e viaggiatori. Tutto appare perfettamente funzionante, quasi come se la città non conoscesse mai il caos.",
+      "ambient": "Mercanti che urlano, cavalli, campane, rumore della folla, acqua della fontana."
+    },
+    {
+      "id": "piazza-centrale",
+      "name": "Piazza Centrale",
+      "parent_id": "valdara",
+      "location_type": "location",
+      "description": "Il cuore pulsante della città. Una grande fontana in pietra occupa il centro della piazza mentre cittadini e commercianti attraversano continuamente il lastricato senza mai fermarsi troppo a lungo. Ogni giorno un cantastorie di nome Chuck racconta avventure fantastiche a una folla che sembra non accorgersi nemmeno della sua presenza.",
+      "ambient": "Acqua della fontana, passi, mercato, bambini che giocano in lontananza."
+    },
+    {
+      "id": "porto-commerciale",
+      "name": "Porto Commerciale",
+      "parent_id": "valdara",
+      "location_type": "harbor",
+      "description": "Navi mercantili attraccano senza sosta scaricando casse provenienti da ogni angolo del regno. Marinai, pescatori e facchini lavorano instancabilmente seguendo una routine perfetta, mentre il profumo salmastro del mare si mescola alle grida dei mercanti.",
+      "ambient": "Onde, gabbiani, corde tese, casse trascinate sul legno."
+    },
+    {
+      "id": "mercato",
+      "name": "Mercato",
+      "parent_id": "valdara",
+      "location_type": "shop",
+      "description": "Decine di bancarelle colorano le vie con stoffe, spezie, attrezzi e cibo provenienti da tutta Valdara. I venditori conoscono alla perfezione ogni prezzo e ogni prodotto, ma raramente si soffermano in conversazioni che vadano oltre il necessario.",
+      "ambient": "Monete, venditori, carri in movimento."
+    },
+    {
+      "id": "palazzo-reale",
+      "name": "Palazzo Reale",
+      "parent_id": "valdara",
+      "location_type": "location",
+      "description": "Residenza della famiglia reale e centro del governo del regno. Alte mura e giardini impeccabili proteggono uno degli edifici più imponenti di tutta Susa. Le decisioni che governano il paese vengono prese tra queste sale di marmo."
+    },
+    {
+      "id": "forgia-borin",
+      "name": "Forgia di Borin",
+      "parent_id": "valdara",
+      "location_type": "shop",
+      "description": "Una piccola bottega da cui proviene costantemente il suono dell'incudine. Borin forgia armi e armature di ottima qualità con una precisione impressionante. Chi entra viene accolto con cortesia e professionalità, come se ogni giornata fosse identica alla precedente.",
+      "ambient": "Martello sull'incudine, fuoco della forgia."
+    },
+    {
+      "id": "locanda-gabbiano",
+      "name": "Locanda del Gabbiano",
+      "parent_id": "valdara",
+      "location_type": "tavern",
+      "description": "Il luogo di ritrovo preferito dai viaggiatori. Il camino acceso riscalda l'ambiente mentre il profumo di pane appena sfornato riempie la sala. Le camere sono semplici ma accoglienti e il locandiere conosce quasi ogni volto che attraversa la sua porta.",
+      "ambient": "Boccali, camino acceso, risate soffocate."
+    },
+    {
+      "id": "tempio-luce",
+      "name": "Tempio della Luce",
+      "parent_id": "valdara",
+      "location_type": "temple",
+      "description": "Un elegante edificio in pietra chiara dedicato alla divinità della speranza. I fedeli entrano e pregano in silenzio, mentre sacerdoti e monaci si occupano quotidianamente dei pellegrini e dei bisognosi."
+    },
+    {
+      "id": "magazzino-abbandonato",
+      "name": "Magazzino Abbandonato",
+      "parent_id": "regione-capitale",
+      "location_type": "location",
+      "description": "Ai margini della città sorge un vecchio deposito ormai dimenticato dal tempo. Le assi del pavimento scricchiolano sotto ogni passo e la polvere ricopre casse ormai vuote. Pochi cittadini sembrano ricordarsi della sua esistenza.",
+      "ambient": "Legno che scricchiola, vento che entra dalle finestre rotte, gocce d'acqua."
+    },
+    {
+      "id": "vecchia-strada",
+      "name": "Vecchia Strada",
+      "parent_id": "regione-capitale",
+      "location_type": "location",
+      "description": "Un'antica via lastricata che un tempo collegava la capitale ai villaggi circostanti. Oggi viene percorsa solo da pochi viaggiatori, mentre la vegetazione ha iniziato lentamente a reclamare ciò che un tempo apparteneva all'uomo."
+    },
+    {
+      "id": "foresta-lyr",
+      "name": "Foresta di Lyr",
+      "parent_id": "regno-valdara",
+      "location_type": "forest",
+      "description": "Una foresta immensa che si estende oltre l'orizzonte. La luce filtra tra gli alberi secolari creando giochi d'ombra che cambiano continuamente con il vento. I cacciatori raccontano che il bosco sia molto più grande di quanto appaia sulle mappe.",
+      "ambient": "Vento tra le foglie, uccelli, rami che si spezzano."
+    },
+    {
+      "id": "bosco-orientale",
+      "name": "Bosco Orientale",
+      "parent_id": "foresta-lyr",
+      "location_type": "forest",
+      "description": "La parte più giovane della foresta, caratterizzata da sentieri relativamente sicuri e alberi dal tronco sottile. È spesso attraversata da boscaioli e raccoglitori di erbe."
+    },
+    {
+      "id": "bosco-occidentale",
+      "name": "Bosco Occidentale",
+      "parent_id": "foresta-lyr",
+      "location_type": "forest",
+      "description": "Un tratto molto più fitto e silenzioso dove la vegetazione rende difficile orientarsi. I raggi del sole riescono a malapena a raggiungere il terreno ricoperto di muschio."
+    },
+    {
+      "id": "lago-echi",
+      "name": "Lago degli Echi",
+      "parent_id": "foresta-lyr",
+      "location_type": "location",
+      "description": "Uno specchio d'acqua limpida circondato da salici e rocce levigate. Le onde sono quasi inesistenti e qualsiasi rumore sembra propagarsi molto più lontano del normale."
+    },
+    {
+      "id": "santuario-silente",
+      "name": "Santuario Silente",
+      "parent_id": "foresta-lyr",
+      "location_type": "temple",
+      "description": "Un antico luogo di raccoglimento costruito in pietra bianca e ormai quasi completamente ricoperto dalla vegetazione. Il silenzio che lo circonda è così profondo da sembrare irreale."
+    },
+    {
+      "id": "cripta-prima-pietra",
+      "name": "Cripta della Prima Pietra",
+      "parent_id": "foresta-lyr",
+      "location_type": "dungeon",
+      "description": "Una costruzione sotterranea risalente a un'epoca dimenticata. Le pareti sono scolpite con simboli consumati dal tempo e l'aria al suo interno è immobile da secoli."
+    },
+    {
+      "id": "costa-occidentale",
+      "name": "Costa Occidentale",
+      "parent_id": "regno-valdara",
+      "location_type": "region",
+      "description": "Una lunga fascia costiera battuta dal vento e dalle maree. Scogliere, baie nascoste e piccoli porti si alternano lungo il litorale, offrendo rifugio tanto ai pescatori quanto ai viaggiatori in cerca di fortuna."
+    },
+    {
+      "id": "porto-grigio",
+      "name": "Porto Grigio",
+      "parent_id": "costa-occidentale",
+      "location_type": "harbor",
+      "description": "Un porto più piccolo della capitale ma fondamentale per il commercio marittimo del regno. Le sue banchine ospitano pescatori, mercanti e navi provenienti da terre lontane."
+    },
+    {
+      "id": "faro-maree",
+      "name": "Faro delle Maree",
+      "parent_id": "costa-occidentale",
+      "location_type": "location",
+      "description": "Un'antica torre costruita su una scogliera che da generazioni guida le navi durante le notti più tempestose. La sua luce è visibile a molte miglia dalla costa."
+    },
+    {
+      "id": "scogli-naufragio",
+      "name": "Scogli del Naufragio",
+      "parent_id": "costa-occidentale",
+      "location_type": "location",
+      "description": "Un tratto di costa disseminato di rocce affilate che hanno spezzato innumerevoli imbarcazioni nel corso dei secoli. Resti di vecchi relitti emergono ancora tra le onde."
+    },
+    {
+      "id": "cala-contrabbandiere",
+      "name": "Cala del Contrabbandiere",
+      "parent_id": "costa-occidentale",
+      "location_type": "location",
+      "description": "Una piccola insenatura nascosta tra alte pareti rocciose. Le sue acque calme permettono alle imbarcazioni di attraccare lontano dagli occhi delle guardie."
+    },
+    {
+      "id": "grotte-salsombra",
+      "name": "Grotte di Salsombra",
+      "parent_id": "costa-occidentale",
+      "location_type": "dungeon",
+      "description": "Un intricato sistema di grotte marine scolpite dalla forza del mare. Con l'alta marea molti passaggi vengono completamente sommersi."
+    },
+    {
+      "id": "monti-orientali",
+      "name": "Monti Orientali",
+      "parent_id": "regno-valdara",
+      "location_type": "region",
+      "description": "Una vasta catena montuosa che separa il regno dalle terre ancora inesplorate. I suoi picchi innevati sono visibili anche dalla capitale nelle giornate più limpide."
+    },
+    {
+      "id": "miniere-ferrovecchio",
+      "name": "Miniere di Ferrovecchio",
+      "parent_id": "monti-orientali",
+      "location_type": "location",
+      "description": "Le miniere più importanti del regno. Da secoli forniscono il ferro utilizzato da fabbri e costruttori, alimentando l'economia di Valdara."
+    },
+    {
+      "id": "fortezza-roccaferma",
+      "name": "Fortezza di Roccaferma",
+      "parent_id": "monti-orientali",
+      "location_type": "location",
+      "description": "Un'imponente roccaforte costruita direttamente nella montagna. Le sue mura dominano l'unico passo che conduce oltre i confini orientali del regno."
+    },
+    {
+      "id": "osservatorio-stelle",
+      "name": "Osservatorio delle Stelle",
+      "parent_id": "monti-orientali",
+      "location_type": "location",
+      "description": "Una torre isolata sulla vetta più alta della catena montuosa. Studiosi e astronomi vi trascorrono le notti osservando il cielo alla ricerca di fenomeni che pochi riescono a comprendere."
+    },
+    {
+      "id": "passo-gigante",
+      "name": "Passo del Gigante",
+      "parent_id": "monti-orientali",
+      "location_type": "location",
+      "description": "Uno stretto valico montano attraversato da viaggiatori e carovane. Le pareti rocciose che lo circondano sono così alte da far sentire chiunque minuscolo al loro passaggio."
+    },
+    {
+      "id": "caverne-cuore-pietra",
+      "name": "Caverne del Cuore di Pietra",
+      "parent_id": "monti-orientali",
+      "location_type": "dungeon",
+      "description": "Un vasto complesso di caverne naturali che si addentra nelle profondità della montagna. Laghi sotterranei, colonne di roccia e antichi cunicoli si intrecciano in un labirinto ancora in gran parte inesplorato."
+    }
+  ]
+}

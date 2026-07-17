@@ -1,0 +1,778 @@
+{
+  "meta": {
+    "campaignId": "the_veil",
+    "name": "The Veil",
+    "version": "2.0.0",
+    "author": "Massimiliano Da Fermo",
+    "assistant": "ChatGPT",
+    "language": "it",
+    "description": "Campagna narrativa dark fantasy investigativa basata sul mistero della memoria.",
+    "startingSession": 1,
+    "recommendedPlayers": 5,
+    "minPlayers": 3,
+    "maxPlayers": 6
+  },
+
+  "world": {
+    "name": "Asteria",
+    "theme": [
+      "Dark Fantasy",
+      "Mystery",
+      "Narrative",
+      "Exploration"
+    ],
+    "tone": [
+      "Lento",
+      "Immersivo",
+      "Malinconico",
+      "Misterioso"
+    ],
+    "calendar": {
+      "currentDay": 1,
+      "currentMonth": "Aurora",
+      "currentYear": 812
+    },
+    "startingLocation": "loc_valdara_square"
+  },
+
+  "history": {
+    "visibleToPlayers": false,
+    "chapters": [
+      {
+        "id": "history_001",
+        "title": "L'Età della Conoscenza",
+        "description": "Molti secoli fa il mondo raggiunse un livello di conoscenza mai visto.",
+        "unlocked": false
+      },
+      {
+        "id": "history_002",
+        "title": "Il Consiglio dei Supremi",
+        "description": "I governanti del mondo presero una decisione destinata a cambiare ogni cosa.",
+        "unlocked": false
+      },
+      {
+        "id": "history_003",
+        "title": "L'Oblio",
+        "description": "Un evento cancellò quasi completamente il passato.",
+        "unlocked": false
+      }
+    ]
+  },
+
+  "worldRules": [
+    {
+      "id": "rule_001",
+      "title": "Routine",
+      "description": "Gli abitanti svolgono il proprio lavoro senza metterlo mai in discussione."
+    },
+    {
+      "id": "rule_002",
+      "title": "Curiosità Limitata",
+      "description": "Le persone evitano inconsciamente di approfondire ciò che non comprendono."
+    },
+    {
+      "id": "rule_003",
+      "title": "Le Città",
+      "description": "Le città sembrano vive, ma sono prive di vera iniziativa."
+    },
+    {
+      "id": "rule_004",
+      "title": "Le Terre Selvagge",
+      "description": "Fuori dalle città le persone reagiscono in modo molto meno prevedibile."
+    }
+  ],
+
+  "worldState": {
+    "memory_progress": 0,
+    "chapter": 1,
+    "current_session": 1,
+    "veil_integrity": 100,
+    "book_progress": 0,
+    "truth_fragments": 0,
+    "custodian_alert": 0,
+    "world_time": "Morning",
+    "weather": "Sunny"
+  },
+
+  "factions": [
+    {
+      "id": "faction_citizens",
+      "name": "Popolazione di Asteria",
+      "description": "Abitanti comuni che vivono la loro quotidianità.",
+      "alignment": "Neutral",
+      "known": true
+    },
+    {
+      "id": "faction_merchants",
+      "name": "Gilda dei Mercanti",
+      "description": "Gestiscono gli scambi commerciali tra le città.",
+      "alignment": "Neutral",
+      "known": true
+    },
+    {
+      "id": "faction_guards",
+      "name": "Guardia di Valdara",
+      "description": "Protegge la capitale.",
+      "alignment": "Lawful Neutral",
+      "known": true
+    },
+    {
+      "id": "faction_unknown",
+      "name": "???",
+      "description": "",
+      "alignment": "Unknown",
+      "known": false
+    }
+  ],
+"npcs": [
+  {
+    "id": "npc_chuck",
+    "name": "Chuck",
+    "titles": [
+      "Cantastorie",
+      "Viandante"
+    ],
+    "race": "Umano",
+    "class": "Bardo",
+    "portrait": "chuck.png",
+    "location": "loc_valdara_square",
+    "known": true,
+    "hostile": false,
+    "description": "Ogni mattina sale sulla piccola fontana della piazza raccontando storie fantastiche. Nessuno lo ascolta mai, ma lui continua come se fosse il pubblico più grande del mondo.",
+    "personality": [
+      "Ironico",
+      "Carismatico",
+      "Curioso",
+      "Empatico"
+    ],
+    "relationship": {
+      "party": 0
+    },
+    "statBlock": {
+      "hp": 18,
+      "ac": 12,
+      "speed": 9
+    },
+    "inventory": [
+      "item_lute",
+      "item_hat",
+      "item_coin_pouch"
+    ],
+    "dialogues": {
+      "first_meeting": [
+        "Finalmente qualcuno che si ferma ad ascoltare.",
+        "Le storie vivono solo se qualcuno le ricorda.",
+        "Sedetevi... vi racconto qualcosa."
+      ]
+    },
+    "secrets": [
+      "Chuck non sa di essere importante.",
+      "Non ricorda perché continua a raccontare sempre la stessa storia."
+    ],
+    "dmNotes": "Lascia molto spazio al roleplay. È il personaggio che unirà il gruppo."
+  },
+
+  {
+    "id": "npc_alaric",
+    "name": "Alaric",
+    "titles": [
+      "Vecchio Viaggiatore"
+    ],
+    "race": "Umano",
+    "class": "Sconosciuta",
+    "portrait": "alaric.png",
+    "location": "loc_valdara_square",
+    "known": true,
+    "hostile": false,
+    "description": "Un anziano dai capelli bianchi. Cammina lentamente osservando le persone.",
+    "personality": [
+      "Calmo",
+      "Saggio",
+      "Misterioso"
+    ],
+    "relationship": {
+      "party": 0
+    },
+    "statBlock": {
+      "hp": 20,
+      "ac": 11
+    },
+    "inventory": [],
+    "dialogues": {
+      "first_meeting": [
+        "Seguitemi. Qui non è il posto giusto per parlare.",
+        "Avete notato qualcosa che gli altri non vedono."
+      ]
+    },
+    "secrets": [
+      "Conosce molto più di quanto dica."
+    ],
+    "dmNotes": "Non rivelare ancora nulla sul passato del mondo."
+  },
+
+  {
+    "id": "npc_blacksmith",
+    "name": "Borin",
+    "titles": [
+      "Fabbro"
+    ],
+    "race": "Nano",
+    "portrait": "blacksmith.png",
+    "location": "loc_blacksmith",
+    "known": true,
+    "hostile": false,
+    "description": "Lavora senza mai fermarsi. Se gli chiedono perché fa il fabbro non sa rispondere.",
+    "personality": [
+      "Taciturno"
+    ],
+    "statBlock": {
+      "hp": 30,
+      "ac": 14
+    },
+    "inventory": [
+      "item_sword",
+      "item_shield"
+    ],
+    "dialogues": {
+      "default": [
+        "Una spada? Sono cinque monete.",
+        "Uno scudo? Otto monete."
+      ]
+    },
+    "secrets": [],
+    "dmNotes": "Perfetto esempio di abitante 'automatico'."
+  },
+
+  {
+    "id": "npc_innkeeper",
+    "name": "Mira",
+    "titles": [
+      "Oste"
+    ],
+    "race": "Umana",
+    "portrait": "innkeeper.png",
+    "location": "loc_inn",
+    "known": true,
+    "hostile": false,
+    "description": "Gestisce la locanda con un sorriso sincero ma vuoto.",
+    "personality": [
+      "Gentile"
+    ],
+    "statBlock": {
+      "hp": 16,
+      "ac": 10
+    },
+    "inventory": [],
+    "dialogues": {
+      "default": [
+        "Una stanza? Due monete.",
+        "Benvenuti alla Locanda del Gabbiano."
+      ]
+    },
+    "secrets": [],
+    "dmNotes": "Non fa domande ai clienti."
+  },
+
+  {
+    "id": "npc_guard_captain",
+    "name": "Capitano Rowan",
+    "titles": [
+      "Capitano della Guardia"
+    ],
+    "race": "Umano",
+    "portrait": "captain.png",
+    "location": "loc_city_gate",
+    "known": true,
+    "hostile": false,
+    "description": "Sorveglia il porto e le porte della città.",
+    "personality": [
+      "Rigido",
+      "Onesto"
+    ],
+    "statBlock": {
+      "hp": 40,
+      "ac": 17
+    },
+    "inventory": [
+      "item_guard_sword"
+    ],
+    "dialogues": {
+      "default": [
+        "Circolate.",
+        "Nessun problema oggi."
+      ]
+    },
+    "secrets": [],
+    "dmNotes": "Non deve sembrare sospetto."
+  }
+]
+,
+"locations": [
+  {
+    "id": "loc_valdara_square",
+    "name": "Piazza Centrale di Valdara",
+    "type": "city_square",
+    "known": true,
+    "dangerLevel": 0,
+    "image": "img_valdara_square",
+    "tabletScene": "tablet_valdara_square",
+    "music": "music_market_day",
+    "ambient": [
+      "Mercanti",
+      "Passi",
+      "Campane",
+      "Uccelli"
+    ],
+    "weather": [
+      "Sunny",
+      "Cloudy",
+      "Rain"
+    ],
+    "description": "Il cuore della città. Mercanti, artigiani e cittadini attraversano continuamente la piazza senza mai fermarsi davvero. Al centro si trova una piccola fontana dove Chuck racconta ogni giorno le sue storie ignorato da tutti.",
+    "connectedLocations": [
+      "loc_market",
+      "loc_city_gate",
+      "loc_harbor",
+      "loc_inn",
+      "loc_blacksmith"
+    ],
+    "availableNPCs": [
+      "npc_chuck",
+      "npc_alaric"
+    ],
+    "possibleItems": [],
+    "possibleCombat": [],
+    "notes": "È qui che il gruppo si riunisce completamente."
+  },
+
+  {
+    "id": "loc_harbor",
+    "name": "Porto di Valdara",
+    "type": "harbor",
+    "known": true,
+    "dangerLevel": 1,
+    "image": "img_harbor",
+    "tabletScene": "tablet_harbor",
+    "music": "music_harbor",
+    "ambient": [
+      "Onde",
+      "Gabbiani",
+      "Legno",
+      "Corde"
+    ],
+    "description": "Il porto commerciale della città. Navi attraccano e salpano continuamente. Nessuno sembra chiedersi da dove arrivino o dove vadano.",
+    "connectedLocations": [
+      "loc_valdara_square",
+      "loc_city_gate"
+    ],
+    "availableNPCs": [
+      "npc_guard_captain"
+    ],
+    "possibleItems": [],
+    "possibleCombat": [],
+    "notes": "Tre personaggi iniziano qui la loro avventura."
+  },
+
+  {
+    "id": "loc_blacksmith",
+    "name": "Forgia di Borin",
+    "type": "shop",
+    "known": true,
+    "dangerLevel": 0,
+    "image": "img_blacksmith",
+    "tabletScene": "tablet_blacksmith",
+    "music": "music_city",
+    "ambient": [
+      "Martelli",
+      "Fuoco",
+      "Incudine"
+    ],
+    "description": "La bottega del fabbro. Armi e armature sono esposte con ordine perfetto.",
+    "connectedLocations": [
+      "loc_valdara_square"
+    ],
+    "availableNPCs": [
+      "npc_blacksmith"
+    ],
+    "possibleItems": [
+      "item_sword",
+      "item_shield"
+    ],
+    "possibleCombat": [],
+    "notes": "Il fabbro non sa spiegare perché faccia questo mestiere."
+  },
+
+  {
+    "id": "loc_inn",
+    "name": "Locanda del Gabbiano",
+    "type": "inn",
+    "known": true,
+    "dangerLevel": 0,
+    "image": "img_inn",
+    "tabletScene": "tablet_inn",
+    "music": "music_tavern",
+    "ambient": [
+      "Bicchieri",
+      "Fuoco",
+      "Persone"
+    ],
+    "description": "La locanda più famosa della città. Il cibo è ottimo e l'oste sorride sempre.",
+    "connectedLocations": [
+      "loc_valdara_square"
+    ],
+    "availableNPCs": [
+      "npc_innkeeper"
+    ],
+    "possibleItems": [],
+    "possibleCombat": [],
+    "notes": "Ottimo luogo per riposare e fare roleplay."
+  },
+
+  {
+    "id": "loc_city_gate",
+    "name": "Porta Est",
+    "type": "city_gate",
+    "known": true,
+    "dangerLevel": 1,
+    "image": "img_city_gate",
+    "tabletScene": "tablet_city_gate",
+    "music": "music_city_gate",
+    "ambient": [
+      "Carri",
+      "Cavalli",
+      "Vento"
+    ],
+    "description": "L'ingresso principale della città. Le guardie controllano distrattamente chi entra e chi esce.",
+    "connectedLocations": [
+      "loc_valdara_square",
+      "loc_harbor",
+      "loc_abandoned_warehouse"
+    ],
+    "availableNPCs": [
+      "npc_guard_captain"
+    ],
+    "possibleItems": [],
+    "possibleCombat": [],
+    "notes": "Da qui Alaric conduce il gruppo fuori dalla routine cittadina."
+  },
+
+  {
+    "id": "loc_abandoned_warehouse",
+    "name": "Magazzino Abbandonato",
+    "type": "warehouse",
+    "known": false,
+    "dangerLevel": 2,
+    "image": "img_warehouse",
+    "tabletScene": "tablet_warehouse",
+    "music": "music_mystery",
+    "ambient": [
+      "Legno",
+      "Gocce",
+      "Scricchiolii"
+    ],
+    "description": "Vecchio deposito ormai inutilizzato. Le assi cigolano ad ogni passo e l'aria è immobile.",
+    "connectedLocations": [
+      "loc_city_gate"
+    ],
+    "availableNPCs": [
+      "npc_alaric"
+    ],
+    "possibleItems": [
+      "item_old_note"
+    ],
+    "possibleCombat": [
+      "combat_training_bandits"
+    ],
+    "notes": "Prima missione della campagna. Qui avviene il combattimento tutorial."
+  }
+],
+
+"items": [
+  {
+    "id": "item_lute",
+    "name": "Liuto Usurato",
+    "type": "tool",
+    "rarity": "common",
+    "description": "Un vecchio liuto di legno scuro, le corde sono consumate ma produce ancora un suono caldo e profondo.",
+    "effects": ["Quando usato per intrattenere, chi ascolta si ferma per qualche istante."],
+    "value": 15,
+    "weight": 2,
+    "emoji": "🎸"
+  },
+  {
+    "id": "item_hat",
+    "name": "Cappello Piumato",
+    "type": "other",
+    "rarity": "common",
+    "description": "Un cappello logoro con una piuma di corvo. Sembra aver viaggiato tanto.",
+    "value": 5,
+    "weight": 0.3,
+    "emoji": "🎩"
+  },
+  {
+    "id": "item_coin_pouch",
+    "name": "Borsa di Monete",
+    "type": "other",
+    "rarity": "common",
+    "description": "Una piccola borsa di cuoio con qualche moneta tintinnante.",
+    "value": 12,
+    "weight": 0.5,
+    "emoji": "💰"
+  },
+  {
+    "id": "item_sword",
+    "name": "Spada di Ferro",
+    "type": "weapon",
+    "rarity": "common",
+    "description": "Una spada semplice ma funzionale. La lama è ben affilata.",
+    "effects": ["Danno: 1d8 taglienti"],
+    "value": 25,
+    "weight": 3,
+    "emoji": "🗡️"
+  },
+  {
+    "id": "item_shield",
+    "name": "Scudo di Legno",
+    "type": "armor",
+    "rarity": "common",
+    "description": "Uno scudo robusto con rinforzi di ferro. CA +2.",
+    "effects": ["CA +2"],
+    "value": 20,
+    "weight": 5,
+    "emoji": "🛡️"
+  },
+  {
+    "id": "item_guard_sword",
+    "name": "Spada della Guardia",
+    "type": "weapon",
+    "rarity": "common",
+    "description": "Spada di ordinanza della Guardia di Valdara. Marchiata con il sigillo della città.",
+    "effects": ["Danno: 1d6 taglienti"],
+    "value": 18,
+    "weight": 2.5,
+    "emoji": "⚔️"
+  },
+  {
+    "id": "item_old_note",
+    "name": "Vecchia Nota Sbiadita",
+    "type": "lore",
+    "rarity": "uncommon",
+    "description": "Un pezzo di carta ingiallito con scritte quasi illeggibili. Sembra una mappa parziale di un edificio sconosciuto.",
+    "effects": ["Sblocca un indizio sulla storia passata."],
+    "value": 0,
+    "weight": 0.05,
+    "requiresAttunement": false,
+    "emoji": "📜"
+  },
+  {
+    "id": "item_healing_herbs",
+    "name": "Erbe Curative",
+    "type": "consumable",
+    "rarity": "common",
+    "description": "Un mazzetto di erbe essiccate dall'aroma pungente. Se consumate, recuperi 1d4 PF.",
+    "effects": ["Recupera 1d4 PF"],
+    "value": 8,
+    "weight": 0.2,
+    "emoji": "🌿"
+  },
+  {
+    "id": "item_torch",
+    "name": "Torcia",
+    "type": "tool",
+    "rarity": "common",
+    "description": "Una torcia di legno imbevuta di resina. Illumina per 3 ore.",
+    "effects": ["Illumina 4 metri", "Durata: 3 ore"],
+    "value": 1,
+    "weight": 1,
+    "emoji": "🔥"
+  },
+  {
+    "id": "item_rope",
+    "name": "Corda di Canapa",
+    "type": "tool",
+    "rarity": "common",
+    "description": "Una corda resistente lunga 15 metri.",
+    "value": 5,
+    "weight": 3,
+    "emoji": "🪢"
+  },
+  {
+    "id": "item_canteen",
+    "name": "Borraccia",
+    "type": "other",
+    "rarity": "common",
+    "description": "Una borraccia di cuoio per l'acqua.",
+    "value": 3,
+    "weight": 0.5,
+    "emoji": "🧴"
+  },
+  {
+    "id": "item_ration",
+    "name": "Razioni da Viaggio",
+    "type": "consumable",
+    "rarity": "common",
+    "description": "Pane secco, formaggio e frutta secca. Nutre per un giorno.",
+    "effects": ["Nutre 1 persona per 1 giorno"],
+    "value": 4,
+    "weight": 1,
+    "emoji": "🥖"
+  }
+],
+
+"relics": [
+  {
+    "id": "relic_memory_fragment_01",
+    "name": "Frammento di Memoria — L'Alba",
+    "description": "Un cristallo pulsante di luce calda. Al tatto mostra una visione: un mondo rigoglioso, città luminose, persone che ridevano.",
+    "veilEffect": "Rivela un ricordo collettivo cancellato — riduceVeilIntegrity di 5.",
+    "memoryUnlock": "Sblocca 'L'Età della Conoscenza' nella storia.",
+    "charges": 3,
+    "emoji": "💎"
+  },
+  {
+    "id": "relic_veil_shard",
+    "name": "Scheggia del Velo",
+    "description": "Un frammento scuro e freddo. Sembra assorbire la luce intorno a sé.",
+    "veilEffect": "Permette di vedere attraverso illusioni minori per 1 ora.",
+    "charges": 5,
+    "emoji": "🪨"
+  }
+],
+
+"quests": [
+  {
+    "id": "quest_main_awakening",
+    "name": "Il Risveglio",
+    "type": "main",
+    "description": "Il gruppo si riunisce in Piazza Centrale. Segui Alaric fino al Magazzino Abbandonato per scoprire la verità sulla memoria perduta.",
+    "objectives": [
+      { "id": "obj_meet_chuck", "description": "Incontra Chuck in Piazza Centrale e ascolta la sua storia" },
+      { "id": "obj_follow_alaric", "description": "Segui Alaric dalla piazza fino al Magazzino Abbandonato" },
+      { "id": "obj_explore_warehouse", "description": "Esplora il Magazzino Abbandonato e trova la nota sbiadita" }
+    ],
+    "rewards": {
+      "xp": 50,
+      "items": ["item_old_note"]
+    },
+    "prerequisites": [],
+    "failConditions": [],
+    "emoji": "📖"
+  },
+  {
+    "id": "combat_training_bandits",
+    "name": "Agguato nel Magazzino",
+    "type": "main",
+    "description": "Durante l'esplorazione del magazzino, due banditi sorprendono il gruppo. Combattimento tutorial.",
+    "objectives": [
+      { "id": "obj_defeat_bandits", "description": "Sconfiggi i due banditi nel magazzino" }
+    ],
+    "rewards": {
+      "xp": 30,
+      "items": ["item_healing_herbs"],
+      "veilShift": -2
+    },
+    "prerequisites": ["obj_explore_warehouse"],
+    "failConditions": ["Tutto il gruppo viene sconfitto"],
+    "emoji": "⚔️"
+  },
+  {
+    "id": "combat_road_ambush",
+    "name": "Imboscata sulla Strada",
+    "type": "side",
+    "description": "Viaggiando verso la prossima città, il gruppo viene attaccato da creature della foresta.",
+    "objectives": [
+      { "id": "obj_survive_ambush", "description": "Sopravvivi all'imboscata" }
+    ],
+    "rewards": {
+      "xp": 20
+    },
+    "prerequisites": [],
+    "failConditions": [],
+    "emoji": "⚔️"
+  }
+],
+
+"world_state": [
+  {
+    "id": "ws_initial",
+    "name": "Stato Iniziale",
+    "description": "Il mondo si trova in uno stato di calma apparente. Il Velo è integro ma comincia a mostrare crepe sottili.",
+    "currentEra": "Era dell'Oblio",
+    "veilStrength": 100,
+    "tags": ["inizio", "tutorial"]
+  }
+],
+
+"music_references": {
+  "music_market_day": "Una melodia vivace con flauto e percussioni leggere. Mercato di giorno.",
+  "music_harbor": "Onde che si infrangono, gabbiani e corde che scricchiolano. Vento salmastro.",
+  "music_city": "Un ronzio sommesso di città che vive. Carri, passi, voci lontane.",
+  "music_tavern": "Musica calda con chitarra classica e fuoco che scoppietta. Locanda accogliente.",
+  "music_city_gate": "Vento che soffia tra le mura. Passi cadenzati delle guardie.",
+  "music_mystery": "Toni bassi e profondi, archi lenti. Senso di mistero e scoperta.",
+  "music_combat_tutorial": "Percussioni secche e incalzanti, archi aggressivi. Combattimento imminente."
+},
+
+"tablet_scenes": {
+  "tablet_valdara_square": {
+    "title": "Piazza Centrale di Valdara",
+    "subtitle": "Il cuore della città",
+    "description": "Mercanti, cittadini e viandanti attraversano la piazza in un flusso continuo. Al centro una fontana di pietra bianca.",
+    "weather": "Sunny",
+    "time": "Morning",
+    "music": "music_market_day",
+    "effect": "none",
+    "overlay": "none"
+  },
+  "tablet_harbor": {
+    "title": "Porto di Valdara",
+    "subtitle": "Dove il mare incontra la città",
+    "description": "Numerose navi attraccate. Il vento porta odore di sale e pesce.",
+    "weather": "Cloudy",
+    "time": "Morning",
+    "music": "music_harbor",
+    "effect": "fog",
+    "overlay": "none"
+  },
+  "tablet_blacksmith": {
+    "title": "Forgia di Borin",
+    "subtitle": "Il fabbro nano",
+    "description": "Il calore della forgia si sente già sulla porta. Martelli che battono sull'incudine.",
+    "weather": "none",
+    "time": "Day",
+    "music": "music_city",
+    "effect": "none",
+    "overlay": "forge_fire"
+  },
+  "tablet_inn": {
+    "title": "Locanda del Gabbiano",
+    "subtitle": "Riparo e ristoro",
+    "description": "Un ambiente caldo e accogliente. Il fuoco scoppietta nel camino.",
+    "weather": "none",
+    "time": "Evening",
+    "music": "music_tavern",
+    "effect": "none",
+    "overlay": "fireplace"
+  },
+  "tablet_city_gate": {
+    "title": "Porta Est",
+    "subtitle": "L'uscita dalla città",
+    "description": "L'antica porta di pietra si erge maestosa. Guardie pattugliano l'ingresso.",
+    "weather": "Windy",
+    "time": "Morning",
+    "music": "music_city_gate",
+    "effect": "none",
+    "overlay": "none"
+  },
+  "tablet_warehouse": {
+    "title": "Magazzino Abbandonato",
+    "subtitle": "Polvere e silenzio",
+    "description": "L'interno è buio e polveroso. Tra le assi del tetto filtra una luce fioca. Si sentono gocce cadere.",
+    "weather": "none",
+    "time": "Dim",
+    "music": "music_mystery",
+    "effect": "fog",
+    "overlay": "dark"
+  }
+}
+}

@@ -1,0 +1,449 @@
+{
+  "schema_version": "1.0",
+
+  "session": {
+    "title": "Le Prime Crepe",
+    "campaignId": "the-veil",
+    "sessionNumber": 1,
+    "date": "Primo Giorno d'Autunno",
+    "description": "Prima sessione della campagna The Veil. Introduzione ai personaggi, alle regole e al mondo di Susa. I PG si incontrano a Valdara, conoscono Chuck il cantastorie e il misterioso Alaric, e si ritrovano coinvolti in un'indagine in un vecchio magazzino abbandonato."
+  },
+
+  "npcs": [
+    {
+      "id": "chuck",
+      "name": "Chuck",
+      "titles": ["Cantastorie"],
+      "description": "Un uomo di mezza età con una voce roca e piena di passione. Racconta storie fantastiche nella piazza principale di Valdara, ma nessuno si ferma mai ad ascoltarlo. Sembra l'unico ad accorgersi che qualcosa non va nel mondo.",
+      "personality": ["Entusiasta", "Ostinato", "Più saggio di quanto lasci intendere"],
+      "location_id": "piazza-centrale",
+      "dialogues": {
+        "saluto": "Allora? Com'è andata?",
+        "storie": "Una volta ho raccontato la storia di un eroe che salvava il mondo ogni giorno, e nessuno si ricordava di lui il giorno dopo."
+      },
+      "emoji": "📖"
+    },
+    {
+      "id": "npc-alaric",
+      "name": "Alaric",
+      "titles": ["Viandante Misterioso"],
+      "description": "Uomo incappucciato dall'aspetto stanco ma dallo sguardo vigile. Ha una familiarità innaturale con luoghi e persone che dice di non conoscere. Ogni tanto chiama le persone con nomi sbagliati, come se ricordasse un altro mondo.",
+      "personality": ["Misterioso", "Gentile", "Sembra confuso ma non vuole ammetterlo"],
+      "location_id": "piazza-centrale",
+      "secrets": ["Ricorda frammenti di un mondo precedente", "Sa che la città ignora certi eventi"],
+      "dialogues": {
+        "presentazione": "Non vi conosco. E probabilmente non dovrei fidarmi di voi. Ma oggi ho visto qualcosa di strano."
+      },
+      "emoji": "🧳"
+    },
+    {
+      "id": "dock-worker",
+      "name": "Facchino del Porto",
+      "titles": ["Lavoratore"],
+      "description": "Un uomo robusto intento a scaricare casse. Svolge il suo lavoro con precisione meccanica, senza mai guardare altrove.",
+      "location_id": "porto-commerciale",
+      "emoji": "👷"
+    },
+    {
+      "id": "merchant-01",
+      "name": "Mercante del Porto",
+      "titles": ["Commerciante"],
+      "description": "Un mercante che controlla le merci appena scaricate. Sa tutto sui prezzi ma niente su altro.",
+      "location_id": "porto-commerciale",
+      "emoji": "🧑‍💼"
+    },
+    {
+      "id": "old-sailor",
+      "name": "Vecchio Marinaio",
+      "titles": ["Marinaio"],
+      "description": "Un anziano marinaio seduto su una cassa, con lo sguardo perso all'orizzonte. Sembra ricordare più di quanto dica.",
+      "location_id": "porto-commerciale",
+      "emoji": "🧓"
+    }
+  ],
+
+  "factions": [],
+
+  "items": [
+    {
+      "id": "old-parchment",
+      "name": "Antico Pergamena",
+      "type": "lore",
+      "rarity": "rare",
+      "description": "Un foglio molto antico con strani simboli disegnati con inchiostro sbiadito. Non contiene mappe né scritte comprensibili, solo simboli che sembrano appartenere a una lingua dimenticata.",
+      "effects": ["Può essere analizzata da uno studioso", "Sembra pulsare leggermente al tatto"],
+      "value": 50,
+      "weight": 0.1,
+      "emoji": "📜"
+    }
+  ],
+
+  "relics": [],
+
+  "quests": [
+    {
+      "id": "quest-prime-crepe",
+      "name": "Le Prime Crepe",
+      "type": "main",
+      "description": "Alaric chiede aiuto per investigare un vecchio magazzino dove tre uomini armati sembrano cercare qualcosa. Le guardie non fanno nulla e nessuno sembra essersene accorto.",
+      "objectives": [
+        { "id": "obj-raggiungere-magazzino", "description": "Raggiungere il vecchio magazzino fuori città", "location_id": "magazzino-abbandonato" },
+        { "id": "obj-affrontare-banditi", "description": "Affrontare i tre uomini armati nel magazzino" },
+        { "id": "obj-trovare-oggetto", "description": "Scoprire cosa stavano cercando i banditi" },
+        { "id": "obj-parlare-alaric", "description": "Confrontarsi con Alaric sul ritrovamento" }
+      ],
+      "rewards": { "xp": 300, "items": ["old-parchment"], "veilShift": -2 },
+      "emoji": "📜"
+    }
+  ],
+
+  "combat": [
+    {
+      "id": "combat-magazzino",
+      "title": "Scontro nel Magazzino",
+      "scene_id": "scena-scontro",
+      "is_active": true,
+      "combatants": [
+        {
+          "name": "Capo dei Banditi",
+          "type": "boss",
+          "hp_max": 35,
+          "armor_class": 14,
+          "initiative": 16,
+          "sort_order": 1
+        },
+        {
+          "name": "Bandito 1",
+          "type": "enemy",
+          "hp_max": 18,
+          "armor_class": 12,
+          "initiative": 12,
+          "sort_order": 2
+        },
+        {
+          "name": "Bandito 2",
+          "type": "enemy",
+          "hp_max": 18,
+          "armor_class": 12,
+          "initiative": 10,
+          "sort_order": 3
+        }
+      ]
+    }
+  ],
+
+  "scenes": [
+    {
+      "id": "scena-introduzione",
+      "type": "narration",
+      "title": "Introduzione",
+      "content": "Benvenuti a Susa. Un continente antico, ricco di città, foreste, montagne e rovine dimenticate. Ogni luogo racconta una storia, ogni persona ha un passato e ogni scelta cambierà il futuro. Oggi non inizierà soltanto una campagna di Dungeons & Dragons. Oggi inizierà il viaggio dei vostri personaggi.",
+      "narration": "Parla lentamente. Non nominare mai il Velo, la memoria o il passato del mondo. Lasciali pensare che sia una normale ambientazione fantasy. Spiega brevemente come funziona il gioco: il DM descrive il mondo, i giocatori dichiarano cosa fanno, quando serve si tirano i dadi.",
+      "location_id": "valdara",
+      "musicCue": "opening_theme",
+      "choices": [
+        { "id": "choice-iniziare", "text": "Iniziare la giornata", "targetBlockId": "scena-delia" }
+      ],
+      "journalEntry": "La campagna ha inizio.",
+      "sceneOrder": 1
+    },
+    {
+      "id": "scena-delia",
+      "type": "narration",
+      "title": "Delia Ombraflore",
+      "content": "Le ali di Delia sfiorano lentamente gli alberi. Da giorni le voci nella sua mente sono più insistenti del solito. Nessuna frase comprensibile. Soltanto sussurri. Per la prima volta tutte sembrano ripetere la stessa parola... Valdara.",
+      "narration": "Lascia descrivere Delia. Chiedile come vola, cosa pensa delle voci e perché decide di ascoltarle. Questa è una scena di roleplay puro. Notifica solo a Delia: 'Solo tu senti quei sussurri.'",
+      "location_id": "valdara",
+      "musicCue": "mystic",
+      "choices": [
+        { "id": "choice-delia-entra", "text": "Entrare a Valdara", "targetBlockId": "scena-kael" }
+      ],
+      "journalEntry": "Delia arriva alle porte della città.",
+      "sceneOrder": 2
+    },
+    {
+      "id": "scena-kael",
+      "type": "narration",
+      "title": "Kael",
+      "content": "Il viaggio di Kael procede da settimane. Ogni alba inizia con la meditazione. Oggi però qualcosa interrompe il silenzio interiore. Non è una voce. È una sensazione. Il Ki sembra agitato... come se qualcosa poco distante fosse fuori posto.",
+      "narration": "Lascia che descriva il proprio addestramento e perché decide di fermarsi proprio a Valdara. Ricorda le prove di abilità se il giocatore vuole osservare meglio l'ambiente. Kael avverte un leggero brivido provenire dalla città se supera Percezione CD 12.",
+      "location_id": "valdara",
+      "musicCue": "temple",
+      "diceCheck": { "count": 1, "sides": 20, "modifier": 2 },
+      "choices": [
+        { "id": "choice-kael-entra", "text": "Entrare a Valdara", "targetBlockId": "scena-neth" }
+      ],
+      "journalEntry": "Kael raggiunge la città.",
+      "sceneOrder": 3
+    },
+    {
+      "id": "scena-neth",
+      "type": "narration",
+      "title": "Neth",
+      "content": "Il mare è calmo. La nave attracca lentamente al porto di Valdara. Neth è appena tornato da un viaggio commerciale. Alcune casse devono essere consegnate al mercato cittadino. Nulla di insolito. O almeno così sembra.",
+      "narration": "Lascia raccontare al giocatore da dove arriva e come trascorre normalmente il suo lavoro. Ricorda che può parlare con chiunque, osservare qualsiasi cosa o ignorare completamente il compito ricevuto. Porto Commerciale - NPC presenti: facchino, mercante.",
+      "location_id": "porto-commerciale",
+      "musicCue": "harbor_day",
+      "npc_ids": ["dock-worker", "merchant-01"],
+      "choices": [
+        { "id": "choice-neth-mercato", "text": "Portare le casse al mercato", "targetBlockId": "scena-velya" },
+        { "id": "choice-neth-porto", "text": "Fermarsi al porto", "targetBlockId": "scena-velya" }
+      ],
+      "journalEntry": "Neth arriva a Valdara.",
+      "sceneOrder": 4
+    },
+    {
+      "id": "scena-velya",
+      "type": "narration",
+      "title": "Velya",
+      "content": "Dopo giorni trascorsi tra i boschi, Velya raggiunge finalmente il porto. Sta seguendo le tracce di un antico simbolo inciso su una pietra trovata nella foresta. Le hanno detto che a Valdara vive qualcuno capace di riconoscere simboli dimenticati.",
+      "narration": "Non rivelare ancora nulla sul simbolo. È solo una motivazione per essere qui. Incoraggia il giocatore a descrivere il proprio ingresso in città.",
+      "location_id": "porto-commerciale",
+      "musicCue": "harbor_day",
+      "npc_ids": ["old-sailor"],
+      "choices": [
+        { "id": "choice-velya-entra", "text": "Entrare in città", "targetBlockId": "scena-porto" }
+      ],
+      "journalEntry": "Velya entra a Valdara.",
+      "sceneOrder": 5
+    },
+    {
+      "id": "scena-porto",
+      "type": "dialogue",
+      "title": "Il Porto",
+      "content": "Kael, Neth e Velya finiscono nello stesso tratto di porto quasi nello stesso momento. Non c'è alcun evento particolare. Nessun incidente. Nessuna esplosione. Semplicemente tre sconosciuti che percorrono la stessa strada.",
+      "narration": "FERMATI QUI. Non parlare più. Lascia che siano loro a decidere se ignorarsi, salutarsi o iniziare a parlare. Questa è la prima vera scena libera della campagna.",
+      "location_id": "porto-commerciale",
+      "musicCue": "harbor",
+      "npc_ids": ["merchant-01", "dock-worker"],
+      "choices": [
+        { "id": "choice-porto-piazza", "text": "I giocatori iniziano a camminare verso la piazza", "targetBlockId": "scena-cantastorie" }
+      ],
+      "journalEntry": "I tre si sono incontrati.",
+      "sceneOrder": 6
+    },
+    {
+      "id": "scena-cantastorie",
+      "type": "revelation",
+      "title": "Il Cantastorie",
+      "content": "La piazza è piena di persone. Mercanti. Bambini. Guardie. Carri. Rumore ovunque.\n\nAl centro della piazza un uomo racconta una storia.\n\nRide. Cambia voce. Recita. Imita mostri. Imita re. Imita draghi.\n\nÈ incredibilmente bravo.\n\nEppure... nessuno si è fermato.\n\nLe persone gli passano accanto come se non esistesse. Nemmeno uno sguardo.\n\nSolo voi lo notate davvero.",
+      "narration": "Questa scena deve durare. Fai una pausa dopo 'nessuno si è fermato'. Lascia il silenzio al tavolo. Da questo momento il DM non guida più la conversazione.",
+      "location_id": "piazza-centrale",
+      "musicCue": "lonely_bard",
+      "npc_ids": ["chuck"],
+      "isRevelation": true,
+      "choices": [
+        { "id": "choice-avvicinarsi", "text": "Avvicinarsi a Chuck", "targetBlockId": "scena-roleplay-libero" },
+        { "id": "choice- osservare", "text": "Osservarlo da lontano", "targetBlockId": "scena-roleplay-libero" }
+      ],
+      "journalEntry": "I personaggi incontrano Chuck.",
+      "sceneOrder": 7
+    },
+    {
+      "id": "scena-roleplay-libero",
+      "type": "dialogue",
+      "title": "Roleplay Libero",
+      "content": "Da questo momento smetti completamente di leggere. Lascia che i giocatori parlino. Lascia che Chuck si presenti. Lascia che si conoscano. Non interromperli. Questa scena termina soltanto quando senti che i personaggi hanno iniziato davvero a fidarsi gli uni degli altri.",
+      "narration": "Potrebbe durare cinque minuti oppure quaranta. Non avere fretta. Premia sempre chi interpreta bene il proprio personaggio.",
+      "location_id": "piazza-centrale",
+      "musicCue": "city_day",
+      "npc_ids": ["chuck"],
+      "choices": [
+        { "id": "choice-roleplay-fine", "text": "Quando il roleplay è terminato", "targetBlockId": "scena-alaric-arrivo" }
+      ],
+      "journalEntry": "Il gruppo si è formato.",
+      "sceneOrder": 8
+    },
+    {
+      "id": "scena-alaric-arrivo",
+      "type": "narration",
+      "title": "Finalmente Qualcuno Ascolta",
+      "content": "Mentre state parlando con Chuck, una figura incappucciata si ferma a qualche metro da voi. Non guarda voi. Guarda Chuck.\n\nRimane in silenzio qualche secondo. Poi sorride.\n\n'Finalmente... qualcuno che ascolta ancora le storie.'\n\nChuck abbassa lentamente il libro.\n\n'Qualcuno ogni tanto si ferma ancora.'\n\nLo sconosciuto scuote la testa.\n\n'No... non intendevo loro. Intendevo te.'\n\nPer un istante cala il silenzio.",
+      "narration": "Parla lentamente. Fai una pausa dopo ogni frase importante. Lascia che siano i giocatori a rompere il silenzio.",
+      "location_id": "piazza-centrale",
+      "musicCue": "mystery_soft",
+      "npc_ids": ["npc-alaric", "chuck"],
+      "choices": [
+        { "id": "choice-alaric-parla", "text": "Parlano con lo sconosciuto", "targetBlockId": "scena-nome-sbagliato" },
+        { "id": "choice-chuck-parla", "text": "Chuck parla per primo", "targetBlockId": "scena-nome-sbagliato" },
+        { "id": "choice-ignorano", "text": "Lo ignorano", "targetBlockId": "scena-nome-sbagliato" }
+      ],
+      "journalEntry": "Un misterioso viaggiatore si avvicina al gruppo.",
+      "sceneOrder": 9
+    },
+    {
+      "id": "scena-nome-sbagliato",
+      "type": "dialogue",
+      "title": "Il Nome Sbagliato",
+      "content": "Lo sconosciuto osserva uno dei personaggi. Scegline uno casualmente. Poi pronuncia un nome completamente diverso.\n\n'È passato tanto tempo... Andrea.'\n\nSe il personaggio risponde 'Io non mi chiamo Andrea', lo sconosciuto rimane immobile. Sbatte lentamente le palpebre.\n\n'Davvero...?'\n\nAbbassa lo sguardo.\n\n'Scusami. Ultimamente succede più spesso di quanto vorrei.'\n\nSorride appena.\n\n'Forse sto diventando vecchio.'\n\nCambia immediatamente argomento.",
+      "narration": "Questa NON deve sembrare una scena importante. Recitala con naturalezza. Non sottolinearla. Non dare spiegazioni se i giocatori insistono.",
+      "location_id": "piazza-centrale",
+      "musicCue": "mystery",
+      "npc_ids": ["npc-alaric"],
+      "choices": [
+        { "id": "choice-continuano", "text": "Continuano la conversazione", "targetBlockId": "scena-richiesta" }
+      ],
+      "journalEntry": "Qualcuno ha pronunciato il nome sbagliato.",
+      "sceneOrder": 10
+    },
+    {
+      "id": "scena-richiesta",
+      "type": "dialogue",
+      "title": "Una Richiesta Insolita",
+      "content": "Lo sconosciuto guarda il gruppo.\n\n'Non vi conosco. E probabilmente non dovrei fidarmi di voi. Ma oggi ho visto qualcosa di strano. Tre uomini sono entrati in un vecchio magazzino fuori città. Sono armati. Sembravano cercare qualcosa. Le guardie non fanno nulla. Nessuno sembra essersene accorto.'\n\nFa un respiro.\n\n'Io ormai sono troppo vecchio per affrontarli da solo. Vi andrebbe di aiutarmi?'",
+      "narration": "Non dire che sono eroi. Non dire che sono speciali. Sta semplicemente chiedendo un favore. Lascia discutere il gruppo.",
+      "location_id": "piazza-centrale",
+      "musicCue": "mystery",
+      "npc_ids": ["npc-alaric"],
+      "choices": [
+        { "id": "choice-accettano", "text": "Accettano", "targetBlockId": "scena-verso-magazzino" },
+        { "id": "choice-domande", "text": "Fanno domande", "targetBlockId": "scena-verso-magazzino" },
+        { "id": "choice-rifiutano", "text": "Rifiutano", "targetBlockId": "scena-verso-magazzino" }
+      ],
+      "journalEntry": "Il gruppo riceve il primo incarico.",
+      "sceneOrder": 11
+    },
+    {
+      "id": "scena-verso-magazzino",
+      "type": "travel",
+      "title": "Verso il Magazzino",
+      "content": "Il sole sta tramontando mentre lasciate lentamente la città. Dietro di voi Valdara continua la propria giornata come se nulla fosse. Mercanti. Guardie. Carri. Risate. Davanti a voi, invece, il vecchio magazzino appare silenzioso. Una finestra è rotta. La porta principale è socchiusa.",
+      "narration": "Descrivi il contrasto tra la città piena di vita e il silenzio del magazzino. Questo è un ottimo momento per spiegare furtività, percezione e investigazione.",
+      "location_id": "valdara",
+      "musicCue": "journey",
+      "diceCheck": { "count": 1, "sides": 20, "modifier": 0 },
+      "npc_ids": ["npc-alaric"],
+      "choices": [
+        { "id": "choice-portone", "text": "Entrano dal portone", "targetBlockId": "scena-dentro-magazzino" },
+        { "id": "choice-finestra", "text": "Entrano dalla finestra", "targetBlockId": "scena-dentro-magazzino" },
+        { "id": "choice-osservano", "text": "Osservano prima l'edificio", "targetBlockId": "scena-dentro-magazzino" }
+      ],
+      "journalEntry": "Il gruppo raggiunge il vecchio magazzino.",
+      "sceneOrder": 12
+    },
+    {
+      "id": "scena-dentro-magazzino",
+      "type": "narration",
+      "title": "Dentro il Magazzino",
+      "content": "L'aria all'interno del magazzino è pesante. Il pavimento è coperto di polvere. Vecchie casse sono state aperte con violenza. Alcune sono completamente distrutte.\n\nDal piano superiore arrivano delle voci.\n\n'Cercate meglio!'\n'Non può essere sparita!'\n'Il capo ci farà fuori!'\n\nSentite il rumore di oggetti lanciati a terra.",
+      "narration": "Lascia decidere ai giocatori come entrare. Possono parlare, nascondersi, osservare oppure attaccare. Spiega come funzionano Furtività, Percezione e Investigazione.",
+      "location_id": "magazzino-abbandonato",
+      "musicCue": "abandoned_warehouse",
+      "npc_ids": ["npc-alaric"],
+      "choices": [
+        { "id": "choice-scoperto", "text": "Entrano allo scoperto", "targetBlockId": "scena-scontro" },
+        { "id": "choice-parlare", "text": "Provano a parlare", "targetBlockId": "scena-scontro" },
+        { "id": "choice-nascondersi", "text": "Si nascondono", "targetBlockId": "scena-scontro" }
+      ],
+      "journalEntry": "Il gruppo entra nel vecchio magazzino.",
+      "sceneOrder": 13
+    },
+    {
+      "id": "scena-scontro",
+      "type": "combat",
+      "title": "Lo Scontro",
+      "content": "Uno dei tre uomini si volta improvvisamente.\n\n'Chi siete?!'\n\nPer un istante cala il silenzio.\n\nIl capo stringe la spada.\n\n'Non importa... eliminateli!'\n\nINIZIA IL COMBATTIMENTO.",
+      "narration": "Qui apri la schermata Combattimento dell'app. Spiega iniziativa, movimento, azione, bonus action, reazione e punti ferita mentre giocano. Questo è il tutorial del combattimento. Fermati ogni turno per spiegare le meccaniche.",
+      "location_id": "magazzino-abbandonato",
+      "musicCue": "combat_intro",
+      "combat_id": "combat-magazzino",
+      "isCombat": true,
+      "choices": [
+        { "id": "choice-combat-fine", "text": "Combattimento terminato", "targetBlockId": "scena-cosa-cercavano" }
+      ],
+      "journalEntry": "Primo combattimento completato.",
+      "sceneOrder": 14
+    },
+    {
+      "id": "scena-cosa-cercavano",
+      "type": "narration",
+      "title": "Cosa Stavano Cercando?",
+      "content": "Il combattimento termina. I tre uomini giacciono a terra. Il vecchio magazzino torna nel silenzio.\n\nTra le casse aperte trovate uno zaino. All'interno ci sono poche monete, del cibo ormai andato a male e un foglio molto antico.\n\nNon contiene mappe. Non contiene scritte comprensibili. Solo strani simboli disegnati con un inchiostro ormai sbiadito.",
+      "narration": "Lascia che siano loro a decidere se prenderlo oppure lasciarlo. Spiega come funziona il bottino e l'inventario.",
+      "location_id": "magazzino-abbandonato",
+      "musicCue": "after_battle",
+      "npc_ids": ["npc-alaric"],
+      "diceCheck": { "count": 1, "sides": 20, "modifier": 2 },
+      "reward": { "items": ["old-parchment"], "xp": 300 },
+      "choices": [
+        { "id": "choice-consegnano", "text": "Consegnano il foglio ad Alaric", "targetBlockId": "scena-domanda-alaric" },
+        { "id": "choice-tengono", "text": "Lo tengono", "targetBlockId": "scena-domanda-alaric" }
+      ],
+      "journalEntry": "È stato trovato uno strano foglio antico.",
+      "sceneOrder": 15
+    },
+    {
+      "id": "scena-domanda-alaric",
+      "type": "dialogue",
+      "title": "La Domanda",
+      "content": "Alaric osserva attentamente il foglio. Rimane in silenzio. Lo gira. Lo guarda controluce. Infine sospira.\n\n'Non è questo...'\n\nSe i giocatori gli chiedono cosa stesse cercando risponde soltanto:\n\n'Non lo so.'\n\nPausa.\n\n'So soltanto che negli ultimi mesi sempre più persone sembrano cercare qualcosa... senza sapere cosa.'",
+      "narration": "Non improvvisare spiegazioni. Alaric sa poco più dei giocatori. Questa è una scena narrativa.",
+      "location_id": "magazzino-abbandonato",
+      "musicCue": "mystery_soft",
+      "npc_ids": ["npc-alaric"],
+      "choices": [
+        { "id": "choice-continuare-alaric", "text": "Continuare a parlare con Alaric", "targetBlockId": "scena-ritorno" }
+      ],
+      "journalEntry": "Anche Alaric sembra confuso.",
+      "sceneOrder": 16
+    },
+    {
+      "id": "scena-ritorno",
+      "type": "travel",
+      "title": "Il Ritorno",
+      "content": "Lasciate lentamente il vecchio magazzino. Il sole è ormai quasi tramontato. L'aria è fresca. Per qualche minuto nessuno parla.\n\nDavanti a voi, Valdara continua la propria giornata come se nulla fosse accaduto. Le luci delle botteghe sono ancora accese. Si sentono risate. Un fabbro continua a battere il martello sull'incudine. Una bambina rincorre un cane nella piazza. È tutto perfettamente normale.",
+      "narration": "Descrivi lentamente la normalità della città. Deve quasi dare fastidio dopo il combattimento. Lascia spazio ai giocatori per parlare tra loro.",
+      "location_id": "valdara",
+      "musicCue": "night_walk",
+      "npc_ids": ["npc-alaric"],
+      "choices": [
+        { "id": "choice-verso-citta", "text": "Continuano verso la città", "targetBlockId": "scena-domanda-strana" }
+      ],
+      "journalEntry": "Il gruppo torna verso Valdara.",
+      "sceneOrder": 17
+    },
+    {
+      "id": "scena-domanda-strana",
+      "type": "revelation",
+      "title": "Una Domanda",
+      "content": "Alaric si ferma improvvisamente. Rimane qualche secondo in silenzio. Poi guarda il vecchio magazzino ormai lontano. Infine guarda voi.\n\n'Posso farvi una domanda?'\n\nAspetta davvero che qualcuno risponda.\n\n'Avete notato una cosa strana?'\n\nLascia che siano i giocatori a parlare. Se nessuno dice nulla continua:\n\n'Abbiamo combattuto per parecchi minuti. Abbiamo urlato. Abbiamo rotto casse. Qualcuno ha persino lanciato della magia.'\n\nPausa.\n\n'Eppure... nessuno è venuto a vedere cosa stesse succedendo.'\n\nSilenzio.",
+      "narration": "Questa è la prima vera crepa del mondo. Non dare spiegazioni. Chiudi la scena con il silenzio. Non rispondere alle domande con informazioni fuori dal personaggio.",
+      "location_id": "valdara",
+      "musicCue": "mystery_soft",
+      "npc_ids": ["npc-alaric"],
+      "isRevelation": true,
+      "choices": [
+        { "id": "choice-entrano-citta", "text": "Entrano in città", "targetBlockId": "scena-chuck-ritorno" }
+      ],
+      "journalEntry": "Alaric nota un comportamento insolito della città.",
+      "sceneOrder": 18
+    },
+    {
+      "id": "scena-chuck-ritorno",
+      "type": "dialogue",
+      "title": "Chuck",
+      "content": "Quando attraversate di nuovo la piazza trovate Chuck esattamente dove lo avevate lasciato. Sta ancora raccontando una storia. La voce è ormai roca. Davanti a lui ci sono le stesse sedie vuote. Le persone continuano a passargli accanto senza degnarlo di uno sguardo.\n\nChuck vi vede. Sorride.\n\n'Allora? Com'è andata?'\n\nPer lui sembra la cosa più normale del mondo continuare a raccontare storie anche senza pubblico.",
+      "narration": "Lascia ai giocatori la possibilità di raccontare cosa è successo. Chuck ascolta con curiosità sincera. Roleplay libero.",
+      "location_id": "piazza-centrale",
+      "musicCue": "lonely_bard",
+      "npc_ids": ["chuck"],
+      "choices": [
+        { "id": "choice-terminare", "text": "Terminare la conversazione", "targetBlockId": "scena-fine" }
+      ],
+      "journalEntry": "Chuck continua a raccontare storie come se nulla fosse.",
+      "sceneOrder": 19
+    },
+    {
+      "id": "scena-fine",
+      "type": "reward",
+      "title": "Fine Sessione",
+      "content": "Il sole è ormai scomparso dietro le montagne. Valdara continua a vivere la propria vita. Le taverne sono aperte. I mercanti sistemano le ultime merci. Le guardie pattugliano le mura. Tutto sembra normale. Forse... troppo normale.\n\nQuesta sera ognuno di voi troverà un posto dove dormire. Domani sarà un altro giorno. O almeno così sembra.\n\nLA SESSIONE TERMINA QUI.",
+      "narration": "Non fare alcun cliffhanger esplicito. Lascia che siano i giocatori a discutere tra loro delle stranezze notate. Chiedi ai giocatori cosa è piaciuto loro e assegna i primi punti esperienza.",
+      "location_id": "piazza-centrale",
+      "musicCue": "ending_session_one",
+      "reward": { "xp": 200, "items": ["old-parchment"] },
+      "journalEntry": "Fine della Sessione 1.",
+      "sceneOrder": 20
+    }
+  ]
+}

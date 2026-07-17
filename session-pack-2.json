@@ -1,0 +1,763 @@
+{
+  "schema_version": "1.0",
+  "session": {
+    "title": "Le Ombre della Foresta",
+    "campaignId": "the_veil",
+    "sessionNumber": 2,
+    "date": "Secondo Giorno d'Autunno",
+    "description": "Il gruppo lascia Valdara e si addentra nella Foresta di Lyr, seguendo gli indizi trovati nel magazzino. Tra sentieri che si ripetono, un santuario dimenticato e guardiani di pietra, i PG scopriranno che il passato non è sepolto tanto in profondità quanto sembra.",
+    "tags": [
+      "foresta",
+      "mistero",
+      "combattimento",
+      "visione"
+    ]
+  },
+  "npcs": [
+    {
+      "id": "chuck",
+      "name": "Chuck",
+      "titles": [
+        "Cantastorie"
+      ],
+      "description": "Un uomo di mezza età con una voce roca e piena di passione. Continua a raccontare storie anche quando non c'è più nessuno ad ascoltare. In questa sessione si dimostra più preoccupato del solito, anche se cerca di nasconderlo con l'ironia.",
+      "personality": [
+        "Entusiasta",
+        "Ostinato",
+        "Ansioso sotto la superficie"
+      ],
+      "location_id": "loc_valdara_square",
+      "dialogues": {
+        "saluto": "Allora? Si parte?",
+        "storie": "Una volta ho attraversato questa foresta... o forse no. Le storie si assomigliano tutte dopo un po'."
+      },
+      "emoji": "📖"
+    },
+    {
+      "id": "npc-old-merchant",
+      "name": "Mercante",
+      "titles": [
+        "Viandante"
+      ],
+      "description": "Un anziano mercante con il carro rotto lungo la strada per Lyr. Ha bisogno di aiuto per riparare una ruota e in cambio offre provviste. Sembra conoscere qualcosa della foresta ma preferisce non parlarne.",
+      "personality": [
+        "Riconoscente",
+        "Silenzioso",
+        "Superstizioso"
+      ],
+      "location_id": "road-to-lyr",
+      "dialogues": {
+        "aiuto": "Per fortuna! Finalmente qualcuno!",
+        "avvertimento": "Non fermatevi dopo il tramonto."
+      },
+      "emoji": "🧳"
+    },
+    {
+      "id": "npc-guardian-1",
+      "name": "Guardiano di Pietra",
+      "titles": [
+        "Protettore del Santuario"
+      ],
+      "description": "Un costrutto alto quasi tre metri, fatto di pietra bianca con venature azzurre luminose. Non parla se non per brevi frasi meccaniche. Protegge il santuario e il cristallo in esso custodito.",
+      "personality": [
+        "Silenzioso",
+        "Inflexibile",
+        "Antico"
+      ],
+      "location_id": "lost-sanctuary",
+      "dialogues": {
+        "avviso": "Archivio compromesso. Protocollo di contenimento attivato.",
+        "sconfitta": "...non... dimenticate..."
+      },
+      "emoji": "🗿"
+    }
+  ],
+  "factions": [],
+  "items": [
+    {
+      "id": "item-cord",
+      "name": "Corda Robusta",
+      "type": "tool",
+      "rarity": "common",
+      "description": "Una corda di canapa ben intrecciata, lunga circa 15 metri. Regalata dal mercante lungo la strada.",
+      "value": 5,
+      "weight": 3,
+      "emoji": "🪢"
+    },
+    {
+      "id": "item-healing-potion",
+      "name": "Pozione Curativa",
+      "type": "consumable",
+      "rarity": "common",
+      "description": "Una piccola fiala di liquido rosso brillante. Recupera 1d4+2 PF.",
+      "effects": [
+        "Recupera 1d4+2 PF"
+      ],
+      "value": 15,
+      "weight": 0.3,
+      "emoji": "🧪"
+    },
+    {
+      "id": "item-medallion",
+      "name": "Medaglione Antico",
+      "type": "lore",
+      "rarity": "rare",
+      "description": "Un medaglione di bronzo molto semplice. Su un lato è inciso un cerchio spezzato — lo stesso simbolo trovato sulla pietra miliare. Sul retro, una frase in una lingua sconosciuta che nessuno riesce a leggere.",
+      "effects": [
+        "Potrebbe essere analizzato da uno studioso",
+        "Sembra molto antico"
+      ],
+      "value": 0,
+      "weight": 0.2,
+      "emoji": "📿"
+    }
+  ],
+  "relics": [
+    {
+      "id": "relic-crystal",
+      "name": "Cristallo della Memoria",
+      "description": "Un cristallo trasparente grande quanto un pugno. Emette una luce propria debolissima che pulsa come un cuore. Al tatto mostra una visione: una città splendente di torri bianche e canali, poi fiamme e urla. Dopo la visione il cristallo diventa opaco e freddo.",
+      "veilEffect": "Rivela un ricordo collettivo cancellato — riduceVeilIntegrity di 5.",
+      "memoryUnlock": "Sblocca 'L'Età della Conoscenza' nella storia.",
+      "charges": 1,
+      "emoji": "💎"
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest-ombre-foresta",
+      "name": "Le Ombre della Foresta",
+      "type": "main",
+      "description": "Dopo gli eventi del magazzino, il gruppo decide di seguire gli indizi verso la Foresta di Lyr. Un antico santuario nascosto attende di essere scoperto, insieme ai segreti che custodisce.",
+      "objectives": [
+        {
+          "id": "obj-arrivare-foresta",
+          "description": "Lasciare Valdara e raggiungere la Foresta di Lyr"
+        },
+        {
+          "id": "obj-trovare-santuario",
+          "description": "Seguire il cervo bianco fino al santuario perduto"
+        },
+        {
+          "id": "obj-aprire-porta",
+          "description": "Trovare il modo di aprire la porta di pietra nel santuario"
+        },
+        {
+          "id": "obj-toccare-cristallo",
+          "description": "Toccare il cristallo nella camera centrale"
+        },
+        {
+          "id": "obj-sopravvivere-guardiani",
+          "description": "Sopravvivere allo scontro con i Guardiani di Pietra"
+        },
+        {
+          "id": "obj-trovare-medaglione",
+          "description": "Recuperare il medaglione antico dal santuario"
+        }
+      ],
+      "rewards": {
+        "xp": 400,
+        "items": [
+          "item-medallion",
+          "relic-crystal"
+        ],
+        "veilShift": -5
+      },
+      "emoji": "🌲"
+    }
+  ],
+  "combat": [
+    {
+      "id": "combat-guardians",
+      "title": "I Guardiani del Santuario",
+      "scene_id": "scena-scontro-guardiani",
+      "is_active": true,
+      "combatants": [
+        {
+          "name": "Guardiano Alpha",
+          "type": "boss",
+          "hp_max": 55,
+          "armor_class": 16,
+          "initiative": 14,
+          "sort_order": 1
+        },
+        {
+          "name": "Guardiano Beta",
+          "type": "enemy",
+          "hp_max": 40,
+          "armor_class": 16,
+          "initiative": 10,
+          "sort_order": 2
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scena-partenza",
+      "type": "narration",
+      "title": "La Partenza",
+      "content": "Il grande portone di Valdara si richiude lentamente alle vostre spalle. Per qualche istante nessuno parla. La città continua a vivere come se nulla fosse successo. Il rumore del mercato arriva ancora fino a voi. Il martello del fabbro continua a battere sull'incudine. Le campane del tempio scandiscono le ore. Persino il profumo del pane appena sfornato sembra voler convincervi a tornare indietro. Ma ormai avete fatto la vostra scelta. Davanti a voi la strada bianca attraversa dolci colline ricoperte d'erba. Molto più lontano si intravede una linea scura: la Foresta di Lyr.",
+      "narration": "Parla lentamente. Soffermati sul contrasto tra la città viva e la strada che si perde all'orizzonte. Lascia ai giocatori il tempo di reagire all'addio.",
+      "location_id": "loc_city_gate",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "opening_theme",
+      "choices": [
+        {
+          "id": "choice-partire",
+          "text": "Iniziare il viaggio",
+          "targetBlockId": "scena-strada"
+        }
+      ],
+      "journalEntry": "Il gruppo lascia Valdara.",
+      "sceneOrder": 1
+    },
+    {
+      "id": "scena-strada",
+      "type": "travel",
+      "title": "La Strada Bianca",
+      "content": "Le prime ore scorrono tranquille. Lungo la strada incontrate persone comuni. Un contadino che accompagna il bestiame. Due bambini che rincorrono una gallina. Una donna che raccoglie erbe lungo il ciglio della strada. Una pattuglia di guardie diretta verso la città. Tutti salutano cordialmente. Chuck rompe il silenzio: 'Ogni volta che parto per un viaggio penso sempre che tornerò ricco. Non è mai successo. Però continuo a sperarci.'",
+      "narration": "Lascia spazio ai giocatori per parlare, raccontarsi qualcosa del loro passato. Più si conoscono ora, più il gruppo funzionerà in futuro.",
+      "location_id": "road-to-lyr",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "journey",
+      "choices": [
+        {
+          "id": "choice-continuare",
+          "text": "Continuare il cammino",
+          "targetBlockId": "scena-pietra-miliare"
+        }
+      ],
+      "journalEntry": "Il viaggio nella Foresta di Lyr ha inizio.",
+      "sceneOrder": 2
+    },
+    {
+      "id": "scena-pietra-miliare",
+      "type": "narration",
+      "title": "La Pietra Miliare",
+      "content": "Dopo circa due ore di cammino, la strada curva leggermente verso sinistra. Accanto al sentiero emerge una grossa pietra miliare consumata dal tempo. È quasi completamente ricoperta dal muschio. Sulla parte superiore è inciso: FORESTA DI LYR — 5 KM. Sotto, però, qualcuno ha scalpellato via un'intera riga. Con violenza. Come se avesse voluto cancellarla per sempre.",
+      "narration": "Se un giocatore chiede di osservarla attentamente, chiedi una prova di Investigazione CD 12. Se supera, nota un piccolo simbolo tra i segni dello scalpello: un cerchio attraversato da una sottile crepa. Lo stesso simbolo del medaglione. Nessuno lo riconosce. Nemmeno Chuck.",
+      "location_id": "road-to-lyr",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery_soft",
+      "diceCheck": {
+        "count": 1,
+        "sides": 20,
+        "modifier": 2
+      },
+      "choices": [
+        {
+          "id": "choice-oltre",
+          "text": "Proseguire il viaggio",
+          "targetBlockId": "scena-bivio"
+        }
+      ],
+      "journalEntry": "Sulla pietra miliare è stato scalpellato via qualcosa. Rimane un simbolo: un cerchio spezzato.",
+      "sceneOrder": 3
+    },
+    {
+      "id": "scena-bivio",
+      "type": "choice",
+      "title": "Il Bivio",
+      "content": "La strada si divide. A destra prosegue la strada principale — larga, sicura, frequentata. A sinistra parte un vecchio sentiero molto più stretto, gli alberi sembrano quasi inghiottirlo. Chuck guarda entrambe le strade: 'Possiamo fare la cosa intelligente... o possiamo fare quella divertente. Indovinate quale preferisco.'",
+      "narration": "Qualunque strada scelgano non cambierà la destinazione finale, solo ciò che incontreranno. Lascia che discutano e decidano.",
+      "location_id": "road-to-lyr",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-strada-principale",
+          "text": "Prendere la strada principale",
+          "targetBlockId": "scena-mercante"
+        },
+        {
+          "id": "choice-sentiero-bosco",
+          "text": "Prendere il sentiero nel bosco",
+          "targetBlockId": "scena-bambola"
+        }
+      ],
+      "journalEntry": "Il gruppo sceglie una strada al bivio.",
+      "sceneOrder": 4
+    },
+    {
+      "id": "scena-mercante",
+      "type": "narration",
+      "title": "Il Mercante",
+      "content": "Dopo circa mezz'ora incontrate un vecchio mercante. Una ruota del carro si è completamente staccata. L'uomo sta cercando disperatamente di sollevarlo. Appena vi vede esclama: 'Per fortuna! Finalmente qualcuno!'",
+      "narration": "Non è un imbroglione. Ha davvero bisogno di una mano. Se lo aiutano (pochi minuti di lavoro), apre una piccola cassa e consegna loro: una corda robusta, due torce, una pozione curativa, alcune razioni da viaggio. Prima di ripartire: 'State andando lì? Non fermatevi dopo il tramonto.' Se gli chiedono il motivo: 'Non saprei. Me lo diceva sempre mio padre.'",
+      "location_id": "road-to-lyr",
+      "npc_ids": [
+        "npc-old-merchant"
+      ],
+      "musicCue": "harbor_day",
+      "reward": {
+        "xp": 50,
+        "items": [
+          "item-cord",
+          "item-torch",
+          "item-healing-potion",
+          "item-ration"
+        ]
+      },
+      "choices": [
+        {
+          "id": "choice-ripartire",
+          "text": "Ripartire dopo l'aiuto",
+          "targetBlockId": "scena-ingresso-foresta"
+        }
+      ],
+      "journalEntry": "Il gruppo aiuta un mercante lungo la strada e riceve provviste.",
+      "sceneOrder": 5
+    },
+    {
+      "id": "scena-bambola",
+      "type": "narration",
+      "title": "Il Pianto nel Bosco",
+      "content": "Dopo pochi minuti il rumore della strada scompare. Rimane soltanto il fruscio delle foglie. Poi qualcuno sente piangere. È una bambina. Il pianto è vicino, molto vicino. Arriva da dietro alcuni alberi. Quando il gruppo si avvicina non trova nessuno. Soltanto una vecchia bambola di pezza seduta sopra un tronco. Ha un occhio cucito male, i vestiti coperti di fango.",
+      "narration": "Se qualcuno la raccoglie non succede nulla. È soltanto una bambola. Chuck la osserva troppo a lungo: 'No. Queste cose non mi piacciono.' La posa sul tronco e riprende a camminare.",
+      "location_id": "road-to-lyr",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-riprendere",
+          "text": "Riprendere il cammino",
+          "targetBlockId": "scena-ingresso-foresta"
+        }
+      ],
+      "journalEntry": "Nel bosco il gruppo trova una bambola abbandonata. Chuck è visibilmente a disagio.",
+      "sceneOrder": 6
+    },
+    {
+      "id": "scena-ingresso-foresta",
+      "type": "ambient",
+      "title": "La Foresta di Lyr",
+      "content": "Dopo alcune ore gli alberi diventano sempre più fitti. Le loro chiome si intrecciano così in alto da nascondere quasi completamente il cielo. La luce cambia. Non è ancora sera, eppure sembra già tardo pomeriggio. L'aria è fredda. Il terreno diventa morbido, ricoperto di foglie umide. L'odore della resina riempie ogni respiro. Il vento smette completamente di soffiare. Anche gli uccelli. Sono spariti. Non c'è più alcun verso. Nemmeno un insetto. Solo il rumore dei vostri passi.",
+      "narration": "Descrivi lentamente. Chuck non racconta più storie. Dopo qualche minuto: 'Sentite anche voi...?' I giocatori chiederanno 'Cosa?' Lui ascolta. Poi sorride nervosamente: 'Appunto. Niente.'",
+      "location_id": "lyr-forest",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-addentrarsi",
+          "text": "Addentrarsi nella foresta",
+          "targetBlockId": "scena-sentiero-nascosto"
+        }
+      ],
+      "journalEntry": "Il gruppo entra nella Foresta di Lyr. Il silenzio è innaturale.",
+      "sceneOrder": 7
+    },
+    {
+      "id": "scena-sentiero-nascosto",
+      "type": "narration",
+      "title": "Il Sentiero che si Ripete",
+      "content": "Il bosco sembra sempre uguale. Alberi, foglie, radici. State camminando ormai da quasi un'ora eppure nessuno ricorda di aver fatto una curva. Chuck si ferma: 'Scusate... quel sasso... giurerei di averlo già visto.' Dieci minuti dopo lo stesso identico masso compare di nuovo. Stessa posizione, stesso muschio, stessa crepa.",
+      "narration": "Non dire che stanno girando in tondo. Lascia che siano loro a capirlo. Se uno dice 'Torniamo indietro', dopo qualche minuto ritrovano ancora il masso. Se decidono di uscire dal sentiero, ci riescono senza problemi. Il fenomeno riguarda solo quella strada.",
+      "location_id": "lyr-forest",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-seguire-strada",
+          "text": "Continuare dritti",
+          "targetBlockId": "scena-cervo"
+        },
+        {
+          "id": "choice-tornare-indietro",
+          "text": "Tornare indietro",
+          "targetBlockId": "scena-cervo"
+        },
+        {
+          "id": "choice-taglio-sentiero",
+          "text": "Tagliare fuori dal sentiero",
+          "targetBlockId": "scena-cervo"
+        }
+      ],
+      "journalEntry": "Il sentiero nella foresta sembra ripetersi. Qualcosa di innaturale sta accadendo.",
+      "sceneOrder": 8
+    },
+    {
+      "id": "scena-cervo",
+      "type": "narration",
+      "title": "Il Cervo Bianco",
+      "content": "Pochi minuti dopo un cervo attraversa lentamente il sentiero. È bellissimo, il pelo è completamente bianco. Si ferma, vi guarda, non scappa. Rimane immobile per parecchi secondi. Poi gira lentamente la testa come se volesse essere seguito. Non corre, cammina, sempre mantenendo la stessa distanza.",
+      "narration": "Se decidono di seguirlo, il cervo li conduce fuori dal sentiero, tra gli alberi, sempre più in profondità. Poi sparisce. Semplicemente. Non scappa, non corre. È come se non fosse mai esistito. Davanti a loro compare una radura.",
+      "location_id": "lyr-forest",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystic",
+      "choices": [
+        {
+          "id": "choice-seguire-cervo",
+          "text": "Seguire il cervo bianco",
+          "targetBlockId": "scena-santuario"
+        },
+        {
+          "id": "choice-ignorare-cervo",
+          "text": "Ignorare il cervo e proseguire",
+          "targetBlockId": "scena-santuario"
+        }
+      ],
+      "journalEntry": "Un cervo bianco appare e scompare nel nulla, conducendo il gruppo verso una radura.",
+      "sceneOrder": 9
+    },
+    {
+      "id": "scena-santuario",
+      "type": "narration",
+      "title": "Il Santuario Perduto",
+      "content": "La vegetazione si apre improvvisamente. Davanti ai vostri occhi appare un luogo che nessuno si aspetterebbe di trovare nel cuore della foresta. Un piccolo santuario costruito con enormi blocchi di pietra bianca. Il tempo ha consumato quasi ogni decorazione. Le colonne sono spezzate, l'edera ricopre gran parte delle pareti, le radici degli alberi sembrano aver abbracciato l'edificio. Al centro della radura, cinque statue perfettamente conservate disposte in cerchio. Sembrano rivolte verso un altare.",
+      "narration": "Chuck rimane immobile: 'Io... questo posto non l'ho mai visto.' Lascia totale libertà di esplorazione. Ogni giocatore farà qualcosa di diverso.",
+      "location_id": "lost-sanctuary",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystic",
+      "choices": [
+        {
+          "id": "choice-esplorare",
+          "text": "Esplorare il santuario",
+          "targetBlockId": "scena-statue"
+        }
+      ],
+      "journalEntry": "Il gruppo scopre un antico santuario nascosto nella foresta.",
+      "sceneOrder": 10
+    },
+    {
+      "id": "scena-statue",
+      "type": "narration",
+      "title": "Le Cinque Statue",
+      "content": "Le statue rappresentano cinque viaggiatori. Non guerrieri, non re. Persone comuni. Una porta un bastone, una uno zaino, una una lanterna, una una spada. L'ultima ha il volto completamente consumato, come se qualcuno lo avesse cancellato.",
+      "narration": "Chi osserva bene l'altare nota qualcosa: non c'è polvere da nessuna parte. Come se qualcuno continuasse a pulirlo. Chuck: 'Spero sia un custode...' Si interrompe: 'Perché ho detto custode?' Non lo sa. Non forzare questo momento.",
+      "location_id": "lost-sanctuary",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery_soft",
+      "diceCheck": {
+        "count": 1,
+        "sides": 20,
+        "modifier": 2
+      },
+      "choices": [
+        {
+          "id": "choice-cercare-porta",
+          "text": "Cercare un'uscita o un ingresso",
+          "targetBlockId": "scena-porta-pietra"
+        }
+      ],
+      "journalEntry": "Il santuario custodisce cinque statue di viandanti. L'ultima è senza volto.",
+      "sceneOrder": 11
+    },
+    {
+      "id": "scena-porta-pietra",
+      "type": "narration",
+      "title": "La Porta di Pietra",
+      "content": "Dietro l'altare, nascosta dalle radici, c'è una porta di pietra. Nessuna maniglia, nessuna serratura. Solo cinque incavi circolari esattamente davanti alle cinque statue.",
+      "narration": "Quando un personaggio appoggia la mano su un incavo, le statue emettono un lieve bagliore azzurro quasi impercettibile. Poi tutto torna come prima. Chuck: 'Credo... che voglia tutti noi.' Devono mettere tutti e cinque una mano ciascuno. Appena l'ultimo poggia la mano, l'intero santuario vibra. La porta scivola lentamente verso il basso. Dall'interno esce aria molto fredda con un odore antico: carta, polvere, pietra bagnata.",
+      "location_id": "lost-sanctuary",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-scendere",
+          "text": "Scendere le scale",
+          "targetBlockId": "scena-scale"
+        }
+      ],
+      "journalEntry": "La porta di pietra si apre: una scala scende nell'oscurità.",
+      "sceneOrder": 12
+    },
+    {
+      "id": "scena-scale",
+      "type": "scene",
+      "title": "Le Scale dell'Oscurità",
+      "content": "Le scale sembrano non finire mai. Ogni gradino è consumato come se migliaia di persone fossero passate di lì. Eppure non c'è una sola impronta. L'unico rumore è quello dei vostri passi. L'aria diventa sempre più fredda. L'odore cambia: non è muffa, è carta molto vecchia. Come una biblioteca rimasta chiusa per secoli.",
+      "narration": "Chuck deglutisce poi sorride: 'Beh... adesso sì che sembra un'avventura.' Accende una torcia e mette il primo piede sulla scalinata. Fine dell'Atto I.",
+      "location_id": "lost-sanctuary",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-seguire-chuck",
+          "text": "Seguire Chuck",
+          "targetBlockId": "scena-sala-silenzio"
+        }
+      ],
+      "journalEntry": "Il gruppo scende nelle profondità del santuario.",
+      "sceneOrder": 13
+    },
+    {
+      "id": "scena-sala-silenzio",
+      "type": "narration",
+      "title": "La Sala del Silenzio",
+      "content": "La luce delle torce illumina lentamente una grande sala. Il soffitto è molto alto. Colonne gigantesche sostengono la volta. Gli scaffali lungo le pareti sono ormai crollati. Migliaia di libri giacciono sul pavimento, coperti da uno spesso strato di polvere. Al centro della sala si trova un enorme tavolo di pietra. Sopra non c'è assolutamente nulla.",
+      "narration": "Lascia almeno venti minuti di esplorazione libera. Se aprono un libro: pagine completamente bianche. Se un giocatore insiste con Percezione, per un istante vede comparire parole dorate che scompaiono subito dopo. Non dire cosa c'era scritto.",
+      "location_id": "hall-of-silence",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-continuare-esplorazione",
+          "text": "Continuare a esplorare la sala",
+          "targetBlockId": "scena-sedie"
+        },
+        {
+          "id": "choice-cercare-uscita",
+          "text": "Cercare un'uscita",
+          "targetBlockId": "scena-corridoio-nascosto"
+        }
+      ],
+      "journalEntry": "Il gruppo scopre una biblioteca sotterranea piena di libri bianchi.",
+      "sceneOrder": 14
+    },
+    {
+      "id": "scena-sedie",
+      "type": "ambient",
+      "title": "Le Cinque Sedie",
+      "content": "Vicino al tavolo ci sono cinque sedie, una davanti a ogni lato, come se aspettassero qualcuno. Sono perfettamente pulite. Tutto il resto della sala è coperto di polvere. Quelle no.",
+      "narration": "Chuck: 'Ok... questa cosa non mi piace per niente.' Se qualcuno si siede, per qualche secondo non succede nulla. Poi si sente un rumore molto lontano, come ingranaggi di pietra. L'intera stanza vibra. Poi il silenzio torna.",
+      "location_id": "hall-of-silence",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery_soft",
+      "choices": [
+        {
+          "id": "choice-proseguire",
+          "text": "Proseguire oltre",
+          "targetBlockId": "scena-corridoio-nascosto"
+        }
+      ],
+      "journalEntry": "Cinque sedie perfettamente pulite in una sala altrimenti polverosa.",
+      "sceneOrder": 15
+    },
+    {
+      "id": "scena-corridoio-nascosto",
+      "type": "narration",
+      "title": "Il Corridoio Nascosto",
+      "content": "Dietro uno scaffale crollato, uno dei personaggi nota un corridoio molto stretto. Non era visibile entrando. Sembra scavato direttamente nella roccia. Le pareti sono ricoperte di incisioni. Non parole, disegni. Persone che costruiscono, persone che studiano, persone che osservano il cielo. Poi gli ultimi disegni sono stati graffiati, come se qualcuno avesse voluto cancellarli.",
+      "narration": "Chuck sfiora un'incisione: 'Chiunque fosse... doveva essere molto arrabbiato.'",
+      "location_id": "hall-of-silence",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-attraversare-corridoio",
+          "text": "Attraversare il corridoio",
+          "targetBlockId": "scena-corridoio-echi"
+        }
+      ],
+      "journalEntry": "Un corridoio nascosto rivela incisioni su pietra: un passaggio cancellato.",
+      "sceneOrder": 16
+    },
+    {
+      "id": "scena-corridoio-echi",
+      "type": "ambient",
+      "title": "Il Corridoio degli Echi",
+      "content": "Mentre avanzate succede una cosa strana. Sentite dei passi. Non davanti, non dietro. Accanto a voi. Come se qualcuno stesse camminando nello stesso corridoio, ma non c'è nessuno. Ogni tanto una risata, una frase, una voce troppo lontana per capire.",
+      "narration": "Non fare tiri. Non c'è niente da trovare. Serve solo a creare tensione.",
+      "location_id": "hall-of-silence",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery",
+      "choices": [
+        {
+          "id": "choice-raggiungere-camera",
+          "text": "Raggiungere la fine del corridoio",
+          "targetBlockId": "scena-camera-centrale"
+        }
+      ],
+      "journalEntry": "Il corridoio è percorso da echi di voci e passi inesistenti.",
+      "sceneOrder": 17
+    },
+    {
+      "id": "scena-camera-centrale",
+      "type": "narration",
+      "title": "La Camera Centrale",
+      "content": "Alla fine del corridoio una stanza perfettamente circolare, molto più piccola e molto più pulita. Al centro un piedistallo. Sopra un piccolo cristallo grande quanto un pugno. Trasparente. Sembra emettere una luce propria, debolissima. La luce pulsa come un cuore. Nella stanza non c'è altro. Il posto trasmette una strana serenità, come se invitasse ad avvicinarsi.",
+      "narration": "Non dire mai 'Prendete il cristallo'. Aspetta che qualcuno si avvicini, lo tocchi, o tenti di esaminarlo.",
+      "location_id": "central-chamber",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystic",
+      "choices": [
+        {
+          "id": "choice-toccare-cristallo",
+          "text": "Toccare il cristallo",
+          "targetBlockId": "scena-visione"
+        },
+        {
+          "id": "choice-esaminare",
+          "text": "Esaminare la stanza prima di toccare",
+          "targetBlockId": "scena-visione"
+        }
+      ],
+      "journalEntry": "Il gruppo trova un cristallo pulsante in una camera circolare.",
+      "sceneOrder": 18
+    },
+    {
+      "id": "scena-visione",
+      "type": "revelation",
+      "title": "La Visione",
+      "content": "Il tempo si ferma. Non c'è luce, non c'è buio, non c'è suono. Il personaggio non vede più il santuario. Si trova altrove. Davanti ai suoi occhi si estende una città immensa mai vista. Torri di marmo bianco, ponti sospesi, biblioteche enormi, canali attraversati da imbarcazioni eleganti. Persone ovunque. Studiosi, artisti, inventori. Una bambina corre ridendo. Due uomini discutono davanti a una mappa gigantesca. Un gruppo di persone osserva una macchina composta da anelli di metallo che ruotano sospesi nel vuoto. Poi tutto cambia. Urla, fiamme, edifici che crollano, persone che scappano. Un uomo grida: 'È troppo tardi!' Un altro urla: 'Distruggetelo!'",
+      "narration": "La visione si spezza. Il personaggio torna nella stanza. Sono passati appena due secondi. Respira affannosamente. Ha gli occhi lucidi. Sa di aver visto qualcosa ma non riesce a ricordare tutto — come un sogno che svanisce appena ci si sveglia. Poi CRAAAK — il piedistallo si spacca. L'intera stanza trema. Polvere cade dal soffitto. Un rumore pesante risuona nelle profondità. Qualcosa si è appena svegliato.",
+      "location_id": "central-chamber",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "revelation",
+      "isRevelation": true,
+      "reward": {
+        "xp": 100
+      },
+      "choices": [
+        {
+          "id": "choice-prepararsi",
+          "text": "Prepararsi all'arrivo dei guardiani",
+          "targetBlockId": "scena-guardiani-risveglio"
+        }
+      ],
+      "journalEntry": "Il cristallo mostra una visione di una città splendente e della sua distruzione. Il santuario trema.",
+      "sceneOrder": 19
+    },
+    {
+      "id": "scena-guardiani-risveglio",
+      "type": "narration",
+      "title": "Il Risveglio dei Guardiani",
+      "content": "Un colpo lento e pesante come un enorme martello sulla pietra. Silenzio. Ancora. TUM. Più vicino. Chuck stringe la torcia: 'Ragazzi... secondo me dobbiamo andare.' Dal corridoio compare una figura alta quasi tre metri, costruita interamente in pietra bianca. Le giunture sono attraversate da sottili linee azzurre. Gli occhi sono due piccoli frammenti di luce. Dietro di lui un secondo, identico. Camminano lentamente, senza fretta.",
+      "narration": "Uno dei guardiani si ferma, inclina la testa, osserva il gruppo, poi il cristallo spento. Pronuncia una sola frase: 'Archivio compromesso. Protocollo di contenimento attivato.'",
+      "location_id": "central-chamber",
+      "npc_ids": [
+        "npc-guardian-1",
+        "chuck"
+      ],
+      "musicCue": "combat_intro",
+      "choices": [
+        {
+          "id": "choice-attaccare",
+          "text": "Attaccare i guardiani",
+          "targetBlockId": "scena-scontro-guardiani"
+        },
+        {
+          "id": "choice-fuggire",
+          "text": "Tentare di fuggire",
+          "targetBlockId": "scena-scontro-guardiani"
+        },
+        {
+          "id": "choice-parlare",
+          "text": "Provare a parlare con i guardiani",
+          "targetBlockId": "scena-scontro-guardiani"
+        }
+      ],
+      "journalEntry": "Due Guardiani di Pietra si risvegliano per proteggere il santuario.",
+      "sceneOrder": 20
+    },
+    {
+      "id": "scena-scontro-guardiani",
+      "type": "combat",
+      "title": "Scontro con i Guardiani",
+      "content": "I Guardiani avanzano. Non impugnano armi, non urlano, non corrono. Cercano di bloccare, disarmare, spingere. Proteggono il santuario. Non cercano di uccidere.",
+      "narration": "È un tutorial di combattimento più avanzato. I Guardiani sono lenti ma resistenti. Ogni tanto pronunciano frasi: 'Integrità insufficiente.' 'Memoria non verificata.' 'Accesso negato.' 'Archivio da preservare.' Quando l'ultimo guardiano arriva a pochi punti ferita, si inginocchia. Le luci azzurre si spengono. La voce diventa quasi umana: '...non... dimenticate...' Poi si trasforma in pietra.",
+      "location_id": "central-chamber",
+      "musicCue": "combat_intro",
+      "combat_id": "combat-guardians",
+      "isCombat": true,
+      "choices": [
+        {
+          "id": "choice-combat-fine",
+          "text": "Combattimento terminato",
+          "targetBlockId": "scena-dopo-scontro"
+        }
+      ],
+      "journalEntry": "Il gruppo sconfigge i Guardiani di Pietra.",
+      "sceneOrder": 21
+    },
+    {
+      "id": "scena-dopo-scontro",
+      "type": "narration",
+      "title": "Dopo lo Scontro",
+      "content": "Il santuario è di nuovo silenzioso. Il cristallo è diventato opaco. Sembra un semplice pezzo di quarzo. Chi lo prende sente solo freddo. La visione non torna. Mentre recuperate il fiato, uno dei personaggi nota qualcosa dietro il piedistallo: una piccola scatola di pietra. Dentro non c'è oro, non c'è magia. Solo un vecchio medaglione di bronzo molto semplice. Su un lato è inciso lo stesso simbolo trovato sulla pietra miliare: il cerchio spezzato. Sul retro una frase in una lingua sconosciuta.",
+      "narration": "Nessuno riesce a leggerla. Nemmeno Chuck: '...direi... assolutamente no.'",
+      "location_id": "central-chamber",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "mystery_soft",
+      "reward": {
+        "xp": 200,
+        "items": [
+          "item-medallion"
+        ]
+      },
+      "choices": [
+        {
+          "id": "choice-risalire",
+          "text": "Risalire in superficie",
+          "targetBlockId": "scena-ritorno-foresta"
+        }
+      ],
+      "journalEntry": "Il gruppo trova un medaglione antico con lo stesso simbolo del cerchio spezzato.",
+      "sceneOrder": 22
+    },
+    {
+      "id": "scena-ritorno-foresta",
+      "type": "travel",
+      "title": "Il Ritorno",
+      "content": "Fuori è ormai notte. La foresta è ancora silenziosa ma qualcosa è cambiato. Non mette più paura. Sembra quasi osservare, come se sapesse che siete entrati e che siete usciti.",
+      "narration": "Il gruppo decide di fermarsi. Accendete il fuoco. Descrivi la scena lentamente: il crepitio del legno, l'odore del cibo, le armature appoggiate a terra. Chuck prepara una zuppa che sa di tutto tranne che di zuppa. Lascia che i giocatori parlino, discutano, facciano ipotesi. Non interromperli.",
+      "location_id": "lyr-forest",
+      "npc_ids": [
+        "chuck"
+      ],
+      "musicCue": "journey",
+      "choices": [
+        {
+          "id": "choice-turno-guardia",
+          "text": "Organizzare i turni di guardia",
+          "targetBlockId": "scena-fine"
+        }
+      ],
+      "journalEntry": "Il gruppo si accampa nella foresta dopo l'esplorazione del santuario.",
+      "sceneOrder": 23
+    },
+    {
+      "id": "scena-fine",
+      "type": "narration",
+      "title": "La Figura nella Foresta",
+      "content": "Quando tutti si addormentano tranne il personaggio di guardia, il fuoco è quasi spento. Il bosco è immerso nell'oscurità. All'improvviso, molto lontano tra gli alberi, una figura. Ferma. Immobile. Avvolta da un mantello scuro. Non si distingue il volto, non si distingue il corpo. Solo due occhi che riflettono la luce del fuoco. Il personaggio si alza di scatto. Gli altri si svegliano. Guardano nella stessa direzione. Non c'è più nessuno. Solo gli alberi e il vento — il primo vento sentito da quando siete entrati nella foresta.",
+      "narration": "Prima di chiudere, leggi lentamente: 'Mentre il fuoco si spegne e il gruppo torna a dormire, molto lontano, oltre gli alberi della Foresta di Lyr, una sagoma si allontana nel buio. Non avete visto il suo volto. Non sapete chi sia. Ma una sensazione vi accompagna fino al sonno: qualsiasi cosa abbiate risvegliato nel santuario... si è accorta di voi.'",
+      "location_id": "lyr-forest",
+      "musicCue": "mystery_soft",
+      "reward": {
+        "xp": 100
+      },
+      "journalEntry": "Una figura misteriosa osserva il gruppo dal buio della foresta.",
+      "sceneOrder": 24
+    }
+  ]
+}

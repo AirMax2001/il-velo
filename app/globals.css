@@ -1,0 +1,596 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --veil-body-bg: linear-gradient(135deg, #0f1217 0%, #171b22 45%, #212731 100%);
+  --veil-body-color: #eef2f7;
+  --veil-body-overlay: linear-gradient(180deg, rgba(255,255,255,0.018), transparent 30%);
+  --veil-font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --veil-font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --veil-panel-bg: linear-gradient(180deg, #1b2230, #151a24);
+  --veil-panel-border: rgba(255, 255, 255, 0.08);
+  --veil-surface-bg: rgba(255, 255, 255, 0.03);
+  --veil-surface-border: rgba(255, 255, 255, 0.07);
+  --veil-input-bg: #11161f;
+  --veil-input-border: rgba(255, 255, 255, 0.1);
+  --veil-input-color: #eef2f7;
+  --veil-btn-bg: linear-gradient(180deg, #2f81f7, #2b6cdf);
+  --veil-btn-border: rgba(255,255,255,0.12);
+  --veil-btn-color: white;
+  --veil-btn-secondary-bg: #1b2230;
+  --veil-btn-secondary-color: #dfe7f2;
+  --veil-btn-secondary-border: rgba(255, 255, 255, 0.1);
+  --veil-btn-secondary-hover-bg: #243043;
+  --veil-btn-secondary-hover-border: rgba(255, 255, 255, 0.18);
+  --veil-hero-bg: linear-gradient(135deg, #1b2230 0%, #10141b 100%);
+  --veil-glass-bg: rgba(8, 8, 8, 0.58);
+  --veil-glass-border: rgba(255, 255, 255, 0.12);
+  --veil-gold: #c9a44c;
+  --veil-gold-rgb: 201, 164, 76;
+  --veil-kicker-color: rgba(201, 164, 76, 0.8);
+  --veil-badge-border: rgba(201, 164, 76, 0.28);
+  --veil-badge-color: #f3dfaf;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(201, 164, 76, 0.35), transparent);
+  --veil-premium-bg: linear-gradient(180deg, #1a2230, #141b24);
+  --veil-premium-border: rgba(255, 255, 255, 0.08);
+  --veil-fable-border: rgba(201, 164, 76, 0.2);
+  --veil-fable-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18));
+  --veil-subtle-color: rgba(232, 230, 227, 0.64);
+  --veil-radius-sm: 0.5rem;
+  --veil-radius-md: 0.85rem;
+  --veil-radius-lg: 1rem;
+  --veil-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.18);
+  --veil-shadow-md: 0 10px 24px rgba(0, 0, 0, 0.22);
+  --veil-shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.25);
+  --veil-glow: none;
+  --veil-bg-pattern: none;
+  --veil-accent-rgb: 47, 129, 247;
+  --veil-particle: none;
+}
+
+[data-theme="default"] {
+  --veil-bg-pattern: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
+  --veil-accent-rgb: 47, 129, 247;
+}
+
+[data-theme="draconic"] {
+  --veil-body-bg: linear-gradient(135deg, #1a0a0a 0%, #2d1111 45%, #3d1515 100%);
+  --veil-body-overlay: linear-gradient(180deg, rgba(220,50,50,0.03), transparent 30%);
+  --veil-bg-pattern: repeating-conic-gradient(rgba(200,60,60,0.04) 0% 25%, transparent 0% 50%) 0 0 / 60px 60px;
+  --veil-accent-rgb: 200, 50, 50;
+  --veil-font-family: 'Cinzel', 'Georgia', serif;
+  --veil-font-heading: 'Cinzel', 'Georgia', serif;
+  --veil-panel-bg: linear-gradient(180deg, #2d1414, #221010);
+  --veil-panel-border: rgba(220, 50, 50, 0.15);
+  --veil-input-bg: #1a0c0c;
+  --veil-btn-bg: linear-gradient(180deg, #d43d3d, #a82828);
+  --veil-btn-border: rgba(232, 184, 75, 0.2);
+  --veil-btn-secondary-bg: #2d1414;
+  --veil-btn-secondary-hover-bg: #3d1a1a;
+  --veil-hero-bg: linear-gradient(135deg, #2d1414 0%, #1a0a0a 100%);
+  --veil-premium-bg: linear-gradient(180deg, #2d1414, #1f0e0e);
+  --veil-gold: #e8b84b;
+  --veil-gold-rgb: 232, 184, 75;
+  --veil-kicker-color: rgba(232, 184, 75, 0.8);
+  --veil-badge-border: rgba(232, 184, 75, 0.28);
+  --veil-badge-color: #f5d98a;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(220, 50, 50, 0.35), transparent);
+  --veil-fable-border: rgba(232, 184, 75, 0.2);
+  --veil-radius-sm: 0.25rem;
+  --veil-radius-md: 0.5rem;
+  --veil-radius-lg: 0.75rem;
+  --veil-shadow-md: 0 8px 20px rgba(160, 30, 30, 0.15);
+  --veil-shadow-lg: 0 10px 28px rgba(160, 30, 30, 0.12);
+  --veil-glow: 0 0 20px rgba(232, 184, 75, 0.08);
+}
+
+[data-theme="arcane"] {
+  --veil-body-bg: linear-gradient(135deg, #0f0a1a 0%, #1a1030 45%, #241545 100%);
+  --veil-body-overlay: linear-gradient(180deg, rgba(138,43,226,0.03), transparent 30%);
+  --veil-bg-pattern: radial-gradient(circle at 25% 25%, rgba(180,100,255,0.04) 1px, transparent 1px) 40px 40px / 60px 60px;
+  --veil-accent-rgb: 138, 43, 226;
+  --veil-font-family: 'Raleway', 'Inter', sans-serif;
+  --veil-font-heading: 'Raleway', 'Inter', sans-serif;
+  --veil-panel-bg: linear-gradient(180deg, #1e1238, #160d2a);
+  --veil-panel-border: rgba(138, 43, 226, 0.15);
+  --veil-input-bg: #100a1f;
+  --veil-btn-bg: linear-gradient(180deg, #8b3dff, #6b27cc);
+  --veil-btn-border: rgba(180, 100, 255, 0.2);
+  --veil-btn-secondary-bg: #1e1238;
+  --veil-btn-secondary-hover-bg: #2a1a45;
+  --veil-hero-bg: linear-gradient(135deg, #1e1238 0%, #100a1a 100%);
+  --veil-premium-bg: linear-gradient(180deg, #1e1238, #150d28);
+  --veil-gold: #b884e8;
+  --veil-gold-rgb: 184, 132, 232;
+  --veil-kicker-color: rgba(184, 132, 232, 0.8);
+  --veil-badge-border: rgba(184, 132, 232, 0.28);
+  --veil-badge-color: #d4b0f0;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.35), transparent);
+  --veil-fable-border: rgba(184, 132, 232, 0.2);
+  --veil-surface-bg: rgba(138, 43, 226, 0.04);
+  --veil-radius-md: 1rem;
+  --veil-radius-lg: 1.25rem;
+  --veil-shadow-md: 0 10px 28px rgba(80, 20, 160, 0.15);
+  --veil-shadow-lg: 0 12px 34px rgba(80, 20, 160, 0.12);
+  --veil-glow: 0 0 24px rgba(138, 43, 226, 0.1);
+}
+
+[data-theme="nature"] {
+  --veil-body-bg: linear-gradient(135deg, #0e1710 0%, #19291c 45%, #1f3522 100%);
+  --veil-body-overlay: linear-gradient(180deg, rgba(74,180,80,0.025), transparent 30%);
+  --veil-bg-pattern: repeating-linear-gradient(45deg, rgba(74,180,80,0.03) 0px, rgba(74,180,80,0.03) 2px, transparent 2px, transparent 8px);
+  --veil-accent-rgb: 74, 180, 80;
+  --veil-font-family: 'Merriweather', 'Georgia', serif;
+  --veil-font-heading: 'Merriweather', 'Georgia', serif;
+  --veil-panel-bg: linear-gradient(180deg, #1c2d1e, #152218);
+  --veil-panel-border: rgba(74, 180, 80, 0.15);
+  --veil-input-bg: #0e1710;
+  --veil-btn-bg: linear-gradient(180deg, #3da84a, #2d8a38);
+  --veil-btn-border: rgba(160, 220, 120, 0.2);
+  --veil-btn-secondary-bg: #1c2d1e;
+  --veil-btn-secondary-hover-bg: #243d28;
+  --veil-hero-bg: linear-gradient(135deg, #1c2d1e 0%, #0e1710 100%);
+  --veil-premium-bg: linear-gradient(180deg, #1c2d1e, #152218);
+  --veil-gold: #8bc96c;
+  --veil-gold-rgb: 139, 201, 108;
+  --veil-kicker-color: rgba(139, 201, 108, 0.8);
+  --veil-badge-border: rgba(139, 201, 108, 0.28);
+  --veil-badge-color: #b8e09e;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(74, 180, 80, 0.35), transparent);
+  --veil-fable-border: rgba(139, 201, 108, 0.2);
+  --veil-radius-sm: 0.8rem;
+  --veil-radius-md: 1.1rem;
+  --veil-radius-lg: 1.3rem;
+  --veil-shadow-md: 0 10px 24px rgba(0, 0, 0, 0.25);
+  --veil-glow: 0 0 20px rgba(74, 180, 80, 0.06);
+}
+
+[data-theme="shadowfell"] {
+  --veil-body-bg: linear-gradient(135deg, #0a0a0f 0%, #12101e 45%, #181526 100%);
+  --veil-body-overlay: linear-gradient(180deg, rgba(60,40,120,0.025), transparent 30%);
+  --veil-bg-pattern: repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(80,60,140,0.03) 8px, rgba(80,60,140,0.03) 10px);
+  --veil-accent-rgb: 100, 80, 160;
+  --veil-font-family: 'Uncial Antiqua', 'Georgia', serif;
+  --veil-font-heading: 'Uncial Antiqua', 'Georgia', serif;
+  --veil-panel-bg: linear-gradient(180deg, #151224, #100e1a);
+  --veil-panel-border: rgba(100, 80, 160, 0.12);
+  --veil-input-bg: #0a0a10;
+  --veil-btn-bg: linear-gradient(180deg, #5a4a9a, #3e3070);
+  --veil-btn-border: rgba(140, 120, 200, 0.15);
+  --veil-btn-secondary-bg: #151224;
+  --veil-btn-secondary-hover-bg: #1e1a30;
+  --veil-hero-bg: linear-gradient(135deg, #151224 0%, #0a0a0f 100%);
+  --veil-premium-bg: linear-gradient(180deg, #151224, #0e0c18);
+  --veil-gold: #8a7ad0;
+  --veil-gold-rgb: 138, 122, 208;
+  --veil-kicker-color: rgba(138, 122, 208, 0.7);
+  --veil-badge-border: rgba(138, 122, 208, 0.25);
+  --veil-badge-color: #b8aae0;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(100, 80, 160, 0.3), transparent);
+  --veil-fable-border: rgba(138, 122, 208, 0.2);
+  --veil-surface-bg: rgba(100, 80, 160, 0.04);
+  --veil-radius-sm: 0.15rem;
+  --veil-radius-md: 0.35rem;
+  --veil-radius-lg: 0.5rem;
+  --veil-shadow-md: 0 10px 24px rgba(0, 0, 0, 0.35);
+  --veil-shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.4);
+  --veil-glow: 0 0 18px rgba(100, 80, 160, 0.06);
+}
+
+[data-theme="celestial"] {
+  --veil-body-bg: linear-gradient(135deg, #e8e4f0 0%, #f0ecf7 45%, #f5f0ff 100%);
+  --veil-body-color: #1a1a2e;
+  --veil-body-overlay: linear-gradient(180deg, rgba(255,255,255,0.3), transparent 30%);
+  --veil-bg-pattern: radial-gradient(circle at 50% 50%, rgba(200,180,220,0.08) 0%, transparent 60%);
+  --veil-accent-rgb: 212, 168, 74;
+  --veil-font-family: 'Cormorant Garamond', 'Georgia', serif;
+  --veil-font-heading: 'Cormorant Garamond', 'Georgia', serif;
+  --veil-panel-bg: linear-gradient(180deg, #ffffff, #f0ecf5);
+  --veil-panel-border: rgba(180, 160, 200, 0.25);
+  --veil-surface-bg: rgba(200, 180, 220, 0.1);
+  --veil-surface-border: rgba(180, 160, 200, 0.15);
+  --veil-input-bg: #ffffff;
+  --veil-input-border: rgba(180, 160, 200, 0.3);
+  --veil-input-color: #1a1a2e;
+  --veil-btn-bg: linear-gradient(180deg, #d4a84a, #c49430);
+  --veil-btn-color: #1a1a2e;
+  --veil-btn-border: rgba(180, 160, 200, 0.2);
+  --veil-btn-secondary-bg: #f0ecf5;
+  --veil-btn-secondary-color: #3a2a5e;
+  --veil-btn-secondary-border: rgba(180, 160, 200, 0.3);
+  --veil-btn-secondary-hover-bg: #e8e0f0;
+  --veil-btn-secondary-hover-border: rgba(180, 160, 200, 0.4);
+  --veil-hero-bg: linear-gradient(135deg, #ffffff 0%, #f0ecf5 100%);
+  --veil-glass-bg: rgba(255, 255, 255, 0.7);
+  --veil-glass-border: rgba(180, 160, 200, 0.2);
+  --veil-gold: #8a7030;
+  --veil-gold-rgb: 138, 112, 48;
+  --veil-kicker-color: rgba(138, 112, 48, 0.8);
+  --veil-badge-border: rgba(138, 112, 48, 0.25);
+  --veil-badge-color: #5a4a20;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(180, 160, 200, 0.4), transparent);
+  --veil-premium-bg: linear-gradient(180deg, #ffffff, #f5f0f8);
+  --veil-premium-border: rgba(180, 160, 200, 0.2);
+  --veil-fable-border: rgba(138, 112, 48, 0.2);
+  --veil-fable-bg: linear-gradient(180deg, rgba(200, 180, 220, 0.15), rgba(138, 112, 48, 0.05));
+  --veil-subtle-color: rgba(50, 40, 70, 0.5);
+  --veil-radius-sm: 0.6rem;
+  --veil-radius-md: 1rem;
+  --veil-radius-lg: 1.3rem;
+  --veil-shadow-sm: 0 4px 12px rgba(80, 60, 100, 0.08);
+  --veil-shadow-md: 0 10px 24px rgba(80, 60, 100, 0.1);
+  --veil-shadow-lg: 0 12px 30px rgba(80, 60, 100, 0.08);
+  --veil-glow: 0 0 30px rgba(212, 168, 74, 0.08);
+}
+
+[data-theme="infernal"] {
+  --veil-body-bg: linear-gradient(135deg, #0f0505 0%, #1f0a00 45%, #2a0d00 100%);
+  --veil-body-overlay: linear-gradient(180deg, rgba(255,80,0,0.03), transparent 30%);
+  --veil-bg-pattern: radial-gradient(circle at 30% 40%, rgba(255,100,0,0.04) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(200,50,0,0.03) 0%, transparent 40%);
+  --veil-accent-rgb: 232, 100, 30;
+  --veil-font-family: 'Bevan', 'Georgia', serif;
+  --veil-font-heading: 'Bevan', 'Georgia', serif;
+  --veil-panel-bg: linear-gradient(180deg, #2a1008, #1f0a05);
+  --veil-panel-border: rgba(255, 100, 0, 0.15);
+  --veil-input-bg: #140705;
+  --veil-btn-bg: linear-gradient(180deg, #e86520, #cc5518);
+  --veil-btn-border: rgba(255, 140, 50, 0.2);
+  --veil-btn-secondary-bg: #2a1008;
+  --veil-btn-secondary-hover-bg: #3a1810;
+  --veil-hero-bg: linear-gradient(135deg, #2a1008 0%, #0f0505 100%);
+  --veil-premium-bg: linear-gradient(180deg, #2a1008, #1f0a05);
+  --veil-gold: #e89830;
+  --veil-gold-rgb: 232, 152, 48;
+  --veil-kicker-color: rgba(232, 152, 48, 0.8);
+  --veil-badge-border: rgba(232, 152, 48, 0.28);
+  --veil-badge-color: #f5c878;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(255, 100, 0, 0.35), transparent);
+  --veil-fable-border: rgba(232, 152, 48, 0.2);
+  --veil-surface-bg: rgba(255, 100, 0, 0.04);
+  --veil-radius-sm: 0.1rem;
+  --veil-radius-md: 0.3rem;
+  --veil-radius-lg: 0.45rem;
+  --veil-shadow-md: 0 8px 20px rgba(160, 40, 0, 0.15);
+  --veil-shadow-lg: 0 10px 28px rgba(160, 40, 0, 0.12);
+  --veil-glow: 0 0 25px rgba(232, 152, 48, 0.08);
+}
+
+[data-theme="ocean"] {
+  --veil-body-bg: linear-gradient(135deg, #0a1418 0%, #0e2028 45%, #122a35 100%);
+  --veil-body-overlay: linear-gradient(180deg, rgba(50,180,200,0.025), transparent 30%);
+  --veil-bg-pattern: repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(50,180,200,0.03) 30px, rgba(50,180,200,0.03) 32px);
+  --veil-accent-rgb: 50, 180, 200;
+  --veil-font-family: 'Nunito', 'Inter', sans-serif;
+  --veil-font-heading: 'Nunito', 'Inter', sans-serif;
+  --veil-panel-bg: linear-gradient(180deg, #142630, #0e1e28);
+  --veil-panel-border: rgba(50, 180, 200, 0.15);
+  --veil-input-bg: #0c1a20;
+  --veil-btn-bg: linear-gradient(180deg, #2aa8c8, #2088a8);
+  --veil-btn-border: rgba(80, 200, 216, 0.2);
+  --veil-btn-secondary-bg: #142630;
+  --veil-btn-secondary-hover-bg: #1a3038;
+  --veil-hero-bg: linear-gradient(135deg, #142630 0%, #0a1418 100%);
+  --veil-premium-bg: linear-gradient(180deg, #142630, #0f2028);
+  --veil-gold: #50c8d8;
+  --veil-gold-rgb: 80, 200, 216;
+  --veil-kicker-color: rgba(80, 200, 216, 0.8);
+  --veil-badge-border: rgba(80, 200, 216, 0.28);
+  --veil-badge-color: #90dce8;
+  --veil-divider-bg: linear-gradient(90deg, transparent, rgba(50, 180, 200, 0.35), transparent);
+  --veil-fable-border: rgba(80, 200, 216, 0.2);
+  --veil-surface-bg: rgba(50, 180, 200, 0.04);
+  --veil-radius-sm: 0.8rem;
+  --veil-radius-md: 1.2rem;
+  --veil-radius-lg: 1.5rem;
+  --veil-shadow-md: 0 10px 24px rgba(0, 40, 60, 0.15);
+  --veil-shadow-lg: 0 12px 30px rgba(0, 40, 60, 0.12);
+  --veil-glow: 0 0 22px rgba(50, 180, 200, 0.06);
+}
+
+body {
+  background: var(--veil-body-bg);
+  color: var(--veil-body-color);
+  font-family: var(--veil-font-family);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--veil-body-overlay), var(--veil-bg-pattern);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--veil-font-heading);
+}
+
+.veil-panel {
+  background: var(--veil-panel-bg);
+  border: 1px solid var(--veil-panel-border);
+  border-radius: var(--veil-radius-md);
+  box-shadow: var(--veil-shadow-md), var(--veil-glow);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.veil-surface {
+  background: var(--veil-surface-bg);
+  border: 1px solid var(--veil-surface-border);
+}
+
+.veil-input {
+  background: var(--veil-input-bg);
+  border: 1px solid var(--veil-input-border);
+  border-radius: var(--veil-radius-sm);
+  padding: 0.65rem 0.8rem;
+  color: var(--veil-input-color);
+  font-family: var(--veil-font-family);
+}
+
+.veil-btn {
+  background: var(--veil-btn-bg);
+  color: var(--veil-btn-color);
+  border: 1px solid var(--veil-btn-border);
+  border-radius: var(--veil-radius-sm);
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  font-family: var(--veil-font-heading);
+  transition: transform 0.2s, opacity 0.2s, filter 0.2s;
+  box-shadow: var(--veil-shadow-sm);
+}
+.veil-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.veil-btn-secondary {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--veil-radius-sm);
+  border: 1px solid var(--veil-btn-secondary-border);
+  background: var(--veil-btn-secondary-bg);
+  padding: 0.55rem 0.9rem;
+  color: var(--veil-btn-secondary-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--veil-font-family);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.veil-btn-secondary:hover {
+  border-color: var(--veil-btn-secondary-hover-border);
+  background: var(--veil-btn-secondary-hover-bg);
+}
+
+.veil-hero {
+  position: relative;
+  border: 1px solid var(--veil-panel-border);
+  border-radius: var(--veil-radius-lg);
+  background: var(--veil-hero-bg);
+  box-shadow: var(--veil-shadow-lg), var(--veil-glow);
+  overflow: hidden;
+}
+
+.veil-glass {
+  border: 1px solid var(--veil-glass-border);
+  border-radius: var(--veil-radius-sm);
+  background: var(--veil-glass-bg);
+  backdrop-filter: blur(14px);
+}
+
+.veil-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-size: 0.75rem;
+  color: var(--veil-kicker-color);
+  font-family: var(--veil-font-heading);
+}
+
+.veil-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid var(--veil-badge-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--veil-badge-color);
+}
+
+.veil-divider {
+  height: 1px;
+  width: 100%;
+  background: var(--veil-divider-bg);
+}
+
+.veil-premium-card {
+  border: 1px solid var(--veil-premium-border);
+  border-radius: var(--veil-radius-md);
+  background: var(--veil-premium-bg);
+  box-shadow: var(--veil-shadow-md), var(--veil-glow);
+}
+
+.veil-fable-card {
+  border: 1px solid var(--veil-fable-border);
+  border-radius: var(--veil-radius-md);
+  background: var(--veil-fable-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.veil-subtle-text {
+  color: var(--veil-subtle-color);
+}
+
+.text-veil-gold {
+  color: var(--veil-gold);
+}
+
+.border-veil-gold {
+  border-color: var(--veil-gold);
+}
+
+.bg-veil-gold {
+  background-color: var(--veil-gold);
+}
+
+.border-veil-gold\/30 {
+  border-color: rgba(var(--veil-gold-rgb), 0.3);
+}
+
+.border-veil-gold\/20 {
+  border-color: rgba(var(--veil-gold-rgb), 0.2);
+}
+
+.bg-veil-gold\/10 {
+  background-color: rgba(var(--veil-gold-rgb), 0.1);
+}
+
+.bg-veil-gold\/5 {
+  background-color: rgba(var(--veil-gold-rgb), 0.05);
+}
+
+.bg-veil-gold\/8 {
+  background-color: rgba(var(--veil-gold-rgb), 0.08);
+}
+
+.bg-veil-gold\/12 {
+  background-color: rgba(var(--veil-gold-rgb), 0.12);
+}
+
+.text-veil-gold\/60 {
+  color: rgba(var(--veil-gold-rgb), 0.6);
+}
+
+.text-veil-gold\/70 {
+  color: rgba(var(--veil-gold-rgb), 0.7);
+}
+
+.text-veil-gold\/80 {
+  color: rgba(var(--veil-gold-rgb), 0.8);
+}
+
+.border-veil-gold\/25 {
+  border-color: rgba(var(--veil-gold-rgb), 0.25);
+}
+
+.border-veil-gold\/35 {
+  border-color: rgba(var(--veil-gold-rgb), 0.35);
+}
+
+.border-veil-gold\/40 {
+  border-color: rgba(var(--veil-gold-rgb), 0.4);
+}
+
+.border-veil-gold\/45 {
+  border-color: rgba(var(--veil-gold-rgb), 0.45);
+}
+
+.border-veil-gold\/50 {
+  border-color: rgba(var(--veil-gold-rgb), 0.5);
+}
+
+.bg-veil-gold\/15 {
+  background-color: rgba(var(--veil-gold-rgb), 0.15);
+}
+
+.bg-veil-gold\/20 {
+  background-color: rgba(var(--veil-gold-rgb), 0.2);
+}
+
+/* --- Veil Effects (Tablet Mode) --- */
+.veil-disturbed {
+  animation: veil-flicker 6s infinite;
+}
+.veil-glitch {
+  animation: veil-flicker 2.5s infinite, veil-shift 0.4s infinite;
+}
+@keyframes veil-flicker {
+  0%, 96%, 100% { filter: none; }
+  97% { filter: brightness(1.3) hue-rotate(10deg); }
+  98% { filter: brightness(0.8); }
+}
+@keyframes veil-shift {
+  0%, 90%, 100% { transform: translate(0, 0); }
+  92% { transform: translate(-2px, 1px); }
+  94% { transform: translate(2px, -1px); }
+}
+.veil-overlay-unstable {
+  background: repeating-linear-gradient(0deg, rgba(138,43,226,0.04) 0px, transparent 2px, transparent 4px);
+}
+.veil-overlay-broken {
+  background: repeating-linear-gradient(0deg, rgba(255,0,60,0.06) 0px, transparent 2px, transparent 4px);
+  mix-blend-mode: screen;
+}
+
+@keyframes veil-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes veil-slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Theme-specific animated effects */
+[data-theme="arcane"] .veil-panel::after,
+[data-theme="arcane"] .veil-premium-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, transparent 40%, rgba(138,43,226,0.06) 50%, transparent 60%);
+  background-size: 200% 200%;
+  animation: veil-shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+[data-theme="draconic"] .veil-btn {
+  animation: veil-pulse-glow 3s ease-in-out infinite;
+}
+
+[data-theme="infernal"] .veil-btn {
+  animation: veil-pulse-glow 2s ease-in-out infinite;
+}
+
+[data-theme="celestial"] .veil-panel,
+[data-theme="celestial"] .veil-premium-card {
+  box-shadow: var(--veil-shadow-md), 0 0 30px rgba(212,168,74,0.05);
+}
+
+[data-theme="ocean"] .veil-panel {
+  border-image: linear-gradient(180deg, rgba(50,180,200,0.2), rgba(50,180,200,0.05)) 1;
+}
+
+@keyframes veil-shimmer {
+  0% { background-position: 200% 200%; }
+  100% { background-position: -200% -200%; }
+}
+
+@keyframes veil-pulse-glow {
+  0%, 100% { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }
+  50% { box-shadow: 0 6px 24px rgba(var(--veil-accent-rgb), 0.15); }
+}
+
+/* ── Map-specific animations ── */
+.animate-pulse-glow {
+  animation: map-pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes map-pulse-glow {
+  0%, 100% { opacity: 0.6; r: 50; }
+  50% { opacity: 1; r: 70; }
+}
+
+.animate-ping-slow {
+  animation: map-ping 2s ease-out infinite;
+}
+
+@keyframes map-ping {
+  0% { r: 10; opacity: 0.4; }
+  50% { r: 16; opacity: 0.15; }
+  100% { r: 10; opacity: 0.4; }
+}
