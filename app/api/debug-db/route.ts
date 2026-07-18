@@ -31,18 +31,20 @@ export async function GET() {
   // 3) Supabase via raw fetch
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  steps.push({ step: "NEXT_PUBLIC_SUPABASE_URL", value: url ? "✅" : "❌" });
+  steps.push({ step: "NEXT_PUBLIC_SUPABASE_URL", value: url ? `✅ (${url})` : "❌" });
   steps.push({ step: "SUPABASE_SERVICE_ROLE_KEY", value: key ? `✅ (${key.slice(0, 10)}...)` : "❌" });
 
   if (url) {
+    const fullUrl = `${url}/rest/v1/`;
+    steps.push({ step: "Fetch URL", value: fullUrl });
     try {
-      const res = await fetch(`${url}/rest/v1/`, {
+      const res = await fetch(fullUrl, {
         headers: { apikey: key || "", Authorization: `Bearer ${key}` },
         signal: AbortSignal.timeout(10000),
       });
       steps.push({ step: "Supabase raw fetch", ok: true, status: res.status });
     } catch (e: any) {
-      steps.push({ step: "Supabase raw fetch", ok: false, error: e.message, cause: e.cause?.message });
+      steps.push({ step: "Supabase raw fetch", ok: false, error: e.message, cause: e.cause?.message, code: e.code });
     }
 
     // 4) Supabase via official client
@@ -52,6 +54,24 @@ export async function GET() {
       steps.push({ step: "Supabase JS client", ok: true, data, error: error?.message });
     } catch (e: any) {
       steps.push({ step: "Supabase JS client", ok: false, error: e.message });
+    }
+
+    // 5) Node.js https module direct request (bypasses global fetch)
+    try {
+      const https = await import("https");
+      const urlObj = new URL(fullUrl);
+      const result = await new Promise<any>((resolve, reject) => {
+        const req = https.get(urlObj, { headers: { apikey: key || "", Authorization: `Bearer ${key}` } }, (res) => {
+          let body = "";
+          res.on("data", (chunk) => body += chunk);
+          res.on("end", () => resolve({ status: res.statusCode, body: body.slice(0, 200) }));
+        });
+        req.on("error", reject);
+        req.setTimeout(10000, () => { req.destroy(); reject(new Error("timeout")); });
+      });
+      steps.push({ step: "Supabase via https module", ok: true, status: result.status });
+    } catch (e: any) {
+      steps.push({ step: "Supabase via https module", ok: false, error: e.message });
     }
   }
 
