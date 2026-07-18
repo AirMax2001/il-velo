@@ -14,12 +14,23 @@ export function supabaseClient() {
   );
 }
 
+let _adminClient: ReturnType<typeof createClient> | null = null;
+
 export function supabaseAdmin() {
-  return createClient(
+  if (_adminClient) return _adminClient;
+  _adminClient = createClient(
     requireValue("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL),
     requireValue("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY),
-    { auth: { persistSession: false } }
+    {
+      auth: { persistSession: false },
+      global: {
+        fetch: (url: RequestInfo | URL, init?: RequestInit) => {
+          return fetch(url, { ...init, signal: AbortSignal.timeout(10000) });
+        },
+      },
+    }
   );
+  return _adminClient;
 }
 
 // Helper per sottoscrizioni realtime lato client (usa l'anon key + le policy
