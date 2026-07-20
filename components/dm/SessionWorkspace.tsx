@@ -59,6 +59,49 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
     engine.loadSessionPack(pack.data);
   }
 
+  async function deletePack(pack: SessionPack) {
+    const confirm = window.confirm(`Eliminare "${pack.title || `Sessione ${pack.session_number}`}"?\nQuesta azione non può essere annullata.`);
+    if (!confirm) return;
+    const res = await fetch(`/api/session-packs?id=${pack.id}`, { method: "DELETE" });
+    if (!res.ok) return;
+    setSessionPacks(prev => prev.filter(p => p.id !== pack.id));
+    if (activePackId === pack.id) {
+      const remaining = sessionPacks.filter(p => p.id !== pack.id);
+      if (remaining.length > 0) {
+        const next = remaining[Math.min(remaining.length - 1, 0)];
+        setActivePackId(next.id);
+        engine.loadSessionPack(next.data);
+      }
+    }
+  }
+
+  async function movePack(pack: SessionPack, fromIdx: number, dir: -1 | 1) {
+    const target = sessionPacks[fromIdx + dir];
+    if (!target) return;
+    const oldNum = pack.session_number;
+    const newNum = target.session_number;
+    // Swap session_numbers in DB
+    const r1 = fetch("/api/session-packs", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: pack.id, session_number: newNum }),
+    });
+    const r2 = fetch("/api/session-packs", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: target.id, session_number: oldNum }),
+    });
+    await Promise.all([r1, r2]);
+    // Update local state
+    setSessionPacks(prev => {
+      const updated = [...prev];
+      updated[fromIdx] = { ...pack, session_number: newNum };
+      updated[fromIdx + dir] = { ...target, session_number: oldNum };
+      updated.sort((a, b) => (a.session_number || 0) - (b.session_number || 0));
+      return updated;
+    });
+  }
+
   const scene = state.currentScene;
   const scenes = state.session?.scenes || [];
   const progress = engine.getSceneProgress();
@@ -77,19 +120,31 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
       {/* Session sidebar */}
       <div className="w-56 shrink-0 rounded-2xl border border-white/[0.06] bg-black/20 p-2 overflow-y-auto">
         <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2 px-2">Sessioni</p>
-        {sessionPacks.map(pack => (
-          <button
-            key={pack.id}
-            onClick={() => selectPack(pack)}
-            className={`w-full text-left rounded-xl px-3 py-2.5 text-sm transition mb-1 ${
-              activePackId === pack.id
-                ? "bg-veil-gold/10 text-veil-gold border border-veil-gold/20"
-                : "text-white/50 hover:bg-white/[0.04] hover:text-white"
-            }`}
-          >
-            <p className="font-medium truncate">{pack.title || `Sessione ${pack.session_number}`}</p>
+        {sessionPacks.map((pack, idx) => (
+          <div key={pack.id} className={`group relative rounded-xl px-3 py-2.5 text-sm transition mb-1 cursor-pointer ${
+            activePackId === pack.id
+              ? "bg-veil-gold/10 text-veil-gold border border-veil-gold/20"
+              : "text-white/50 hover:bg-white/[0.04] hover:text-white border border-transparent"
+          }`} onClick={() => selectPack(pack)}>
+            <div className="flex items-center justify-between">
+              <p className="font-medium truncate flex-1">{pack.title || `Sessione ${pack.session_number}`}</p>
+              <div className="flex items-center gap-0.5 ml-1 shrink-0">
+                {/* Reorder arrows */}
+                {idx > 0 && (
+                  <button onClick={(e) => { e.stopPropagation(); movePack(pack, idx, -1); }}
+                    className="opacity-0 group-hover:opacity-60 hover:opacity-100 text-white/40 hover:text-white text-xs px-0.5">▲</button>
+                )}
+                {idx < sessionPacks.length - 1 && (
+                  <button onClick={(e) => { e.stopPropagation(); movePack(pack, idx, 1); }}
+                    className="opacity-0 group-hover:opacity-60 hover:opacity-100 text-white/40 hover:text-white text-xs px-0.5">▼</button>
+                )}
+                {/* Delete */}
+                <button onClick={(e) => { e.stopPropagation(); deletePack(pack); }}
+                  className="opacity-0 group-hover:opacity-40 hover:opacity-100 text-red-400 hover:text-red-300 text-xs px-0.5">✕</button>
+              </div>
+            </div>
             <p className="text-[10px] text-white/30">#{pack.session_number} · {new Date(pack.created_at).toLocaleDateString("it-IT")}</p>
-          </button>
+          </div>
         ))}
       </div>
 

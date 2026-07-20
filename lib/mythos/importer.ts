@@ -125,9 +125,18 @@ export async function importSessionPack(
 
   onProgress?.(10, "Preparazione sessione...");
 
+  // Use provided session_number or auto-calculate
+  const incomingNumber = data.session?.sessionNumber;
   const packsRes = await fetch(`/api/session-packs?sessionId=${sessionId}`);
   const packsData = await packsRes.json();
-  const sessionNumber = (packsData.items || []).length + 1;
+  const existing = (packsData.items || []).find((p: any) => p.session_number === incomingNumber);
+
+  // If a pack with the same number already exists, delete it first (overwrite)
+  if (existing) {
+    await fetch(`/api/session-packs?id=${existing.id}`, { method: "DELETE" });
+  }
+
+  const sessionNumber = incomingNumber || (packsData.items || []).length + 1;
 
   await postJSON("/api/session-packs", {
     session_id: sessionId,
