@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { NpcPopup } from "@/components/dm/popups/NpcPopup";
 import { LocationPopup } from "@/components/dm/popups/LocationPopup";
 import { ItemPopup } from "@/components/dm/popups/ItemPopup";
-import { CombatWorkspace } from "@/components/dm/CombatWorkspace";
+import { CombatCards } from "@/components/dm/CombatCards";
 import { FirstSessionGuide } from "@/components/dm/FirstSessionGuide";
 
 type PopupType = "npc" | "location" | "item" | null;
@@ -319,40 +319,9 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
               )}
 
               {scene.isCombat && scene.combat_id && (
-                <>
-                  <div className="relative">
-                    <button onClick={() => setShowCombat(!showCombat)}
-                      className={`relative flex w-full items-center gap-3 rounded-xl border px-4 py-3 transition text-left ${
-                        showCombat ? "border-red-400/50 bg-red-900/20" : "border-red-500/30 bg-red-900/10 hover:border-red-400/50"
-                      }`}>
-                      <span className="text-xl shrink-0">⚔</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-red-200 font-medium">Combattimento</p>
-                        <p className="text-xs text-red-300/60">{showCombat ? "Nascondi" : "Apri gestione combattimento"}</p>
-                      </div>
-                      <span className={`text-xs text-red-300/50 transition shrink-0 ${showCombat ? "rotate-180" : ""}`}>▼</span>
-                    </button>
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      const sid = _sid;
-                      if (!window.confirm(`Eliminare definitivamente questo combattimento?`)) return;
-                      fetch(`/api/combat?id=${scene.combat_id}`, { method: "DELETE" })
-                        .then(() => { setShowCombat(false); setToast({ message: "Combattimento eliminato", type: "success" }); });
-                    }}
-                      className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 border-red-400/50 bg-red-900/80 text-xs text-red-200 font-bold hover:bg-red-700 hover:border-red-300 shadow-lg"
-                      title="Elimina combattimento">
-                      ✕
-                    </button>
-                  </div>
-                  {showCombat && (
-                    <CombatWorkspace
-                      sessionId={_sid}
-                      combatId={scene.combat_id}
-                      onDelete={() => { setShowCombat(false); setToast({ message: "Combattimento eliminato", type: "success" }); }}
-                      onClose={() => setShowCombat(false)}
-                    />
-                  )}
-                </>
+                <div className="border-t border-white/[0.06] pt-4 mt-4">
+                  <CombatCards sessionId={_sid} />
+                </div>
               )}
             </div>
           </div>
