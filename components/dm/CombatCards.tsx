@@ -146,7 +146,15 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Combattimento</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Combattimento</h2>
+          {activeCombat && !showInitiativeModal && (
+            <button onClick={() => { setActiveCombat(null); setCombatants([]); }}
+              className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/40 hover:text-white hover:border-white/20 transition">
+              ← Torna ai combattimenti
+            </button>
+          )}
+        </div>
         <div className="flex gap-2">
           {activeCombat && !showInitiativeModal && (
             <button onClick={nextTurn} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-5 py-2 text-sm text-veil-gold hover:bg-veil-gold/20">
@@ -274,10 +282,6 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
               <p className="text-[10px] text-white/30">Turno</p>
               <p className="text-xl font-semibold text-white">{currentTurn?.name || "—"}</p>
             </div>
-            <button onClick={() => { setActiveCombat(null); setCombatants([]); }}
-              className="ml-auto rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/40 hover:text-white hover:border-white/20 transition">
-              ← Torna ai combattimenti
-            </button>
           </div>
 
           <div className="mb-6">
