@@ -41,6 +41,13 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
   const [showCombat, setShowCombat] = useState(false);
   const [sessionPacks, setSessionPacks] = useState<SessionPack[]>([]);
   const [activePackId, setActivePackId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     if (!_sid) return;
@@ -313,15 +320,24 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
 
               {scene.isCombat && scene.combat_id && (
                 <>
-                  <button onClick={() => setShowCombat(!showCombat)} className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                    showCombat ? "border-red-400/50 bg-red-900/20" : "border-red-500/30 bg-red-900/10 hover:border-red-400/50"
-                  }`}>
-                    <span className="text-xl">⚔</span>
-                    <div className="flex-1"><p className="text-sm text-red-200 font-medium">Combattimento</p><p className="text-xs text-red-300/60">{showCombat ? "Nascondi" : "Apri gestione combattimento"}</p></div>
-                    <span className={`text-xs text-red-300/50 transition ${showCombat ? "rotate-180" : ""}`}>▼</span>
+                  <button onClick={() => setShowCombat(!showCombat)}
+                    className={`relative flex w-full items-center gap-3 rounded-xl border px-4 py-3 transition text-left ${
+                      showCombat ? "border-red-400/50 bg-red-900/20" : "border-red-500/30 bg-red-900/10 hover:border-red-400/50"
+                    }`}>
+                    <span className="text-xl shrink-0">⚔</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-red-200 font-medium">Combattimento</p>
+                      <p className="text-xs text-red-300/60">{showCombat ? "Nascondi" : "Apri gestione combattimento"}</p>
+                    </div>
+                    <span className={`text-xs text-red-300/50 transition shrink-0 ${showCombat ? "rotate-180" : ""}`}>▼</span>
                   </button>
                   {showCombat && (
-                    <CombatWorkspace sessionId={_sid} combatId={scene.combat_id} />
+                    <CombatWorkspace
+                      sessionId={_sid}
+                      combatId={scene.combat_id}
+                      onDelete={() => { setShowCombat(false); setToast({ message: "Combattimento eliminato", type: "success" }); }}
+                      onClose={() => setShowCombat(false)}
+                    />
                   )}
                 </>
               )}
@@ -337,6 +353,16 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
           {popup?.type === "npc" && <NpcPopup npcId={popup.id} onClose={() => setPopup(null)} />}
           {popup?.type === "location" && <LocationPopup locationId={popup.id} onClose={() => setPopup(null)} />}
           {popup?.type === "item" && <ItemPopup itemId={popup.id} onClose={() => setPopup(null)} />}
+
+          {toast && (
+            <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] rounded-xl border px-5 py-3 text-sm shadow-lg transition-all ${
+              toast.type === "success"
+                ? "border-emerald-500/40 bg-emerald-900/80 text-emerald-200"
+                : "border-red-500/40 bg-red-900/80 text-red-200"
+            }`}>
+              {toast.message}
+            </div>
+          )}
 
         </div>
       )}
