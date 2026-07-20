@@ -32,13 +32,6 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
       setCombat(matched);
       const d = await fetch(`/api/combatants?combatId=${matched.id}`).then(r => r.json());
       setCombatants(d.items || []);
-      // If combatants already have a sort_order set, resume combat; otherwise show ordering modal
-      const hasOrder = (d.items || []).some((c: any) => c.sort_order != null && c.sort_order > 0);
-      if (hasOrder && matched.is_active) {
-        setPhase("combat");
-        const ordered = (d.items || []).filter((c: any) => !c.is_dead).sort((a: any, b: any) => a.sort_order - b.sort_order);
-        setTurnOrder(ordered.map((c: any) => c.id));
-      }
     } else {
       setCombat(null);
       setCombatants([]);
@@ -179,9 +172,14 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-red-500/25 bg-[#0a0806] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">⚔</span>
-              <span className="text-base font-medium text-white">{combat?.title || "Combattimento"}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl shrink-0">⚔</span>
+              <span className="text-base font-medium text-white truncate">{combat?.title || "Combattimento"}</span>
+              <button onClick={deleteCurrentCombat}
+                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-xs text-white/60 hover:border-red-400/50 hover:bg-red-800/30 hover:text-red-300 transition shrink-0 ml-1"
+                title="Elimina combattimento">
+                ✕
+              </button>
             </div>
           </div>
 
@@ -272,7 +270,7 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
           <span className="text-xl shrink-0">⚔</span>
           <span className="text-sm font-medium text-white truncate">{combat?.title || "Combattimento"}</span>
           <button onClick={deleteCurrentCombat}
-            className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-xs text-white/40 hover:border-red-400/30 hover:bg-red-900/20 hover:text-red-300 transition ml-1 shrink-0"
+            className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-xs text-white/60 hover:border-red-400/50 hover:bg-red-800/30 hover:text-red-300 transition shrink-0 ml-1"
             title="Elimina combattimento">
             ✕
           </button>
