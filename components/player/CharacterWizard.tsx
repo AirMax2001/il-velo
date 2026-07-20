@@ -11,6 +11,7 @@ type Props = {
 };
 
 const WIZARD_KEY = "veil-wizard-done";
+const WIZARD_SAVE_KEY = "veil-wizard-data";
 
 export function isWizardDone(): boolean {
   if (typeof window === "undefined") return true;
@@ -19,16 +20,32 @@ export function isWizardDone(): boolean {
 
 export function markWizardDone() {
   localStorage.setItem(WIZARD_KEY, "true");
+  localStorage.removeItem(WIZARD_SAVE_KEY);
+}
+
+function loadWizardData(): { step: number; form: any; cd: any } | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(WIZARD_SAVE_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function saveWizardData(step: number, form: any, cd: any) {
+  localStorage.setItem(WIZARD_SAVE_KEY, JSON.stringify({ step, form, cd }));
 }
 
 export function CharacterWizard({ player, onComplete, onClose }: Props) {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState(player);
-  const [cd, setCd] = useState<CharacterData>(player.character_data || {});
+  const saved = loadWizardData();
+  const [step, setStep] = useState(saved?.step || 0);
+  const [form, setForm] = useState(saved?.form || player);
+  const [cd, setCd] = useState<CharacterData>(saved?.cd || player.character_data || {});
   const [saving, setSaving] = useState(false);
 
   const current = wizardSteps[step];
   const total = wizardSteps.length;
+
+  // Auto-save on every field change
+  useEffect(() => { saveWizardData(step, form, cd); }, [step, form, cd]);
 
   function updateField(key: string, value: any) {
     if (["character_name", "race", "class", "level", "xp", "hp_current", "hp_max", "temp_hp", "coins", "conditions", "age", "personality", "history", "goals", "fear", "important_person", "secret", "background"].includes(key)) {

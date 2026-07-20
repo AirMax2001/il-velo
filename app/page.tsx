@@ -23,7 +23,15 @@ export default function Home() {
       setCampaignCode(storedCode);
       setPlayerStep("character");
     }
+    const storedName = localStorage.getItem("veil_player_name");
+    if (storedName) setCharName(storedName);
+    const storedPass = localStorage.getItem("veil_player_pass");
+    if (storedPass) setCharPassword(storedPass);
   }, []);
+
+  // Auto-save player join fields on change
+  useEffect(() => { localStorage.setItem("veil_player_name", charName); }, [charName]);
+  useEffect(() => { localStorage.setItem("veil_player_pass", charPassword); }, [charPassword]);
 
   async function readApiResponse(res: Response) {
     const text = await res.text();
@@ -101,6 +109,8 @@ export default function Home() {
     const data = await readApiResponse(res);
     if (data.error) return setError(data.error);
 
+    localStorage.removeItem("veil_player_name");
+    localStorage.removeItem("veil_player_pass");
     const playerData = { ...data.player, session_id: data.session.id };
     localStorage.setItem("veil_player", JSON.stringify(playerData));
     router.push(`/player/${data.player.access_token}?sessionId=${data.session.id}`);
