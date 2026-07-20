@@ -173,12 +173,12 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-red-500/25 bg-[#0a0806] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center justify-between mb-4 pr-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <span className="text-xl shrink-0">⚔</span>
               <span className="text-base font-medium text-white truncate">{combat?.title || "Combattimento"}</span>
               <button onClick={deleteCurrentCombat}
-                className="rounded border border-red-400/40 bg-red-900/40 px-2 py-1 text-sm text-red-300 font-bold hover:bg-red-800/60 hover:border-red-300/60 transition shrink-0 ml-2"
+                className="shrink-0 rounded-lg border-2 border-red-400/50 bg-red-900/50 px-3 py-1 text-sm text-red-200 font-bold hover:bg-red-700/60 hover:border-red-300/70 transition ml-2"
                 title="Elimina combattimento">
                 ✕
               </button>
@@ -269,11 +269,11 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
     <div className="rounded-2xl border border-red-500/25 bg-black/30">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-xl shrink-0">⚔</span>
           <span className="text-sm font-medium text-white truncate">{combat?.title || "Combattimento"}</span>
           <button onClick={deleteCurrentCombat}
-            className="rounded border border-red-400/40 bg-red-900/40 px-2 py-1 text-sm text-red-300 font-bold hover:bg-red-800/60 hover:border-red-300/60 transition shrink-0 ml-2"
+            className="shrink-0 rounded-lg border-2 border-red-400/50 bg-red-900/50 px-3 py-1 text-sm text-red-200 font-bold hover:bg-red-700/60 hover:border-red-300/70 transition ml-2"
             title="Elimina combattimento">
             ✕
           </button>
