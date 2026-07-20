@@ -274,6 +274,10 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
               <p className="text-[10px] text-white/30">Turno</p>
               <p className="text-xl font-semibold text-white">{currentTurn?.name || "—"}</p>
             </div>
+            <button onClick={() => { setActiveCombat(null); setCombatants([]); }}
+              className="ml-auto rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/40 hover:text-white hover:border-white/20 transition">
+              ← Torna ai combattimenti
+            </button>
           </div>
 
           <div className="mb-6">
