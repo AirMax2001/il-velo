@@ -149,10 +149,32 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Combattimento</h2>
           {activeCombat && !showInitiativeModal && (
-            <button onClick={() => { setActiveCombat(null); setCombatants([]); }}
-              className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/40 hover:text-white hover:border-white/20 transition">
-              ← Torna ai combattimenti
-            </button>
+            <>
+              <button onClick={() => { setActiveCombat(null); setCombatants([]); }}
+                className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/40 hover:text-white hover:border-white/20 transition">
+                ← Torna ai combattimenti
+              </button>
+              <button onClick={async () => {
+                if (!activeCombat) return;
+                await fetch("/api/combat", {
+                  method: "PATCH",
+                  body: JSON.stringify({ id: activeCombat.id, turn_index: 0, round: 1, is_active: false }),
+                });
+                const reset = await fetch(`/api/combatants?combatId=${activeCombat.id}`).then(r => r.json());
+                for (const c of (reset.items || [])) {
+                  await fetch("/api/combatants", {
+                    method: "PATCH",
+                    body: JSON.stringify({ id: c.id, hp_current: c.hp_max, is_dead: false, sort_order: 0, initiative: 0 }),
+                  });
+                }
+                await loadCombatants(activeCombat.id);
+                setActiveCombat({ ...activeCombat, turn_index: 0, round: 1, is_active: false });
+                setShowInitiativeModal(true);
+              }}
+                className="rounded-lg border border-amber-400/30 bg-amber-900/20 px-3 py-1.5 text-xs text-amber-300 hover:bg-amber-900/30 transition">
+                ↻ Resetta
+              </button>
+            </>
           )}
         </div>
         <div className="flex gap-2">
