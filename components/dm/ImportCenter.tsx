@@ -81,6 +81,16 @@ export function ImportCenter({ sessionId, onImport, onClose }: ImportCenterProps
       setPartial({ progress: { current, message } });
     };
 
+    // Cleanup: delete all existing importable entities to avoid duplicates
+    if (state.mode === "session") {
+      onProgress(5, "Pulizia dati esistenti...");
+      await fetch("/api/reset-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+    }
+
     let result;
     if (state.mode === "campaign") {
       result = await importCampaignPack(parsed as CampaignPack, state.dmPassword, onProgress);

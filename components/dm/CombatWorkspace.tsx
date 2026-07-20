@@ -58,10 +58,7 @@ export function CombatWorkspace({ sessionId, combatId, onDelete, onClose }: Comb
         sort_order: c.sort_order ?? 0,
       }));
       setCombatants(items);
-      // If combat was active, resume in combat phase
-      if (matched.is_active && matched.turn_index != null && items.some(c => c.sort_order > 0)) {
-        setPhase("combat");
-      }
+      setPhase("setup");
     } else {
       setCombat(null);
       setCombatants([]);
@@ -308,7 +305,7 @@ export function CombatWorkspace({ sessionId, combatId, onDelete, onClose }: Comb
               Annulla
             </button>
             <button onClick={startCombat}
-              disabled={combatants.length < 2 || combatants.some(c => c.initiative === 0 && c.initiative !== 0)}
+              disabled={combatants.length < 2}
               className="flex-1 rounded-lg bg-red-600/30 border border-red-500/40 px-6 py-2.5 text-sm text-red-200 hover:bg-red-600/40 disabled:opacity-30 transition font-semibold">
               Inizia Combattimento ({combatants.length} creature)
             </button>
