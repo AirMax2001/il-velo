@@ -32,8 +32,10 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
       setCombat(matched);
       const d = await fetch(`/api/combatants?combatId=${matched.id}`).then(r => r.json());
       setCombatants(d.items || []);
-      if (matched.turn_index != null && matched.round != null) setPhase("combat");
-      if (matched.turn_index != null) {
+      // If combatants already have a sort_order set, resume combat; otherwise show ordering modal
+      const hasOrder = (d.items || []).some((c: any) => c.sort_order != null && c.sort_order > 0);
+      if (hasOrder && matched.is_active) {
+        setPhase("combat");
         const ordered = (d.items || []).filter((c: any) => !c.is_dead).sort((a: any, b: any) => a.sort_order - b.sort_order);
         setTurnOrder(ordered.map((c: any) => c.id));
       }
@@ -266,12 +268,16 @@ export function CombatWorkspace({ sessionId, combatId }: CombatWorkspaceProps) {
     <div className="rounded-2xl border border-red-500/25 bg-black/30">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">⚔</span>
-          <span className="text-sm font-medium text-white">{combat?.title || "Combattimento"}</span>
-          <button onClick={deleteCurrentCombat} className="text-xs text-white/20 hover:text-red-400 transition" title="Elimina combattimento">✕</button>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xl shrink-0">⚔</span>
+          <span className="text-sm font-medium text-white truncate">{combat?.title || "Combattimento"}</span>
+          <button onClick={deleteCurrentCombat}
+            className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-xs text-white/40 hover:border-red-400/30 hover:bg-red-900/20 hover:text-red-300 transition ml-1 shrink-0"
+            title="Elimina combattimento">
+            ✕
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowRules(!showRules)}
             className="rounded-lg border border-veil-gold/20 px-3 py-1.5 text-xs text-veil-gold/70 hover:bg-veil-gold/10"
