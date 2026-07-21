@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import type { Player, CharacterData } from "@/lib/types";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
-import { getClassSavingThrows, getClassSkillPicks, getRaceStats } from "@/lib/dndClasses";
+import { getClassData, findClassKey } from "@/lib/data/classes";
+import { getRaceData, findRaceKey } from "@/lib/data/races";
+import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
 
 type PlayerCardsProps = { sessionId: string };
 type PlayerDetailTab = "character" | "inventory" | "secrets";
@@ -236,33 +238,67 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
 
   const abilityLabels: Record<string, string> = { strength: "FOR", dexterity: "DES", constitution: "COS", intelligence: "INT", wisdom: "SAG", charisma: "CAR" };
 
-  function mod(score: number | undefined): string {
-    if (score == null) return "0";
-    const m = Math.floor((score - 10) / 2);
-    return m >= 0 ? `+${m}` : `${m}`;
-  }
-
   return (
     <div className="space-y-5">
       {/* Info Base */}
       <Section title="Info Base">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <DMField label="Nome" value={player.character_name} onSave={v => onSave({ character_name: v })} />
-          <DMField label="Razza" value={player.race} onSave={v => onSave({ race: v })} />
-          <DMField label="Classe" value={player.class} onSave={v => {
-            onSave({ class: v });
-            const st = getClassSavingThrows(v);
-            if (st.length > 0) {
-              const autoSt: Record<string, boolean> = {};
-              (["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).forEach(k => {
-                const stKey = "st" + k.charAt(0).toUpperCase() + k.slice(1);
-                autoSt[stKey] = st.includes(stKey);
-              });
-              onSave(autoSt);
-            }
-          }} />
+          {/* Razza dropdown */}
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Razza</label>
+            <select className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 focus:border-veil-gold/30 focus:outline-none"
+              value={player.race || ""}
+              onChange={e => onSave({ race: e.target.value })}>
+              <option value="" disabled>Seleziona razza</option>
+              <option value="Dragonide">Dragonide</option>
+              <option value="Elfo">Elfo</option><option value="Elfo dei Boschi">Elfo dei Boschi</option><option value="Elfo Oscuro">Elfo Oscuro</option>
+              <option value="Halfling">Halfling</option><option value="Mezzelfo">Mezzelfo</option><option value="Mezzorco">Mezzorco</option>
+              <option value="Nano">Nano</option><option value="Nano delle Colline">Nano delle Colline</option><option value="Nano delle Montagne">Nano delle Montagne</option>
+              <option value="Tiefling">Tiefling</option><option value="Umano">Umano</option>
+              <option value="Gnomo">Gnomo</option><option value="Gnomo delle Foreste">Gnomo delle Foreste</option><option value="Gnomo delle Rocce">Gnomo delle Rocce</option>
+              <option value="Halfling Piedelesto">Halfling Piedelesto</option><option value="Halfling Robusto">Halfling Robusto</option>
+            </select>
+          </div>
+          {/* Classe dropdown */}
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Classe</label>
+            <select className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 focus:border-veil-gold/30 focus:outline-none"
+              value={findClassKey(player.class || "")}
+              onChange={e => {
+                const clsKey = e.target.value;
+                const clsData = getClassData(clsKey);
+                const clsName = clsData?.name || clsKey;
+                if (!clsData) { onSave({ class: clsName }); return; }
+                const autoSt: Record<string, boolean> = {};
+                (["strength","dexterity","constitution","intelligence","wisdom","charisma"] as const).forEach(k => {
+                  const stKey = "st" + k.charAt(0).toUpperCase() + k.slice(1);
+                  autoSt[stKey] = clsData.savingThrows.includes(stKey);
+                });
+                onSave({ class: clsName, ...autoSt });
+              }}>
+              <option value="" disabled>Seleziona classe</option>
+              <option value="barbarian">Barbaro</option><option value="bard">Bardo</option><option value="cleric">Chierico</option>
+              <option value="druid">Druido</option><option value="fighter">Guerriero</option><option value="monk">Monaco</option>
+              <option value="paladin">Paladino</option><option value="ranger">Ranger</option><option value="rogue">Ladro</option>
+              <option value="sorcerer">Stregone</option><option value="warlock">Warlock</option><option value="wizard">Mago</option>
+            </select>
+          </div>
           <DMField label="Livello" value={player.level} type="number" onSave={v => onSave({ level: v })} />
-          <DMField label="Background" value={player.background} onSave={v => onSave({ background: v })} />
+          {/* Background dropdown */}
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Background</label>
+            <select className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 focus:border-veil-gold/30 focus:outline-none"
+              value={player.background || ""}
+              onChange={e => onSave({ background: e.target.value })}>
+              <option value="" disabled>Seleziona background</option>
+              <option value="Accolito">Accolito</option><option value="Artigiano della Gilda">Artigiano della Gilda</option>
+              <option value="Artista">Artista</option><option value="Criminale">Criminale</option><option value="Eremita">Eremita</option>
+              <option value="Eroe del Popolo">Eroe del Popolo</option><option value="Forestiero">Forestiero</option>
+              <option value="Marinaio">Marinaio</option><option value="Nobile">Nobile</option><option value="Saggio">Saggio</option>
+              <option value="Soldato">Soldato</option><option value="Svergognato">Svergognato</option>
+            </select>
+          </div>
           <DMField label="Allineamento" value={cd.alignment} onSave={v => onSave({ alignment: v })} />
           <DMField label="XP" value={player.xp} type="number" onSave={v => onSave({ xp: v })} />
           <DMField label="Età" value={player.age} onSave={v => onSave({ age: v })} />
@@ -273,37 +309,50 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       {/* Caratteristiche */}
       <Section title="Caratteristiche">
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 text-center">
-          {["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"].map(k => (
-            <div key={k}>
-              <LabelWithGuide fieldKey={k} label={abilityLabels[k]} className="justify-center text-xs text-white/40 mb-1" />
-              <input type="number" className="veil-input w-full text-center text-lg font-bold"
-                value={cd[k] ?? 10}
-                onChange={e => onSave({ [k]: Number(e.target.value) })} />
-              <p className="text-sm text-veil-gold mt-1">{mod(cd[k])}</p>
-            </div>
-          ))}
+          {(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).map(k => {
+            const score = Number(cd[k]) || 10;
+            const raceKey = findRaceKey(player.race || "");
+            const raceData = raceKey ? getRaceData(raceKey) : null;
+            const raceBonus = raceData?.abilityBonuses?.[k] || 0;
+            const totalScore = score + raceBonus;
+            return (
+              <div key={k}>
+                <LabelWithGuide fieldKey={k} label={abilityLabels[k]} className="justify-center text-xs text-white/40 mb-1" />
+                <input type="number" className="veil-input w-full text-center text-lg font-bold"
+                  value={score}
+                  onChange={e => onSave({ [k]: Number(e.target.value) })} />
+                <p className="text-sm text-veil-gold mt-1">{formatMod(getModifier(totalScore))}</p>
+                {raceBonus > 0 && <p className="text-[9px] text-emerald-400/50 mt-0.5">base+{raceBonus}</p>}
+              </div>
+            );
+          })}
         </div>
       </Section>
 
       {/* Tiri Salvezza */}
       <Section title="Tiri Salvezza">
         {(() => {
-          const classSt = getClassSavingThrows(player.class || "");
+          const clsKey = findClassKey(player.class || "");
+          const clsData = clsKey ? getClassData(clsKey) : null;
+          const classSt = clsData?.savingThrows || [];
+          const pb = getProficiencyBonus(Number(player.level) || 1);
           return (
             <>
-              {classSt.length > 0 && <p className="text-[10px] text-veil-gold/50 mb-3">Classe: {classSt.join(", ")}</p>}
+              {classSt.length > 0 && <p className="text-[10px] text-veil-gold/50 mb-3">Competenze automatiche: {classSt.map((k: string) => abilityLabels[k.replace("st","").toLowerCase()] || k).join(", ")}</p>}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"].map(k => {
+                {(["strength","dexterity","constitution","intelligence","wisdom","charisma"] as const).map(k => {
                   const stKey = "st" + k.charAt(0).toUpperCase() + k.slice(1);
                   const isClassSt = classSt.includes(stKey);
+                  const score = Number(cd[k]) || 10;
+                  const modVal = getModifier(score);
+                  const total = isClassSt ? modVal + pb : modVal;
                   return (
-                    <label key={stKey} className={`flex items-center gap-2 text-xs ${isClassSt ? "text-white/80" : "text-white/40"} cursor-pointer`}>
-                      <input type="checkbox" className="accent-veil-gold" checked={cd[stKey] ?? false}
-                        disabled={!isClassSt}
-                        onChange={e => onSave({ [stKey]: e.target.checked })} />
+                    <div key={stKey} className={`flex items-center gap-2 ${isClassSt ? "opacity-100" : "opacity-40"}`}>
+                      <div className={`h-4 w-4 rounded border ${isClassSt ? "bg-veil-gold/20 border-veil-gold/50" : "border-white/10"}`} />
                       <LabelWithGuide fieldKey={stKey} label={abilityLabels[k]} className={`text-xs ${isClassSt ? "text-white/80" : "text-white/40"}`} />
-                      <span className="text-xs text-veil-gold/50 ml-auto">{mod(cd[k])}</span>
-                    </label>
+                      <span className="text-xs text-veil-gold/50 ml-auto">{formatMod(total)}</span>
+                      {isClassSt && <span className="text-[9px] text-veil-gold/40">✓ classe</span>}
+                    </div>
                   );
                 })}
               </div>
@@ -315,27 +364,39 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       {/* Abilità */}
       <Section title="Abilità">
         {(() => {
-          const cls = getClassSkillPicks(player.class || "");
-          const raceDt = getRaceStats(player.race || "");
-          const raceExtra = raceDt?.extraSkills ?? 0;
-          const totalPicks = cls.picks + raceExtra;
+          const clsKey = findClassKey(player.class || "");
+          const clsData = clsKey ? getClassData(clsKey) : null;
+          const clsPicks = clsData?.skillPicks ?? 0;
+          const clsOptions = clsData?.skillOptions ?? [];
+          const raceKey = findRaceKey(player.race || "");
+          const raceData = raceKey ? getRaceData(raceKey) : null;
+          const extraSkills = raceData?.extraSkillCount ?? 0;
+          const totalPicks = clsPicks + extraSkills;
           const picked = skillKeys.filter(sk => cd[sk.key]).length;
           const picksLeft = totalPicks - picked;
+          const pb = getProficiencyBonus(Number(player.level) || 1);
           return (
             <>
               {totalPicks > 0 && (
                 <p className={`text-[10px] mb-3 ${picksLeft < 0 ? "text-red-400" : "text-veil-gold/50"}`}>
-                  Competenze: {picked}/{totalPicks} {picksLeft < 0 ? "(superato!)" : `(ancora ${picksLeft})`}
+                  Competenze: {picked}/{totalPicks} ({clsPicks} classe{extraSkills ? ` + ${extraSkills} razza` : ""}) {picksLeft < 0 ? "(superato!)" : `(ancora ${picksLeft})`}
                 </p>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                 {skillKeys.map(sk => {
-                  const isInClass = cls.options.length === 0 || cls.options.includes(sk.key);
+                  const inClass = clsOptions.includes(sk.key);
+                  const anyOpt = clsOptions.length === 0;
+                  const enabled = anyOpt || inClass;
+                  const score = Number(cd[sk.ability]) || 10;
+                  const modVal = getModifier(score);
+                  const total = cd[sk.key] ? modVal + pb : modVal;
                   return (
-                    <label key={sk.key} className={`flex items-center gap-2 text-xs ${isInClass ? "text-white/60" : "text-white/30"} cursor-pointer`}>
+                    <label key={sk.key} className={`flex items-center gap-2 text-xs ${enabled ? "text-white/60" : "text-white/30"} cursor-pointer`}>
                       <input type="checkbox" className="accent-veil-gold" checked={cd[sk.key] ?? false}
                         onChange={e => onSave({ [sk.key]: e.target.checked })} />
-                      <LabelWithGuide fieldKey={sk.key} label={sk.label + " (" + abilityLabels[sk.ability] + ")"} className={`text-xs ${isInClass ? "text-white/60" : "text-white/30"}`} />
+                      <LabelWithGuide fieldKey={sk.key} label={sk.label + " (" + abilityLabels[sk.ability] + ")"} className={`text-xs ${enabled ? "text-white/60" : "text-white/30"}`} />
+                      <span className="text-[10px] text-veil-gold/40 ml-auto">{formatMod(total)}</span>
+                      {inClass && <span className="text-[9px] text-veil-gold/40">classe</span>}
                     </label>
                   );
                 })}
@@ -347,51 +408,88 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
 
       {/* Combattimento */}
       <Section title="Combattimento">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <DMField label="CA" value={cd.armorClass} type="number" onSave={v => onSave({ armorClass: v })} />
-          <DMField label="Iniziativa" value={cd.initiative} type="number" onSave={v => onSave({ initiative: v })} />
-          <DMField label="Velocità" value={cd.speed} type="number" onSave={v => onSave({ speed: v })} />
-          <DMField label="Bonus Competenza" value={cd.proficiencyBonus} type="number" onSave={v => onSave({ proficiencyBonus: v })} />
-          <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer">
-            <input type="checkbox" className="accent-veil-gold" checked={cd.inspiration ?? false}
-              onChange={e => onSave({ inspiration: e.target.checked })} />
-            <LabelWithGuide fieldKey="inspiration" label="Ispirazione" />
-          </label>
-        </div>
+        {(() => {
+          const dex = Number(cd.dexterity) || 10;
+          const lv = Number(player.level) || 1;
+          const pb = getProficiencyBonus(lv);
+          const initMod = getModifier(dex);
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <DMField label="CA" value={cd.armorClass} type="number" onSave={v => onSave({ armorClass: v })} />
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Iniziativa</label>
+                <div className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 flex items-center justify-between">
+                  <span className="text-sm text-white/70">{formatMod(initMod)}</span>
+                  <span className="text-[9px] text-white/20">DES</span>
+                </div>
+              </div>
+              <DMField label="Velocità" value={cd.speed} type="number" onSave={v => onSave({ speed: v })} />
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Bonus Competenza</label>
+                <div className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 flex items-center justify-between">
+                  <span className="text-sm text-white/70">+{pb}</span>
+                  <span className="text-[9px] text-white/20">liv.{lv}</span>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer col-span-full">
+                <input type="checkbox" className="accent-veil-gold" checked={cd.inspiration ?? false}
+                  onChange={e => onSave({ inspiration: e.target.checked })} />
+                <LabelWithGuide fieldKey="inspiration" label="Ispirazione" />
+              </label>
+            </div>
+          );
+        })()}
       </Section>
 
       {/* HP e Dadi Vita */}
       <Section title="Punti Ferita">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <DMField label="PF Max" value={player.hp_max} type="number" onSave={v => onSave({ hp_max: v })} />
-          <DMField label="PF Correnti" value={player.hp_current} type="number" onSave={v => onSave({ hp_current: v })} />
-          <DMField label="PF Temp" value={player.temp_hp} type="number" onSave={v => onSave({ temp_hp: v })} />
-          <DMField label="Dadi Vita" value={cd.hitDiceTotal} onSave={v => onSave({ hitDiceTotal: v })} />
-        </div>
-        <div className="mt-3 flex gap-6">
-          <div>
-            <LabelWithGuide fieldKey="deathSaveSuccesses" label="Tiri Morte ✓" />
-            <div className="flex gap-1 mt-1">
-              {[0,1,2].map(i => (
-                <button key={i} onClick={() => onSave({ deathSaveSuccesses: Math.min(i === (cd.deathSaveSuccesses || 0) ? i - 1 : i, 3) })}
-                  className={`h-5 w-5 rounded-full border text-[10px] ${(cd.deathSaveSuccesses || 0) > i ? "bg-emerald-500/30 border-emerald-400/50 text-emerald-200" : "border-white/10 text-white/30"}`}>✓</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <LabelWithGuide fieldKey="deathSaveFailures" label="Tiri Morte ✕" />
-            <div className="flex gap-1 mt-1">
-              {[0,1,2].map(i => (
-                <button key={i} onClick={() => onSave({ deathSaveFailures: Math.min(i === (cd.deathSaveFailures || 0) ? i - 1 : i, 3) })}
-                  className={`h-5 w-5 rounded-full border text-[10px] ${(cd.deathSaveFailures || 0) > i ? "bg-red-500/30 border-red-400/50 text-red-200" : "border-white/10 text-white/30"}`}>✕</button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="mt-3">
-          <DMField label="Condizioni (separate da virgola)" value={Array.isArray(player.conditions) ? player.conditions.join(", ") : ""}
-            onSave={v => onSave({ conditions: v.split(",").map((s: string) => s.trim()).filter(Boolean) })} />
-        </div>
+        {(() => {
+          const clsKey = findClassKey(player.class || "");
+          const clsData = clsKey ? getClassData(clsKey) : null;
+          const hitDie = clsData?.hitDie;
+          const con = Number(cd.constitution) || 10;
+          const conMod = getModifier(con);
+          const lv = Number(player.level) || 1;
+          return (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <DMField label="PF Max" value={player.hp_max} type="number" onSave={v => onSave({ hp_max: v })} />
+                <DMField label="PF Correnti" value={player.hp_current} type="number" onSave={v => onSave({ hp_current: v })} />
+                <DMField label="PF Temp" value={player.temp_hp} type="number" onSave={v => onSave({ temp_hp: v })} />
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Dadi Vita</label>
+                  <div className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/40">
+                    {hitDie ? `${lv}d${hitDie}${conMod >= 0 ? "+" : ""}${conMod * lv}` : "—"}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-6">
+                <div>
+                  <LabelWithGuide fieldKey="deathSaveSuccesses" label="Tiri Morte ✓" />
+                  <div className="flex gap-1 mt-1">
+                    {[0,1,2].map(i => (
+                      <button key={i} onClick={() => onSave({ deathSaveSuccesses: Math.min(i === (cd.deathSaveSuccesses || 0) ? i - 1 : i, 3) })}
+                        className={`h-5 w-5 rounded-full border text-[10px] ${(cd.deathSaveSuccesses || 0) > i ? "bg-emerald-500/30 border-emerald-400/50 text-emerald-200" : "border-white/10 text-white/30"}`}>✓</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <LabelWithGuide fieldKey="deathSaveFailures" label="Tiri Morte ✕" />
+                  <div className="flex gap-1 mt-1">
+                    {[0,1,2].map(i => (
+                      <button key={i} onClick={() => onSave({ deathSaveFailures: Math.min(i === (cd.deathSaveFailures || 0) ? i - 1 : i, 3) })}
+                        className={`h-5 w-5 rounded-full border text-[10px] ${(cd.deathSaveFailures || 0) > i ? "bg-red-500/30 border-red-400/50 text-red-200" : "border-white/10 text-white/30"}`}>✕</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3">
+                <DMField label="Condizioni (separate da virgola)" value={Array.isArray(player.conditions) ? player.conditions.join(", ") : ""}
+                  onSave={v => onSave({ conditions: v.split(",").map((s: string) => s.trim()).filter(Boolean) })} />
+              </div>
+            </>
+          );
+        })()}
       </Section>
 
       {/* Attacchi */}
@@ -415,11 +513,33 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
 
       {/* Incantesimi */}
       <Section title="Incantesimi">
-        <div className="grid grid-cols-3 gap-3">
-          <DMField label="Caratteristica" value={cd.spellcastingAbility} onSave={v => onSave({ spellcastingAbility: v })} />
-          <DMField label="CD" value={cd.spellSaveDC} type="number" onSave={v => onSave({ spellSaveDC: v })} />
-          <DMField label="Bonus Attacco" value={cd.spellAttackBonus} type="number" onSave={v => onSave({ spellAttackBonus: v })} />
-        </div>
+        {(() => {
+          const sca = cd.spellcastingAbility || "";
+          const scaScore = sca ? Number(cd[sca.toLowerCase()]) || 10 : 10;
+          const scaMod = getModifier(scaScore);
+          const pb = getProficiencyBonus(Number(player.level) || 1);
+          const autoDC = 8 + scaMod + pb;
+          const autoAtk = scaMod + pb;
+          return (
+            <div className="grid grid-cols-3 gap-3">
+              <DMField label="Caratteristica" value={sca} onSave={v => onSave({ spellcastingAbility: v })} />
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">CD</label>
+                <div className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 flex items-center justify-between">
+                  <span className="text-sm text-white/70">{autoDC}</span>
+                  <span className="text-[9px] text-white/20">8+{formatMod(scaMod)}+{pb}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Bonus Attacco</label>
+                <div className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 flex items-center justify-between">
+                  <span className="text-sm text-white/70">+{autoAtk}</span>
+                  <span className="text-[9px] text-white/20">{formatMod(scaMod)}+{pb}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </Section>
 
       {/* Personalità */}
