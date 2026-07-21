@@ -27,6 +27,14 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
     if (selected?.id === npc.id) setSelected((prev: any) => prev ? { ...prev, is_dead: !prev.is_dead } : null);
   }
 
+  async function deleteNpc(npc: any, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!window.confirm(`Eliminare definitivamente ${npc.name}?`)) return;
+    await fetch(`/api/npcs?id=${npc.id}`, { method: "DELETE" });
+    setNpcs(prev => prev.filter(n => n.id !== npc.id));
+    if (selected?.id === npc.id) setSelected(null);
+  }
+
   if (!sessionId) return <p className="text-white/40 text-sm">Nessuna campagna attiva</p>;
 
   const filtered = filter === "all" ? npcs : npcs.filter(n => filter === "dead" ? n.is_dead : !n.is_dead);
@@ -57,6 +65,11 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
                 : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"
             }`}
           >
+            <button onClick={(e) => deleteNpc(npc, e)}
+              className="absolute -top-2.5 -right-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-red-400/40 bg-red-900/60 text-[11px] text-red-200 hover:bg-red-600/70 hover:text-white transition"
+              title="Elimina NPC">
+              &times;
+            </button>
             <div className="flex items-start gap-4">
               <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg ${npc.is_dead ? "bg-red-900/30 text-red-400" : "bg-stone-800/50 text-stone-400"}`}>
                 {npc.is_dead ? "✝" : (npc.name?.[0]?.toUpperCase() || "?")}
@@ -88,10 +101,11 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
                 {selected.is_dead ? "✝" : (selected.name?.[0]?.toUpperCase() || "?")}
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <h3 className={`text-xl ${selected.is_dead ? "text-red-400/60 line-through" : "text-veil-gold"}`}>{selected.name}</h3>
-                  {selected.is_dead && <span className="rounded-lg border border-red-500/30 bg-red-900/20 px-2 py-0.5 text-xs text-red-300">Morto</span>}
-                </div>
+                  <div className="flex items-center gap-3">
+                    <h3 className={`text-xl ${selected.is_dead ? "text-red-400/60 line-through" : "text-veil-gold"}`}>{selected.name}</h3>
+                    {selected.is_dead && <span className="rounded-lg border border-red-500/30 bg-red-900/20 px-2 py-0.5 text-xs text-red-300">Morto</span>}
+                    <button onClick={(e) => { e.stopPropagation(); deleteNpc(selected, e); }} className="ml-auto text-xs text-white/30 hover:text-red-300 transition">Elimina</button>
+                  </div>
                 <p className="mt-1 text-sm text-white/50">{selected.role || "Nessun ruolo"}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {selected.description && <span className="rounded-lg border border-white/[0.06] bg-black/30 px-2.5 py-1 text-xs text-white/40">{selected.knows ? "Sa: " + selected.knows : ""}</span>}

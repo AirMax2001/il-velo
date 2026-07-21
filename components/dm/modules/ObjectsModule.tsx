@@ -149,7 +149,12 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
           const c = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
           const ownerName = getOwnerName(item.player_id);
           return (
-            <div key={item.id} onClick={() => setSelected(selected?.id === item.id ? null : item)} className={`rounded-2xl border p-4 cursor-pointer transition ${selected?.id === item.id ? `${c.border} ${c.bg}` : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"}`}>
+            <div key={item.id} onClick={() => setSelected(selected?.id === item.id ? null : item)} className={`relative rounded-2xl border p-4 cursor-pointer transition ${selected?.id === item.id ? `${c.border} ${c.bg}` : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"}`}>
+              <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
+                className="absolute -top-2.5 -right-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-red-400/40 bg-red-900/60 text-[11px] text-red-200 hover:bg-red-600/70 hover:text-white transition"
+                title="Elimina oggetto">
+                &times;
+              </button>
               <div className="flex items-start gap-3">
                 <span className={`text-lg ${c.text}`}>{item.rarity === "legendary" ? "🌟" : item.rarity === "epic" ? "✦" : item.rarity === "rare" ? "◆" : item.rarity === "artifact" ? "⚔" : item.rarity === "relic" ? "◈" : "◇"}</span>
                 <div className="min-w-0 flex-1">

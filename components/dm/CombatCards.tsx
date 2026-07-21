@@ -74,7 +74,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
 
   async function confirmStartCombat() {
     if (!activeCombat || combatants.length === 0) return;
-    const sorted = [...combatants].sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
+    const sorted = [...combatants].sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
     await Promise.all(
       sorted.map((c, i) =>
         fetch("/api/combatants", {
@@ -236,7 +236,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
                       <span className="text-[10px] text-white/40 uppercase">Iniziativa</span>
                       <input type="number" min={0} max={99}
                         className="w-16 rounded-lg border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm text-white text-center focus:outline-none focus:border-blue-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        value={c.initiative || ""}
+                        value={c.initiative ?? ""}
                         onChange={e => setInitiativeDraft(c.id, parseInt(e.target.value) || 0)}
                         placeholder="0"
                       />
@@ -265,7 +265,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
                       <span className="text-[10px] text-white/40 uppercase">Iniziativa</span>
                       <input type="number" min={0} max={99}
                         className="w-16 rounded-lg border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm text-white text-center focus:outline-none focus:border-red-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        value={c.initiative || ""}
+                        value={c.initiative ?? ""}
                         onChange={e => setInitiativeDraft(c.id, parseInt(e.target.value) || 0)}
                         placeholder="0"
                       />
@@ -304,21 +304,36 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
               <p className="text-[10px] text-white/30">Turno</p>
               <p className="text-xl font-semibold text-white">{currentTurn?.name || "—"}</p>
             </div>
+            <div className="text-xs text-white/20 ml-auto">
+              {alive.length > 0 && `Ordine: ${alive.map((c, i) => `${i + 1}.${c.name}(${c.initiative})`).join(" → ")}`}
+            </div>
           </div>
 
           <div className="mb-6">
             <p className="text-[10px] uppercase tracking-[0.2em] text-red-400/60 mb-3">Nemici</p>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {alive.filter(c => c.type !== "player").map(c => (
+              {alive.filter(c => c.type !== "player").map((c, idx) => {
+                const pos = alive.indexOf(c) + 1;
+                return (
                 <div key={c.id} className={`relative rounded-2xl border-2 p-4 ${
                   currentTurn?.id === c.id ? "border-red-400/60 bg-red-900/20" : "border-red-500/20 bg-black/20"
                 }`}>
+                  <div className={`absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                    currentTurn?.id === c.id ? "bg-red-400 text-black" : "bg-white/10 text-white/40"
+                  }`}>{pos}</div>
+                  <button onClick={(e) => { e.stopPropagation(); removeCombatant(c.id); }}
+                    className="absolute -top-2.5 -right-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-red-400/40 bg-red-900/60 text-[11px] text-red-200 hover:bg-red-600/70 hover:text-white transition"
+                    title="Rimuovi dal combattimento">
+                    &times;
+                  </button>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-red-300">{c.type === "boss" ? "⚔" : "○"}</span>
                       <span className="font-medium text-white">{c.name}</span>
                     </div>
-                    <button onClick={() => removeCombatant(c.id)} className="text-xs text-white/20 hover:text-red-300">&times;</button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-white/30">Init {c.initiative}</span>
+                    </div>
                   </div>
                   <div className="mb-2">
                     <div className="flex items-center justify-between text-xs mb-1">
@@ -340,23 +355,35 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
                     <button onClick={() => updateCombatant(c.id, { hp_current: Math.min(c.hp_max, c.hp_current + 10) })} className="rounded-lg bg-emerald-500/20 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-500/30">+10</button>
                     <button onClick={() => updateCombatant(c.id, { is_dead: !c.is_dead })} className="ml-auto rounded-lg bg-white/10 px-2 py-1 text-xs text-white/50 hover:bg-white/20">{c.is_dead ? "Ripristina" : "Uccidi"}</button>
                   </div>
-                  <div className="mt-1 text-[10px] text-white/30">Init: {c.initiative} &middot; CA {c.armor_class}</div>
+                  <div className="mt-1 text-[10px] text-white/30">CA {c.armor_class}</div>
                   {currentTurn?.id === c.id && <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-400 text-[10px] text-black font-bold">&gt;</span>}
                 </div>
-              ))}
+              )})}
             </div>
           </div>
 
           <div className="mb-6">
             <p className="text-[10px] uppercase tracking-[0.2em] text-blue-400/60 mb-3">Giocatori</p>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {alive.filter(c => c.type === "player").map(c => (
+              {alive.filter(c => c.type === "player").map((c, idx) => {
+                const pos = alive.indexOf(c) + 1;
+                return (
                 <div key={c.id} className={`relative rounded-2xl border-2 p-4 ${
                   currentTurn?.id === c.id ? "border-blue-400/60 bg-blue-900/20" : "border-blue-500/20 bg-black/20"
                 }`}>
+                  <div className={`absolute -top-2 -left-2 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                    currentTurn?.id === c.id ? "bg-blue-400 text-black" : "bg-white/10 text-white/40"
+                  }`}>{pos}</div>
+                  <button onClick={(e) => { e.stopPropagation(); removeCombatant(c.id); }}
+                    className="absolute -top-2.5 -right-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-blue-400/40 bg-blue-900/60 text-[11px] text-blue-200 hover:bg-blue-600/70 hover:text-white transition"
+                    title="Rimuovi dal combattimento">
+                    &times;
+                  </button>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-white">{c.name}</span>
-                    <button onClick={() => removeCombatant(c.id)} className="text-xs text-white/20 hover:text-red-300">&times;</button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-white/30">Init {c.initiative}</span>
+                    </div>
                   </div>
                   <div className="mb-2">
                     <div className="flex items-center justify-between text-xs mb-1">
@@ -377,10 +404,10 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
                     <button onClick={() => updateCombatant(c.id, { hp_current: Math.min(c.hp_max, c.hp_current + 5) })} className="rounded-lg bg-emerald-500/20 px-2 py-1 text-xs text-emerald-200">+5</button>
                     <button onClick={() => updateCombatant(c.id, { hp_current: Math.min(c.hp_max, c.hp_current + 10) })} className="rounded-lg bg-emerald-500/20 px-2 py-1 text-xs text-emerald-200">+10</button>
                   </div>
-                  <div className="mt-1 text-[10px] text-white/30">Init: {c.initiative}</div>
+                  <div className="mt-1 text-[10px] text-white/30">CA {c.armor_class}</div>
                   {currentTurn?.id === c.id && <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-400 text-[10px] text-black font-bold">&gt;</span>}
                 </div>
-              ))}
+              )})}
             </div>
 
             <details className="mt-3">
