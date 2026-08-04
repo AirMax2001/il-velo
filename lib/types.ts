@@ -38,7 +38,7 @@ export type CharacterData = {
   hitDiceRemaining?: string;
   deathSaveSuccesses?: number;
   deathSaveFailures?: number;
-  attacks?: { name: string; bonus: string; damage: string }[];
+  attacks?: { name: string; bonus: string; damage: string; type?: string }[];
   spellcastingAbility?: string;
   spellSaveDC?: number;
   spellAttackBonus?: number;
@@ -63,6 +63,12 @@ export type CharacterData = {
   ep?: number;
   sp?: number;
   cp?: number;
+  spells1?: string[];
+  spells2?: string[];
+  spells3?: string[];
+  spells4?: string[];
+  spells5?: string[];
+  notes?: string;
 };
 
 export type Player = {

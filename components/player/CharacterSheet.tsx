@@ -5,138 +5,144 @@ import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
+import { getBackgroundData } from "@/lib/data/backgrounds";
+import races from "@/lib/data/races";
+import classes from "@/lib/data/classes";
+import backgrounds from "@/lib/data/backgrounds";
 import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
+import type { AbilityName, SkillKey, SaveKey } from "@/lib/characterEngine";
 
 type Props = { player: Player; onUpdate: (p: Player) => void };
+type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra";
 
-/* ── Point Buy cost table (D&D 5e: 27 punti, range 8-15 base) ── */
-const POINT_BUY_MAX = 27;
-function pointBuyCost(score: number): number {
-  if (score <= 8) return 0;
-  if (score === 9) return 1;
-  if (score === 10) return 2;
-  if (score === 11) return 3;
-  if (score === 12) return 4;
-  if (score === 13) return 5;
-  if (score === 14) return 7;
-  return 9;
-}
-function totalPointsUsed(data: Record<string, any>): number {
-  let total = 0;
-  for (const k of ["strength","dexterity","constitution","intelligence","wisdom","charisma"]) {
-    const s = Number(data[k]) || 8;
-    total += s <= 8 ? 0 : pointBuyCost(Math.min(s, 15));
-  }
-  return total;
-}
+/* ── Costanti ── */
+const ABILITY_KEYS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const;
+const ABILITY_LABELS: Record<string, string> = {
+  strength: "Forza", dexterity: "Destrezza", constitution: "Costituzione",
+  intelligence: "Intelligenza", wisdom: "Saggezza", charisma: "Carisma",
+};
+const ABILITY_SHORT: Record<string, string> = {
+  strength: "FOR", dexterity: "DES", constitution: "COS",
+  intelligence: "INT", wisdom: "SAG", charisma: "CAR",
+};
 
-/* ── Sub-componenti fuori da CharacterSheet per evitare remount su ogni render ── */
+const SKILL_LIST: { key: SkillKey; label: string; ability: AbilityName }[] = [
+  { key: "skillAthletics", label: "Atletica", ability: "strength" },
+  { key: "skillAcrobatics", label: "Acrobazia", ability: "dexterity" },
+  { key: "skillSleightOfHand", label: "Rapidità di Mano", ability: "dexterity" },
+  { key: "skillStealth", label: "Furtività", ability: "dexterity" },
+  { key: "skillArcana", label: "Arcano", ability: "intelligence" },
+  { key: "skillHistory", label: "Storia", ability: "intelligence" },
+  { key: "skillInvestigation", label: "Indagare", ability: "intelligence" },
+  { key: "skillNature", label: "Natura", ability: "intelligence" },
+  { key: "skillReligion", label: "Religione", ability: "intelligence" },
+  { key: "skillAnimalHandling", label: "Addestrare Animali", ability: "wisdom" },
+  { key: "skillInsight", label: "Intuizione", ability: "wisdom" },
+  { key: "skillMedicine", label: "Medicina", ability: "wisdom" },
+  { key: "skillPerception", label: "Percezione", ability: "wisdom" },
+  { key: "skillSurvival", label: "Sopravvivenza", ability: "wisdom" },
+  { key: "skillDeception", label: "Inganno", ability: "charisma" },
+  { key: "skillIntimidation", label: "Intimidire", ability: "charisma" },
+  { key: "skillPerformance", label: "Intrattenere", ability: "charisma" },
+  { key: "skillPersuasion", label: "Persuasione", ability: "charisma" },
+];
 
-function SheetInput({ fieldKey, label, value, onChange, onSave, narrow, type = "text", placeholder, onBlurExtra }: {
-  fieldKey: string; label: string; value: any; onChange: (v: any) => void; onSave: (f: any) => void;
-  narrow?: boolean; type?: string; placeholder?: string; onBlurExtra?: () => void;
-}) {
-  return (
-    <div className={narrow ? "w-24" : ""}>
-      <LabelWithGuide fieldKey={fieldKey} label={label} />
-      <input
-        type={type}
-        className="veil-input mt-1 w-full"
-        value={value ?? ""}
-        placeholder={placeholder}
-        onChange={e => {
-          const v = type === "number" ? (e.target.value === "" ? "" : Number(e.target.value)) : e.target.value;
-          onChange(v);
-        }}
-        onBlur={() => { onSave({ [fieldKey]: value }); onBlurExtra?.(); }}
-      />
-    </div>
-  );
-}
+const SAVE_LIST: { key: SaveKey; label: string; ability: AbilityName }[] = [
+  { key: "stStrength", label: "Forza", ability: "strength" },
+  { key: "stDexterity", label: "Destrezza", ability: "dexterity" },
+  { key: "stConstitution", label: "Costituzione", ability: "constitution" },
+  { key: "stIntelligence", label: "Intelligenza", ability: "intelligence" },
+  { key: "stWisdom", label: "Saggezza", ability: "wisdom" },
+  { key: "stCharisma", label: "Carisma", ability: "charisma" },
+];
 
-function SheetTextarea({ fieldKey, label, value, onChange, onSave }: {
-  fieldKey: string; label: string; value: any; onChange: (v: string) => void; onSave: (f: any) => void;
-}) {
-  return (
-    <div>
-      <LabelWithGuide fieldKey={fieldKey} label={label} />
-      <textarea
-        className="veil-input mt-1 w-full min-h-[60px]"
-        value={value ?? ""}
-        onChange={e => onChange(e.target.value)}
-        onBlur={() => onSave({ [fieldKey]: value })}
-      />
-    </div>
-  );
-}
+const COIN_TYPES = [
+  { key: "pp", label: "PP", desc: "Platino", color: "text-blue-200" },
+  { key: "gp", label: "GP", desc: "Oro", color: "text-veil-gold" },
+  { key: "ep", label: "PE", desc: "Electrum", color: "text-emerald-300" },
+  { key: "sp", label: "SA", desc: "Argento", color: "text-gray-300" },
+  { key: "cp", label: "MC", desc: "Rame", color: "text-orange-300" },
+];
 
-function SaveBadge({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
-  const cfg = { idle: ["border-white/10 text-white/45","pronta"], saving: ["border-veil-gold/40 text-veil-gold","salvataggio..."], saved: ["border-emerald-400/35 text-emerald-200","salvata"], error: ["border-red-400/35 text-red-200","errore"] }[state];
-  return <span className={`rounded-full border px-2 py-1 text-xs ${cfg[0]}`}>{cfg[1]}</span>;
-}
+const CONDITIONS_LIST = [
+  "Accecato", "Affascinato", "Assordato", "Atterrito", "Avvelenato",
+  "Esausto", "Grappling", "Incapacitato", "Inconscio", "Invisibile",
+  "Paralizzato", "Pietrificato", "Prono", "Rallentato", "Spaventato",
+  "Stordito", "Trattenuto",
+];
 
-function mod(score: number | undefined): string {
-  if (score == null) return "0";
-  const m = Math.floor((score - 10) / 2);
-  return m >= 0 ? `+${m}` : `${m}`;
-}
-
+/* ── Helpers ── */
 function parseConditions(raw: any): string[] {
   if (Array.isArray(raw)) return raw;
   if (typeof raw === "string") try { return JSON.parse(raw); } catch { return []; }
   return [];
 }
 
-const abilityScoreKeys = ["strength","dexterity","constitution","intelligence","wisdom","charisma"] as const;
-const abilityLabels: Record<string, string> = { strength:"FOR", dexterity:"DES", constitution:"COS", intelligence:"INT", wisdom:"SAG", charisma:"CAR" };
-
-const coinTypes = [{ key:"pp", label:"PP" }, { key:"gp", label:"GP" }, { key:"ep", label:"PE" }, { key:"sp", label:"SP" }, { key:"cp", label:"CP" }];
-
-const skillKeys: { key: string; label: string; ability: string }[] = [
-  { key:"skillAthletics", label:"Atletica", ability:"strength" },
-  { key:"skillAcrobatics", label:"Acrobazia", ability:"dexterity" },
-  { key:"skillSleightOfHand", label:"Rapidità di Mano", ability:"dexterity" },
-  { key:"skillStealth", label:"Furtività", ability:"dexterity" },
-  { key:"skillArcana", label:"Arcano", ability:"intelligence" },
-  { key:"skillHistory", label:"Storia", ability:"intelligence" },
-  { key:"skillInvestigation", label:"Indagare", ability:"intelligence" },
-  { key:"skillNature", label:"Natura", ability:"intelligence" },
-  { key:"skillReligion", label:"Religione", ability:"intelligence" },
-  { key:"skillAnimalHandling", label:"Addestrare Animali", ability:"wisdom" },
-  { key:"skillInsight", label:"Intuizione", ability:"wisdom" },
-  { key:"skillMedicine", label:"Medicina", ability:"wisdom" },
-  { key:"skillPerception", label:"Percezione", ability:"wisdom" },
-  { key:"skillSurvival", label:"Sopravvivenza", ability:"wisdom" },
-  { key:"skillDeception", label:"Inganno", ability:"charisma" },
-  { key:"skillIntimidation", label:"Intimidire", ability:"charisma" },
-  { key:"skillPerformance", label:"Intrattenere", ability:"charisma" },
-  { key:"skillPersuasion", label:"Persuasione", ability:"charisma" },
-];
-
-/* ── Resize image to dataUrl (max dim, quality 0-1) ── */
 function resizeImage(file: File, maxDim: number, quality: number, cb: (dataUrl: string) => void) {
   const img = new Image();
   img.onload = () => {
     let w = img.width, h = img.height;
     if (w > maxDim || h > maxDim) {
       const ratio = Math.min(maxDim / w, maxDim / h);
-      w = Math.round(w * ratio);
-      h = Math.round(h * ratio);
+      w = Math.round(w * ratio); h = Math.round(h * ratio);
     }
     const c = document.createElement("canvas");
     c.width = w; c.height = h;
-    const ctx = c.getContext("2d")!;
-    ctx.drawImage(img, 0, 0, w, h);
+    c.getContext("2d")!.drawImage(img, 0, 0, w, h);
     cb(c.toDataURL("image/jpeg", quality));
   };
   img.src = URL.createObjectURL(file);
 }
 
-/* ── Componente principale ── */
+/* ── Sub-componenti ── */
+function SaveBadge({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
+  const cfg = {
+    idle: ["border-white/10 text-white/30", "pronta"],
+    saving: ["border-veil-gold/40 text-veil-gold animate-pulse", "salvataggio..."],
+    saved: ["border-emerald-400/35 text-emerald-300", "✓ salvata"],
+    error: ["border-red-400/35 text-red-300", "errore"],
+  }[state];
+  return <span className={`rounded-full border px-2 py-0.5 text-[10px] ${cfg[0]}`}>{cfg[1]}</span>;
+}
 
+function StatBox({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-black/30 p-3 text-center">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-white/35 mb-1">{label}</p>
+      <p className="text-xl font-bold text-white">{value}</p>
+      {sub && <p className="text-[10px] text-white/25 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+function NumberBubbles({
+  label, count, filled, onToggle, color = "emerald",
+}: { label: string; count: number; filled: number; onToggle: (idx: number) => void; color?: string }) {
+  const colorMap: Record<string, string> = {
+    emerald: "bg-emerald-500/30 border-emerald-400/50 text-emerald-200",
+    red: "bg-red-500/30 border-red-400/50 text-red-200",
+  };
+  const filledCls = colorMap[color] || colorMap.emerald;
+  return (
+    <div>
+      <p className="text-xs text-white/40 mb-1">{label}</p>
+      <div className="flex gap-1.5">
+        {Array.from({ length: count }, (_, i) => (
+          <button key={i} onClick={() => onToggle(i)}
+            className={`h-7 w-7 rounded-full border text-xs transition ${i < filled ? filledCls : "border-white/10 text-white/20 hover:border-white/30"}`}>
+            {i < filled ? (color === "emerald" ? "✓" : "✕") : "○"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Componente principale ── */
 export function CharacterSheet({ player, onUpdate }: Props) {
   const [form, setForm] = useState(player);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [activeTab, setActiveTab] = useState<SheetTab>("core");
   const playerRef = useRef(player);
   const formRef = useRef(form);
   formRef.current = form;
@@ -149,6 +155,7 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     }
   }, [player]);
 
+  /* ── State updaters ── */
   const upd = useCallback((key: string, value: any) => {
     setForm((prev: any) => ({ ...prev, [key]: value }));
   }, []);
@@ -159,28 +166,27 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     setForm((prev: any) => ({ ...prev, character_data: { ...(prev.character_data || {}), ...obj } }));
   }, []);
 
-  const save = useCallback(async (fields: Partial<Player & CharacterData>) => {
+  /* ── Save ── */
+  const save = useCallback(async (fields: Record<string, any>) => {
     if (savingRef.current) return;
     savingRef.current = true;
-    const prevForm = formRef.current;
-    setForm((prev: any) => ({ ...prev, ...fields }));
     setSaveState("saving");
     try {
       const body: any = { id: player.id };
-      const cd: any = {};
-      let hasCd = false;
+      const cdFields: Record<string, any> = {};
+      const topLevelFields = new Set([
+        "character_name", "race", "class", "level", "xp", "hp_current", "hp_max",
+        "temp_hp", "coins", "conditions", "age", "personality", "history", "goals",
+        "fear", "important_person", "secret", "background", "dm_private_notes",
+        "player_name", "avatar_url",
+      ]);
       for (const [k, v] of Object.entries(fields)) {
-        if (["character_name","race","class","level","xp","hp_current","hp_max","temp_hp","coins","conditions","age","personality","history","goals","fear","important_person","secret","background","dm_private_notes","player_name","avatar_url"].includes(k)) {
-          body[k] = v;
-        } else {
-          cd[k] = v;
-          hasCd = true;
-        }
+        if (topLevelFields.has(k)) body[k] = v;
+        else { cdFields[k] = v; }
       }
-      if (hasCd) {
-        const cur = formRef.current;
-        const curCd = cur?.character_data || {};
-        body.character_data = { ...curCd, ...cd };
+      if (Object.keys(cdFields).length > 0) {
+        const curCd = formRef.current?.character_data || {};
+        body.character_data = { ...curCd, ...cdFields };
       }
       const res = await fetch("/api/players", {
         method: "PATCH",
@@ -194,7 +200,6 @@ export function CharacterSheet({ player, onUpdate }: Props) {
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 1600);
     } catch {
-      setForm(prevForm);
       setSaveState("error");
       setTimeout(() => setSaveState("idle"), 3000);
     } finally {
@@ -202,501 +207,983 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     }
   }, [player.id, onUpdate]);
 
-  const cd = form?.character_data || {};
+  /* ── Dati derivati ── */
+  const cd = form?.character_data || {} as CharacterData;
   const attacks = Array.isArray(cd.attacks) ? cd.attacks : [];
   const spellSlots = (cd.spellSlots || {}) as Record<number, { total?: number; expended?: number }>;
+  const conditions = parseConditions(form?.conditions);
+
+  const clsKey = findClassKey(formRef.current?.class || "");
+  const clsData = clsKey ? getClassData(clsKey) : null;
+  const raceKey = findRaceKey(formRef.current?.race || "");
+  const raceData = raceKey ? getRaceData(raceKey) : null;
+  const bgData = form?.background ? getBackgroundData(
+    Object.keys(backgrounds).find(k => (backgrounds as any)[k].name === form.background) || form.background
+  ) : null;
+
+  const level = Number(formRef.current?.level) || 1;
+  const pb = getProficiencyBonus(level);
+
+  // Caratteristiche con bonus razziali
+  function getAbilityScore(ability: string): number {
+    return Number(cd[ability as keyof CharacterData]) || 10;
+  }
+  function getRaceBonus(ability: string): number {
+    const bonus = raceData?.abilityBonuses?.[ability] || 0;
+    return bonus;
+  }
+  function getTotalScore(ability: string): number {
+    return getAbilityScore(ability) + getRaceBonus(ability);
+  }
+
+  // Auto-calcoli dalla classe/razza
+  const hitDie = clsData?.hitDie;
+  const conMod = getModifier(getTotalScore("constitution"));
+  const dexMod = getModifier(getTotalScore("dexterity"));
+  const raceSpeed = raceData?.speed;
+  const expectedHP = hitDie ? hitDie + conMod + (level - 1) * (Math.ceil(hitDie / 2) + 1 + conMod) : null;
+
+  // Incantesimi: caratteristica auto da classe
+  const spellAbility = clsData?.spellcasting?.spellcastingAbility;
+  const spellAbilityScore = spellAbility ? getTotalScore(spellAbility) : 10;
+  const spellAbilityMod = getModifier(spellAbilityScore);
+  const spellDC = 8 + spellAbilityMod + pb;
+  const spellAtk = spellAbilityMod + pb;
+
+  // Abilità/Saving Throws: classe garantisce competenze, background aggiunge le sue
+  const classSkillSet = new Set(clsData?.savingThrows || []);
+  const bgSkillSet = new Set<string>((bgData?.skillProficiencies || []).filter(Boolean));
+
+  /* ── TABS ── */
+  const TABS: { id: SheetTab; label: string; icon: string }[] = [
+    { id: "core", label: "Nucleo", icon: "⚡" },
+    { id: "combat", label: "Combattimento", icon: "⚔️" },
+    { id: "magic", label: "Magia", icon: "✨" },
+    { id: "gear", label: "Equipaggiamento", icon: "🎒" },
+    { id: "personality", label: "Personalità", icon: "📖" },
+    { id: "extra", label: "Extra", icon: "🔧" },
+  ];
+
+  /* ── Render Tabs ── */
+  function renderCore() {
+    return (
+      <div className="space-y-4">
+        {/* Avatar + Info principale */}
+        <div className="veil-panel p-4">
+          <div className="flex items-start gap-4">
+            <div className="flex flex-col items-center gap-2">
+              <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="xl" />
+              <label className="cursor-pointer rounded-lg border border-veil-gold/20 px-2 py-1 text-[10px] text-veil-gold/50 hover:bg-veil-gold/10 hover:text-veil-gold transition text-center">
+                Immagine
+                <input type="file" accept="image/*" className="hidden" onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  resizeImage(file, 200, 0.6, dataUrl => {
+                    upd("avatar_url", dataUrl);
+                    save({ avatar_url: dataUrl });
+                  });
+                }} />
+              </label>
+              {form?.avatar_url && (
+                <button onClick={() => { upd("avatar_url", ""); save({ avatar_url: "" }); }}
+                  className="text-[10px] text-red-300/40 hover:text-red-300">Rimuovi</button>
+              )}
+            </div>
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Nome */}
+              <div className="col-span-full sm:col-span-2">
+                <LabelWithGuide fieldKey="character_name" label="Nome Personaggio" />
+                <input type="text" className="veil-input mt-1 w-full"
+                  value={form?.character_name || ""}
+                  onChange={e => upd("character_name", e.target.value)}
+                  onBlur={() => save({ character_name: formRef.current?.character_name })} />
+              </div>
+              {/* Livello */}
+              <div>
+                <LabelWithGuide fieldKey="level" label="Livello" />
+                <input type="number" className="veil-input mt-1 w-full" min={1} max={20}
+                  value={form?.level || 1}
+                  onChange={e => upd("level", Number(e.target.value))}
+                  onBlur={() => save({ level: formRef.current?.level })} />
+              </div>
+              {/* Razza */}
+              <div>
+                <LabelWithGuide fieldKey="race" label="Razza" />
+                <select className="veil-input mt-1 w-full"
+                  value={findRaceKey(form?.race || "") || form?.race || ""}
+                  onChange={e => {
+                    const rk = e.target.value;
+                    const rd = getRaceData(rk);
+                    const name = rd?.name || rk;
+                    upd("race", name);
+                    // Auto-aggiorna velocità
+                    if (rd?.speed) updCd("speed", rd.speed);
+                  }}
+                  onBlur={() => {
+                    const cur = formRef.current;
+                    const rk = findRaceKey(cur?.race || "");
+                    const rd = rk ? getRaceData(rk) : null;
+                    save({ race: cur?.race, ...(rd?.speed ? { speed: rd.speed } : {}) });
+                  }}>
+                  <option value="">— Seleziona razza —</option>
+                  {Object.values(races).map(r => (
+                    <option key={r.key} value={r.key}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Classe */}
+              <div>
+                <LabelWithGuide fieldKey="class_label" label="Classe" />
+                <select className="veil-input mt-1 w-full"
+                  value={findClassKey(form?.class || "") || ""}
+                  onChange={e => {
+                    const ck = e.target.value;
+                    const clsd = getClassData(ck);
+                    upd("class", clsd?.name || ck);
+                  }}
+                  onBlur={() => {
+                    const cur = formRef.current;
+                    const ck = findClassKey(cur?.class || "");
+                    const clsd = ck ? getClassData(ck) : null;
+                    if (!clsd) return;
+                    // Auto-imposta tiri salvezza di classe
+                    const saveFields: Record<string, boolean> = {};
+                    for (const sv of ["stStrength", "stDexterity", "stConstitution", "stIntelligence", "stWisdom", "stCharisma"]) {
+                      saveFields[sv] = clsd.savingThrows.includes(sv);
+                    }
+                    save({ class: clsd.name, ...saveFields });
+                  }}>
+                  <option value="">— Seleziona classe —</option>
+                  {Object.values(classes).map(c => (
+                    <option key={c.key} value={c.key}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Background */}
+              <div>
+                <LabelWithGuide fieldKey="background" label="Background" />
+                <select className="veil-input mt-1 w-full"
+                  value={Object.keys(backgrounds).find(k => (backgrounds as any)[k].name === form?.background) || form?.background || ""}
+                  onChange={e => {
+                    const bk = e.target.value;
+                    const bd = getBackgroundData(bk);
+                    upd("background", bd?.name || bk);
+                    // Auto-seleziona abilità background
+                    if (bd?.skillProficiencies) {
+                      const skillUpdates: Record<string, boolean> = {};
+                      bd.skillProficiencies.forEach(s => { skillUpdates[s] = true; });
+                      updCdAll(skillUpdates);
+                    }
+                  }}
+                  onBlur={() => save({ background: formRef.current?.background })}>
+                  <option value="">— Seleziona background —</option>
+                  {Object.values(backgrounds).map(b => (
+                    <option key={b.key} value={b.key}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Allineamento */}
+              <div>
+                <LabelWithGuide fieldKey="alignment" label="Allineamento" />
+                <select className="veil-input mt-1 w-full"
+                  value={cd.alignment || ""}
+                  onChange={e => updCd("alignment", e.target.value)}
+                  onBlur={() => save({ alignment: formRef.current?.character_data?.alignment })}>
+                  <option value="">— Seleziona —</option>
+                  {["Legale Buono", "Neutrale Buono", "Caotico Buono", "Legale Neutrale", "Neutrale", "Caotico Neutrale", "Legale Malvagio", "Neutrale Malvagio", "Caotico Malvagio"].map(a => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              </div>
+              {/* XP */}
+              <div>
+                <LabelWithGuide fieldKey="xp" label="XP" />
+                <input type="number" className="veil-input mt-1 w-full" min={0}
+                  value={form?.xp || 0}
+                  onChange={e => upd("xp", Number(e.target.value))}
+                  onBlur={() => save({ xp: formRef.current?.xp })} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Info razza */}
+        {raceData && (
+          <div className="veil-panel p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-veil-gold/80 font-medium">{raceData.name}</span>
+              <span className="text-[10px] text-white/30">{raceData.speed}m · {raceData.size}</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {Object.entries(raceData.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
+                <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
+                  {ABILITY_SHORT[k] || k}+{v}
+                </span>
+              ))}
+              {raceData.traits.slice(0, 4).map(t => (
+                <span key={t.name} className="rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/40" title={t.description}>{t.name}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Caratteristiche */}
+        <div className="veil-panel p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm text-veil-gold/80 font-medium">Caratteristiche</h3>
+            {clsData && (
+              <span className="text-[10px] text-white/30">
+                Bonus Competenza: <strong className="text-veil-gold/60">+{pb}</strong>
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {ABILITY_KEYS.map(k => {
+              const base = getAbilityScore(k);
+              const bonus = getRaceBonus(k);
+              const total = getTotalScore(k);
+              const mod = getModifier(total);
+              return (
+                <div key={k} className="text-center">
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-white/35 mb-1">{ABILITY_SHORT[k]}</p>
+                  <input type="number" className="veil-input w-full text-center text-lg font-bold px-1"
+                    value={base}
+                    min={1} max={20}
+                    onChange={e => updCd(k, Number(e.target.value))}
+                    onBlur={() => save({ [k]: formRef.current?.character_data?.[k as keyof CharacterData] })} />
+                  <p className="text-base text-veil-gold font-bold mt-1">{mod >= 0 ? `+${mod}` : `${mod}`}</p>
+                  {bonus > 0 ? (
+                    <p className="text-[9px] text-emerald-400/60 mt-0.5">base+{bonus}={total}</p>
+                  ) : (
+                    <p className="text-[9px] text-white/20 mt-0.5">base</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* PF + Stats di combattimento rapide */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Punti Ferita</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            <div>
+              <LabelWithGuide fieldKey="hp_max" label="PF Max" />
+              <input type="number" className="veil-input mt-1 w-full text-center" min={0}
+                value={form?.hp_max || ""}
+                onChange={e => upd("hp_max", Number(e.target.value))}
+                onBlur={() => save({ hp_max: formRef.current?.hp_max })} />
+              {expectedHP && <p className="text-[9px] text-white/20 mt-0.5 text-center">attesi: ~{expectedHP}</p>}
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="hp_current" label="PF Correnti" />
+              <input type="number" className="veil-input mt-1 w-full text-center" min={0}
+                value={form?.hp_current ?? ""}
+                onChange={e => upd("hp_current", Number(e.target.value))}
+                onBlur={() => save({ hp_current: formRef.current?.hp_current })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="temp_hp" label="PF Temporanei" />
+              <input type="number" className="veil-input mt-1 w-full text-center" min={0}
+                value={form?.temp_hp ?? ""}
+                onChange={e => upd("temp_hp", Number(e.target.value))}
+                onBlur={() => save({ temp_hp: formRef.current?.temp_hp })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="hitDiceTotal" label="Dadi Vita" />
+              <div className="veil-input mt-1 w-full text-center pointer-events-none opacity-60">
+                {hitDie ? `${level}d${hitDie}` : "—"}
+              </div>
+              {hitDie && <p className="text-[9px] text-white/20 mt-0.5 text-center">COS mod: {conMod >= 0 ? `+${conMod}` : conMod}</p>}
+            </div>
+          </div>
+          {/* HP bar */}
+          {form?.hp_max && form?.hp_max > 0 && (
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-3">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${((form?.hp_current || 0) / form.hp_max) > 0.5 ? "bg-emerald-500" : ((form?.hp_current || 0) / form.hp_max) > 0.25 ? "bg-yellow-500" : "bg-red-500"}`}
+                style={{ width: `${Math.max(0, Math.min(100, ((form?.hp_current || 0) / form.hp_max) * 100))}%` }} />
+            </div>
+          )}
+        </div>
+
+        {/* Stats veloci: CA / Iniziativa / Velocità / PB */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="veil-panel p-3 text-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/35 mb-1">CA</p>
+            <input type="number" className="bg-transparent text-xl font-bold text-white w-full text-center border-none outline-none"
+              value={cd.armorClass || ""}
+              onChange={e => updCd("armorClass", Number(e.target.value))}
+              onBlur={() => save({ armorClass: formRef.current?.character_data?.armorClass })} />
+            <p className="text-[9px] text-white/20 mt-0.5">Classe Armatura</p>
+          </div>
+          <StatBox label="Iniziativa" value={dexMod >= 0 ? `+${dexMod}` : `${dexMod}`} sub="DES mod" />
+          <div className="veil-panel p-3 text-center">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/35 mb-1">Velocità</p>
+            <input type="number" className="bg-transparent text-xl font-bold text-white w-full text-center border-none outline-none"
+              value={cd.speed || raceSpeed || ""}
+              onChange={e => updCd("speed", Number(e.target.value))}
+              onBlur={() => save({ speed: formRef.current?.character_data?.speed })} />
+            <p className="text-[9px] text-white/20 mt-0.5">{raceSpeed ? `razza: ${raceSpeed}m` : "metri"}</p>
+          </div>
+          <StatBox label="Bon. Competenza" value={`+${pb}`} sub={`liv. ${level}`} />
+        </div>
+
+        {/* Tiri Salvezza */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Tiri Salvezza</h3>
+          {clsData && (
+            <p className="text-[10px] text-white/30 mb-2">
+              Competenze dalla classe: {clsData.savingThrows.map(s => {
+                const found = SAVE_LIST.find(sl => sl.key === s);
+                return found?.label || s;
+              }).join(", ")}
+            </p>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {SAVE_LIST.map(sv => {
+              const isClassSave = classSkillSet.has(sv.key);
+              const isManualChecked = (cd as any)[sv.key] ?? false;
+              const isChecked = isClassSave || isManualChecked;
+              const score = getTotalScore(sv.ability);
+              const mod = getModifier(score);
+              const total = isChecked ? mod + pb : mod;
+              return (
+                <label key={sv.key} className={`flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition ${isChecked ? "border-veil-gold/20 bg-veil-gold/[0.04]" : "border-white/[0.04] bg-black/20"}`}>
+                  <input type="checkbox" className="accent-veil-gold w-4 h-4"
+                    checked={isChecked}
+                    disabled={isClassSave} // Le competenze di classe non si possono togliere
+                    onChange={e => {
+                      if (isClassSave) return;
+                      updCd(sv.key, e.target.checked);
+                      save({ [sv.key]: e.target.checked });
+                    }} />
+                  <span className={`text-xs flex-1 ${isChecked ? "text-white/80" : "text-white/40"}`}>{sv.label}</span>
+                  <span className={`text-xs font-medium ${isChecked ? "text-veil-gold" : "text-white/30"}`}>
+                    {total >= 0 ? `+${total}` : `${total}`}
+                  </span>
+                  {isClassSave && <span className="text-[9px] text-veil-gold/30">classe</span>}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Abilità */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Abilità</h3>
+          {clsData && (
+            <p className="text-[10px] text-white/30 mb-2">
+              {clsData.skillPicks} abilità dalla classe ·
+              {bgData && ` ${bgData.skillProficiencies.length} dal background`}
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {SKILL_LIST.map(sk => {
+              const isChecked = (cd as any)[sk.key] ?? false;
+              const isClassOption = clsData?.skillOptions.includes(sk.key) || false;
+              const isBgSkill = bgSkillSet.has(sk.key);
+              const score = getTotalScore(sk.ability);
+              const mod = getModifier(score);
+              const total = isChecked ? mod + pb : mod;
+              return (
+                <label key={sk.key} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 cursor-pointer transition text-sm
+                  ${isChecked ? isBgSkill ? "border-emerald-500/20 bg-emerald-900/[0.06]" : "border-veil-gold/20 bg-veil-gold/[0.04]" : isClassOption ? "border-white/[0.06] bg-black/20 hover:border-white/[0.10]" : "border-white/[0.03] bg-black/10 opacity-40"}`}>
+                  <input type="checkbox" className="accent-veil-gold w-4 h-4 flex-shrink-0"
+                    checked={isChecked}
+                    onChange={e => {
+                      updCd(sk.key, e.target.checked);
+                      save({ [sk.key]: e.target.checked });
+                    }} />
+                  <span className={`flex-1 text-xs ${isChecked ? "text-white/80" : "text-white/40"}`}>
+                    {sk.label}
+                  </span>
+                  <span className="text-[10px] text-white/25">{ABILITY_SHORT[sk.ability]}</span>
+                  <span className={`text-xs font-medium w-8 text-right ${isChecked ? "text-veil-gold" : "text-white/25"}`}>
+                    {total >= 0 ? `+${total}` : `${total}`}
+                  </span>
+                  {isBgSkill && <span className="text-[9px] text-emerald-400/40">BG</span>}
+                  {isClassOption && !isBgSkill && <span className="text-[9px] text-veil-gold/30">cls</span>}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Ispirazione */}
+        <div className="veil-panel p-3 flex items-center gap-3">
+          <input type="checkbox" id="inspiration" className="accent-veil-gold w-5 h-5"
+            checked={cd.inspiration ?? false}
+            onChange={e => { updCd("inspiration", e.target.checked); save({ inspiration: e.target.checked }); }} />
+          <label htmlFor="inspiration" className="text-sm text-white/70 cursor-pointer flex-1">
+            <span className="text-veil-gold/80">Ispirazione</span>
+            <span className="text-white/30 text-xs ml-2">assegnata dal DM</span>
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  function renderCombat() {
+    return (
+      <div className="space-y-4">
+        {/* Attacchi */}
+        <div className="veil-panel p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm text-veil-gold/80 font-medium">Attacchi</h3>
+            <button onClick={() => updCdAll({ attacks: [...attacks, { name: "", bonus: "", damage: "", type: "" }] })}
+              className="text-xs text-veil-gold/60 hover:text-veil-gold border border-veil-gold/20 rounded-lg px-2 py-1 transition">
+              + Aggiungi
+            </button>
+          </div>
+          {attacks.length === 0 && (
+            <p className="text-xs text-white/30 text-center py-3">Nessun attacco. Clicca "+ Aggiungi" per inserirne uno.</p>
+          )}
+          <div className="space-y-2">
+            {attacks.map((a: any, i: number) => (
+              <div key={i} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center">
+                <input className="veil-input text-xs" placeholder="Nome arma (es. Spada Lunga)"
+                  value={a.name}
+                  onChange={e => {
+                    const na = attacks.map((x: any, j: number) => j === i ? { ...x, name: e.target.value } : x);
+                    updCdAll({ attacks: na });
+                  }}
+                  onBlur={() => save({ attacks: formRef.current?.character_data?.attacks })} />
+                <input className="veil-input w-16 text-xs text-center" placeholder="+5"
+                  value={a.bonus}
+                  onChange={e => {
+                    const na = attacks.map((x: any, j: number) => j === i ? { ...x, bonus: e.target.value } : x);
+                    updCdAll({ attacks: na });
+                  }}
+                  onBlur={() => save({ attacks: formRef.current?.character_data?.attacks })} />
+                <input className="veil-input w-20 text-xs text-center" placeholder="1d8+3"
+                  value={a.damage}
+                  onChange={e => {
+                    const na = attacks.map((x: any, j: number) => j === i ? { ...x, damage: e.target.value } : x);
+                    updCdAll({ attacks: na });
+                  }}
+                  onBlur={() => save({ attacks: formRef.current?.character_data?.attacks })} />
+                <input className="veil-input w-20 text-xs text-center" placeholder="Tipo"
+                  value={a.type || ""}
+                  onChange={e => {
+                    const na = attacks.map((x: any, j: number) => j === i ? { ...x, type: e.target.value } : x);
+                    updCdAll({ attacks: na });
+                  }}
+                  onBlur={() => save({ attacks: formRef.current?.character_data?.attacks })} />
+                <button onClick={() => {
+                  const na = attacks.filter((_: any, j: number) => j !== i);
+                  updCd("attacks", na);
+                  save({ attacks: na });
+                }} className="text-red-300/40 hover:text-red-300 text-sm">×</button>
+              </div>
+            ))}
+          </div>
+          {attacks.length > 0 && (
+            <p className="text-[10px] text-white/20 mt-2">Bonus · Danno · Tipo (es. tagliante, fuoco...)</p>
+          )}
+        </div>
+
+        {/* Dadi vita tracciamento */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Dadi Vita Rimanenti</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <LabelWithGuide fieldKey="hitDiceTotal" label="Totale Dadi Vita" />
+              <div className="veil-input mt-1 w-full pointer-events-none opacity-50">
+                {hitDie ? `${level}d${hitDie}` : "—"}
+              </div>
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="hitDiceRemaining" label="Rimanenti" />
+              <input type="text" className="veil-input mt-1 w-full"
+                value={cd.hitDiceRemaining || ""}
+                placeholder={hitDie ? `${level}d${hitDie}` : ""}
+                onChange={e => updCd("hitDiceRemaining", e.target.value)}
+                onBlur={() => save({ hitDiceRemaining: formRef.current?.character_data?.hitDiceRemaining })} />
+            </div>
+          </div>
+        </div>
+
+        {/* Tiri per la morte */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Tiri per la Morte</h3>
+          <p className="text-[10px] text-white/30 mb-3">3 successi = stabilizzato, 3 fallimenti = morte. Si azzera dopo ogni riposo breve o lungo.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <NumberBubbles
+              label="Successi"
+              count={3}
+              filled={cd.deathSaveSuccesses || 0}
+              onToggle={i => {
+                const cur = cd.deathSaveSuccesses || 0;
+                const newVal = cur > i ? i : i + 1;
+                updCd("deathSaveSuccesses", newVal);
+                save({ deathSaveSuccesses: newVal });
+              }}
+              color="emerald"
+            />
+            <NumberBubbles
+              label="Fallimenti"
+              count={3}
+              filled={cd.deathSaveFailures || 0}
+              onToggle={i => {
+                const cur = cd.deathSaveFailures || 0;
+                const newVal = cur > i ? i : i + 1;
+                updCd("deathSaveFailures", newVal);
+                save({ deathSaveFailures: newVal });
+              }}
+              color="red"
+            />
+          </div>
+        </div>
+
+        {/* Condizioni */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Condizioni</h3>
+          <p className="text-[10px] text-white/30 mb-3">Le condizioni vengono assegnate dal DM. Qui puoi anche aggiungerle manualmente.</p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {conditions.map(c => (
+              <span key={c} className="rounded-full border border-red-500/30 bg-red-900/20 px-2.5 py-1 text-xs text-red-300/80 flex items-center gap-1">
+                {c}
+                <button onClick={() => {
+                  const nc = conditions.filter(x => x !== c);
+                  upd("conditions", JSON.stringify(nc));
+                  save({ conditions: JSON.stringify(nc) });
+                }} className="text-red-300/40 hover:text-red-300 ml-0.5">×</button>
+              </span>
+            ))}
+            {conditions.length === 0 && <span className="text-xs text-white/25">Nessuna condizione attiva</span>}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {CONDITIONS_LIST.filter(c => !conditions.includes(c)).map(c => (
+              <button key={c} onClick={() => {
+                const nc = [...conditions, c];
+                upd("conditions", JSON.stringify(nc));
+                save({ conditions: JSON.stringify(nc) });
+              }} className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/35 hover:border-white/25 hover:text-white/60 transition">
+                + {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderMagic() {
+    const hasSpellcasting = !!clsData?.spellcasting || !!spellAbility;
+    const spellAbilityLabel = spellAbility ? ABILITY_LABELS[spellAbility] || spellAbility : null;
+
+    return (
+      <div className="space-y-4">
+        {!hasSpellcasting && (
+          <div className="veil-panel p-6 text-center">
+            <p className="text-3xl mb-3">⚔️</p>
+            <p className="text-white/40">{clsData?.name || "Questa classe"} non usa la magia.</p>
+            <p className="text-[11px] text-white/25 mt-1">Se hai oggetti magici o capacità speciali, usa la sezione Attacchi.</p>
+          </div>
+        )}
+
+        {hasSpellcasting && (
+          <>
+            {/* Stats incantatore */}
+            <div className="veil-panel p-4">
+              <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Statistiche Incantatore</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
+                  <p className="text-[10px] text-blue-300/50 mb-1">Caratteristica</p>
+                  <p className="text-sm text-blue-200 font-medium">{spellAbilityLabel || "—"}</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">{ABILITY_SHORT[spellAbility || ""] || ""}</p>
+                </div>
+                <div className="text-center rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
+                  <p className="text-[10px] text-blue-300/50 mb-1">CD Inc.</p>
+                  <p className="text-xl font-bold text-blue-200">{spellDC}</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">8+{spellAbilityMod >= 0 ? "+" : ""}{spellAbilityMod}+{pb}</p>
+                </div>
+                <div className="text-center rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
+                  <p className="text-[10px] text-blue-300/50 mb-1">Attacco</p>
+                  <p className="text-xl font-bold text-blue-200">{spellAtk >= 0 ? `+${spellAtk}` : `${spellAtk}`}</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">{spellAbilityMod >= 0 ? "+" : ""}{spellAbilityMod}+{pb}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trucchetti */}
+            <div className="veil-panel p-4">
+              <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Trucchetti</h3>
+              <p className="text-[10px] text-white/30 mb-2">I trucchetti sono a volontà, non consumano slot. Inserisci i nomi separati da virgola.</p>
+              <input className="veil-input w-full text-sm"
+                placeholder="Es: Luce, Mano magica, Trama dell'Illusore..."
+                value={(cd.cantrips || []).join(", ")}
+                onChange={e => updCd("cantrips", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                onBlur={() => save({ cantrips: formRef.current?.character_data?.cantrips })} />
+              {(cd.cantrips || []).length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {(cd.cantrips || []).map((c: string) => (
+                    <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Slot incantesimi */}
+            <div className="veil-panel p-4">
+              <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Slot Incantesimi</h3>
+              <p className="text-[10px] text-white/30 mb-3">Totale = slot disponibili, Usati = slot spesi. Si recuperano dopo un riposo lungo.</p>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
+                  const total = spellSlots[lv]?.total ?? 0;
+                  const used = spellSlots[lv]?.expended ?? 0;
+                  const available = Math.max(0, total - used);
+                  return (
+                    <div key={lv} className="text-center">
+                      <p className="text-[10px] text-white/30 mb-1">{lv}° Liv.</p>
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <input type="number" className="veil-input w-10 text-center text-xs p-1" placeholder="0" min={0} max={9}
+                          value={total || ""}
+                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total: Number(e.target.value), expended: spellSlots[lv]?.expended ?? 0 } } })}
+                          onBlur={() => save({ spellSlots: formRef.current?.character_data?.spellSlots })} />
+                        <span className="text-[10px] text-white/20">/</span>
+                        <input type="number" className="veil-input w-10 text-center text-xs p-1" placeholder="0" min={0}
+                          value={used || ""}
+                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total: spellSlots[lv]?.total ?? 0, expended: Number(e.target.value) } } })}
+                          onBlur={() => save({ spellSlots: formRef.current?.character_data?.spellSlots })} />
+                      </div>
+                      {/* Palline disponibili */}
+                      <div className="flex justify-center gap-0.5 flex-wrap">
+                        {Array.from({ length: Math.min(total, 9) }, (_, i) => (
+                          <button key={i} onClick={() => {
+                            const newUsed = i < used ? i : i + 1;
+                            updCdAll({ spellSlots: { ...spellSlots, [lv]: { total, expended: Math.min(newUsed, total) } } });
+                            save({ spellSlots: { ...spellSlots, [lv]: { total, expended: Math.min(newUsed, total) } } });
+                          }}
+                            className={`w-4 h-4 rounded-full border transition ${i < (total - used) ? "bg-blue-500/40 border-blue-400/50" : "bg-white/[0.04] border-white/10"}`}
+                            title={i < (total - used) ? "Slot disponibile (clicca per usare)" : "Slot usato"}
+                          />
+                        ))}
+                      </div>
+                      {total > 0 && <p className="text-[9px] text-white/20 mt-0.5">{available} disponibili</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Lista incantesimi */}
+            <div className="veil-panel p-4">
+              <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Incantesimi Noti/Preparati</h3>
+              <p className="text-[10px] text-white/30 mb-2">Inserisci gli incantesimi separati da virgola, raggruppati per livello.</p>
+              {[1, 2, 3, 4, 5].map(lv => (
+                <div key={lv} className="mb-2">
+                  <label className="text-xs text-white/40 mb-1 block">{lv}° Livello</label>
+                  <input className="veil-input w-full text-sm"
+                    placeholder={`Es: ${lv === 1 ? "Proiettile Incantato, Armatura del Mago..." : "Freccia Acida, Invisibilità..."}`}
+                    value={((cd as any)[`spells${lv}`] || []).join(", ")}
+                    onChange={e => updCd(`spells${lv}`, e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))}
+                    onBlur={() => save({ [`spells${lv}`]: formRef.current?.character_data?.[`spells${lv}` as keyof CharacterData] })} />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  function renderGear() {
+    return (
+      <div className="space-y-4">
+        {/* Monete */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Monete</h3>
+          <div className="grid grid-cols-5 gap-3 text-center">
+            {COIN_TYPES.map(c => (
+              <div key={c.key}>
+                <p className={`text-[10px] uppercase font-bold mb-1 ${c.color}`}>{c.label}</p>
+                <p className="text-[9px] text-white/20 mb-1">{c.desc}</p>
+                <input type="number" className="veil-input w-full text-center text-sm font-medium p-1.5" min={0}
+                  value={(cd as any)[c.key] ?? 0}
+                  onChange={e => updCd(c.key, Number(e.target.value))}
+                  onBlur={() => save({ [c.key]: formRef.current?.character_data?.[c.key as keyof CharacterData] })} />
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-white/20 mt-3 text-center">
+            1 PP = 10 GP = 50 SA = 100 MC
+          </p>
+        </div>
+
+        {/* Tesoro / oggetti speciali */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Tesoro e Oggetti Speciali</h3>
+          <textarea className="veil-input w-full min-h-[80px] text-sm"
+            placeholder="Anello del nuotatore, Pietra del teletrasporto, Mappa del dungeon..."
+            value={cd.treasure || ""}
+            onChange={e => updCd("treasure", e.target.value)}
+            onBlur={() => save({ treasure: formRef.current?.character_data?.treasure })} />
+        </div>
+
+        {/* Alleati e Organizzazioni */}
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Alleati e Organizzazioni</h3>
+          <textarea className="veil-input w-full min-h-[60px] text-sm"
+            placeholder="Ordine dei Cavalieri d'Oro, Gilda dei Ladri di Waterdeep..."
+            value={cd.allies || ""}
+            onChange={e => updCd("allies", e.target.value)}
+            onBlur={() => save({ allies: formRef.current?.character_data?.allies })} />
+        </div>
+      </div>
+    );
+  }
+
+  function renderPersonality() {
+    // Suggerimenti dal background
+    const bgTraits = bgData?.personalityTraits || [];
+    const bgIdeals = bgData?.ideals || [];
+    const bgBonds = bgData?.bonds || [];
+    const bgFlaws = bgData?.flaws || [];
+
+    function SuggestField({ label, fieldKey, value, suggestions, isTop }: {
+      label: string; fieldKey: string; value: string;
+      suggestions: string[]; isTop?: boolean;
+    }) {
+      const [showSug, setShowSug] = useState(false);
+      return (
+        <div className="relative">
+          <div className="flex items-center justify-between mb-1">
+            <LabelWithGuide fieldKey={fieldKey} label={label} />
+            {suggestions.length > 0 && (
+              <button onClick={() => setShowSug(s => !s)}
+                className="text-[10px] text-veil-gold/40 hover:text-veil-gold transition">
+                {showSug ? "▲ nascondi" : "💡 suggerimenti"}
+              </button>
+            )}
+          </div>
+          {showSug && suggestions.length > 0 && (
+            <div className={`absolute ${isTop ? "bottom-full mb-1" : "top-full mt-1"} left-0 right-0 z-10 rounded-xl border border-veil-gold/20 bg-[#0d0a06] p-2 space-y-1`}>
+              {suggestions.map((s, i) => (
+                <button key={i} onClick={() => {
+                  updCd(fieldKey, s);
+                  setShowSug(false);
+                  save({ [fieldKey]: s });
+                }}
+                  className="w-full text-left text-[10px] text-white/50 hover:text-white/80 rounded px-2 py-1 hover:bg-white/[0.04] transition">
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+          <textarea className="veil-input mt-1 w-full min-h-[60px] text-sm"
+            value={value || ""}
+            onChange={e => updCd(fieldKey, e.target.value)}
+            onBlur={() => save({ [fieldKey]: formRef.current?.character_data?.[fieldKey as keyof CharacterData] })} />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="veil-panel p-4 space-y-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium">
+            Tratti {bgData && <span className="text-[10px] text-white/30 font-normal ml-1">Background: {bgData.name}</span>}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <SuggestField label="Tratti di Personalità" fieldKey="personalityTraits" value={cd.personalityTraits || ""} suggestions={bgTraits} />
+            <SuggestField label="Ideali" fieldKey="ideals" value={cd.ideals || ""} suggestions={bgIdeals} />
+            <SuggestField label="Legami" fieldKey="bonds" value={cd.bonds || ""} suggestions={bgBonds} isTop />
+            <SuggestField label="Difetti" fieldKey="flaws" value={cd.flaws || ""} suggestions={bgFlaws} isTop />
+          </div>
+        </div>
+
+        <div className="veil-panel p-4 space-y-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium">Storia e Motivazioni</h3>
+          <div>
+            <LabelWithGuide fieldKey="history" label="Storia del Personaggio" />
+            <textarea className="veil-input mt-1 w-full min-h-[80px] text-sm"
+              value={form?.history || ""}
+              onChange={e => upd("history", e.target.value)}
+              onBlur={() => save({ history: formRef.current?.history })} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <LabelWithGuide fieldKey="goals" label="Obiettivo" />
+              <textarea className="veil-input mt-1 w-full min-h-[50px] text-sm"
+                value={form?.goals || ""}
+                onChange={e => upd("goals", e.target.value)}
+                onBlur={() => save({ goals: formRef.current?.goals })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="fear" label="Paura" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={form?.fear || ""}
+                onChange={e => upd("fear", e.target.value)}
+                onBlur={() => save({ fear: formRef.current?.fear })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="important_person" label="Persona Importante" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={form?.important_person || ""}
+                onChange={e => upd("important_person", e.target.value)}
+                onBlur={() => save({ important_person: formRef.current?.important_person })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="secret" label="Segreto" />
+              <textarea className="veil-input mt-1 w-full min-h-[50px] text-sm"
+                value={form?.secret || ""}
+                onChange={e => upd("secret", e.target.value)}
+                onBlur={() => save({ secret: formRef.current?.secret })} />
+            </div>
+          </div>
+        </div>
+
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Aspetto Fisico</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <LabelWithGuide fieldKey="age" label="Età" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={form?.age || ""}
+                onChange={e => upd("age", e.target.value)}
+                onBlur={() => save({ age: formRef.current?.age })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="height" label="Altezza" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={cd.height || ""} placeholder="180cm"
+                onChange={e => updCd("height", e.target.value)}
+                onBlur={() => save({ height: formRef.current?.character_data?.height })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="weight" label="Peso" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={cd.weight || ""} placeholder="80kg"
+                onChange={e => updCd("weight", e.target.value)}
+                onBlur={() => save({ weight: formRef.current?.character_data?.weight })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="eyes" label="Occhi" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={cd.eyes || ""} placeholder="Azzurri"
+                onChange={e => updCd("eyes", e.target.value)}
+                onBlur={() => save({ eyes: formRef.current?.character_data?.eyes })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="skin" label="Carnagione" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={cd.skin || ""} placeholder="Olivastra"
+                onChange={e => updCd("skin", e.target.value)}
+                onBlur={() => save({ skin: formRef.current?.character_data?.skin })} />
+            </div>
+            <div>
+              <LabelWithGuide fieldKey="hair" label="Capelli" />
+              <input type="text" className="veil-input mt-1 w-full text-sm"
+                value={cd.hair || ""} placeholder="Corvino, lungo"
+                onChange={e => updCd("hair", e.target.value)}
+                onBlur={() => save({ hair: formRef.current?.character_data?.hair })} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderExtra() {
+    return (
+      <div className="space-y-4">
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Linguaggi</h3>
+          <p className="text-[10px] text-white/30 mb-1">
+            {raceData ? `Lingua/e dalla razza: ${raceData.languages.join(", ")}` : ""}
+            {bgData?.languages ? ` · ${bgData.languages} extra dal background` : ""}
+          </p>
+          <textarea className="veil-input w-full min-h-[60px] text-sm"
+            placeholder="Comune, Nanico, Elfico..."
+            value={cd.languages || raceData?.languages.join(", ") || ""}
+            onChange={e => updCd("languages", e.target.value)}
+            onBlur={() => save({ languages: formRef.current?.character_data?.languages })} />
+        </div>
+
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Competenze</h3>
+          <p className="text-[10px] text-white/30 mb-1">Armature, armi, strumenti dalla classe e background.</p>
+          {clsData && (
+            <div className="rounded-lg bg-black/20 p-2 mb-2 text-[10px] text-white/35 space-y-0.5">
+              {clsData.armorProficiencies.length > 0 && <p>🛡️ Armature: {clsData.armorProficiencies.join(", ")}</p>}
+              <p>⚔️ Armi: {clsData.weaponProficiencies.join(", ")}</p>
+              {clsData.toolProficiencies.length > 0 && <p>🔧 Strumenti: {clsData.toolProficiencies.join(", ")}</p>}
+            </div>
+          )}
+          <textarea className="veil-input w-full min-h-[60px] text-sm"
+            placeholder="Armi semplici, Armature leggere, Strumenti da musicista..."
+            value={cd.otherProficiencies || ""}
+            onChange={e => updCd("otherProficiencies", e.target.value)}
+            onBlur={() => save({ otherProficiencies: formRef.current?.character_data?.otherProficiencies })} />
+        </div>
+
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche di Classe</h3>
+          {clsData?.features.map(f => (
+            <div key={f.name} className="mb-3">
+              <p className="text-xs text-veil-gold/70 font-medium">{f.name}</p>
+              <p className="text-[11px] text-white/40 mt-0.5">{f.description}</p>
+            </div>
+          ))}
+          {raceData?.traits.map(t => (
+            <div key={t.name} className="mb-3">
+              <p className="text-xs text-emerald-400/70 font-medium">{t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
+              <p className="text-[11px] text-white/40 mt-0.5">{t.description}</p>
+            </div>
+          ))}
+          {bgData && (
+            <div className="mb-3">
+              <p className="text-xs text-blue-400/70 font-medium">{bgData.feature.name} <span className="text-[9px] text-white/20">(background)</span></p>
+              <p className="text-[11px] text-white/40 mt-0.5">{bgData.feature.description}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Note Aggiuntive</h3>
+          <textarea className="veil-input w-full min-h-[80px] text-sm"
+            placeholder="Note varie, ricompense, missioni, ecc..."
+            value={(cd as any).notes || ""}
+            onChange={e => updCd("notes", e.target.value)}
+            onBlur={() => save({ notes: (formRef.current?.character_data as any)?.notes })} />
+        </div>
+      </div>
+    );
+  }
+
+  const tabRenderers: Record<SheetTab, () => JSX.Element> = {
+    core: renderCore,
+    combat: renderCombat,
+    magic: renderMagic,
+    gear: renderGear,
+    personality: renderPersonality,
+    extra: renderExtra,
+  };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg text-veil-gold">Scheda personaggio</h2>
+    <div className="mx-auto max-w-3xl">
+      {/* Header scheda */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg text-veil-gold font-medium">Scheda Personaggio</h2>
         <SaveBadge state={saveState} />
       </div>
 
-      {/* Info Base */}
-      <div className="veil-panel p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="col-span-full flex items-center gap-4">
-          <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="xl" />
-          <label className="cursor-pointer rounded-xl border border-veil-gold/20 px-3 py-2 text-xs text-veil-gold/60 hover:bg-veil-gold/10 hover:text-veil-gold transition">
-            Carica immagine
-            <input type="file" accept="image/*" className="hidden" onChange={e => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              resizeImage(file, 200, 0.6, dataUrl => {
-                upd("avatar_url", dataUrl);
-                save({ avatar_url: dataUrl });
-              });
-            }} />
-          </label>
-          {form?.avatar_url && (
-            <button onClick={() => { upd("avatar_url", ""); save({ avatar_url: "" }); }}
-              className="text-xs text-red-300/50 hover:text-red-300">Rimuovi</button>
-          )}
-        </div>
-        <SheetInput fieldKey="character_name" label="Nome" value={form?.character_name} onChange={v => upd("character_name", v)} onSave={save} />
-        <SheetInput fieldKey="character_name" label="Nome" value={form?.character_name} onChange={v => upd("character_name", v)} onSave={save} />
-        {/* Razza dropdown */}
-        <div>
-          <LabelWithGuide fieldKey="race" label="Razza" />
-          <select className="veil-input mt-1 w-full"
-            value={form?.race || ""}
-            onChange={e => upd("race", e.target.value)}
-            onBlur={() => save({ race: formRef.current?.race })}>
-            <option value="" disabled>Seleziona razza</option>
-            <option value="Dragonide">Dragonide</option>
-            <option value="Elfo">Elfo</option>
-            <option value="Elfo dei Boschi">Elfo dei Boschi</option>
-            <option value="Elfo Oscuro">Elfo Oscuro</option>
-            <option value="Halfling">Halfling</option>
-            <option value="Mezzelfo">Mezzelfo</option>
-            <option value="Mezzorco">Mezzorco</option>
-            <option value="Nano">Nano</option>
-            <option value="Nano delle Colline">Nano delle Colline</option>
-            <option value="Nano delle Montagne">Nano delle Montagne</option>
-            <option value="Tiefling">Tiefling</option>
-            <option value="Umano">Umano</option>
-            <option value="Gnomo">Gnomo</option>
-            <option value="Gnomo delle Foreste">Gnomo delle Foreste</option>
-            <option value="Gnomo delle Rocce">Gnomo delle Rocce</option>
-            <option value="Halfling Piedelesto">Halfling Piedelesto</option>
-            <option value="Halfling Robusto">Halfling Robusto</option>
-          </select>
-        </div>
-        {/* Classe dropdown */}
-        <div>
-          <LabelWithGuide fieldKey="class_label" label="Classe" />
-          <select className="veil-input mt-1 w-full"
-            value={findClassKey(formRef.current?.class || "")}
-            onChange={e => {
-              const clsKey = e.target.value;
-              const clsData = getClassData(clsKey);
-              const clsName = clsData?.name || clsKey;
-              upd("class", clsName);
-            }}
-            onBlur={() => {
-              const cur = formRef.current;
-              const clsKey = findClassKey(cur?.class || "");
-              if (!clsKey) return;
-              const clsData = getClassData(clsKey);
-              if (!clsData) return;
-              const autoSt: Record<string, boolean> = {};
-              abilityScoreKeys.forEach(k => {
-                const stKey = "st" + k.charAt(0).toUpperCase() + k.slice(1);
-                autoSt[stKey] = clsData.savingThrows.includes(stKey);
-              });
-              save({ class: clsData.name, ...autoSt });
-            }}>
-            <option value="" disabled>Seleziona classe</option>
-            <option value="barbarian">Barbaro</option>
-            <option value="bard">Bardo</option>
-            <option value="cleric">Chierico</option>
-            <option value="druid">Druido</option>
-            <option value="fighter">Guerriero</option>
-            <option value="monk">Monaco</option>
-            <option value="paladin">Paladino</option>
-            <option value="ranger">Ranger</option>
-            <option value="rogue">Ladro</option>
-            <option value="sorcerer">Stregone</option>
-            <option value="warlock">Warlock</option>
-            <option value="wizard">Mago</option>
-          </select>
-        </div>
-        <SheetInput fieldKey="level" label="Livello" value={form?.level} onChange={v => upd("level", v)} onSave={save} type="number" />
-        {/* Background dropdown */}
-        <div>
-          <LabelWithGuide fieldKey="background" label="Background" />
-          <select className="veil-input mt-1 w-full"
-            value={form?.background || ""}
-            onChange={e => upd("background", e.target.value)}
-            onBlur={() => save({ background: formRef.current?.background })}>
-            <option value="" disabled>Seleziona background</option>
-            <option value="Accolito">Accolito</option>
-            <option value="Artigiano della Gilda">Artigiano della Gilda</option>
-            <option value="Artista">Artista</option>
-            <option value="Criminale">Criminale</option>
-            <option value="Eremita">Eremita</option>
-            <option value="Eroe del Popolo">Eroe del Popolo</option>
-            <option value="Forestiero">Forestiero</option>
-            <option value="Marinaio">Marinaio</option>
-            <option value="Nobile">Nobile</option>
-            <option value="Saggio">Saggio</option>
-            <option value="Soldato">Soldato</option>
-            <option value="Svergognato">Svergognato</option>
-          </select>
-        </div>
-        <SheetInput fieldKey="alignment" label="Allineamento" value={cd.alignment} onChange={v => updCd("alignment", v)} onSave={save} placeholder="es. Caotico Buono" />
-        <SheetInput fieldKey="xp" label="XP" value={form?.xp} onChange={v => upd("xp", v)} onSave={save} type="number" />
-      </div>
-
-      {/* Info Razza */}
-      {form?.race && (() => {
-        const raceKey = findRaceKey(form.race);
-        const raceData = raceKey ? getRaceData(raceKey) : null;
-        if (!raceData) return null;
-        const bonuses = Object.entries(raceData.abilityBonuses).filter(([, v]) => v > 0);
-        return (
-          <div className="veil-panel p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm text-veil-gold/80">{raceData.name}</h3>
-              <span className="text-[10px] text-white/30">Velocità: {raceData.speed}ft</span>
-            </div>
-            {bonuses.length > 0 && (
-              <p className="text-xs text-veil-gold/50 mt-2">
-                Bonus razziali: {bonuses.map(([k, v]) => `${abilityLabels[k] || k} +${v}`).join(", ")}
-              </p>
-            )}
-            {raceData.traits.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {raceData.traits.map((t, i) => (
-                  <span key={i} className="rounded bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/50">{t.name}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* Caratteristiche */}
-      <div className="veil-panel p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm text-veil-gold/80">Caratteristiche</h3>
-          {(() => {
-            const used = totalPointsUsed(cd);
-            const remaining = POINT_BUY_MAX - used;
-            return (
-              <span className={`text-xs ${remaining < 0 ? "text-red-400" : "text-white/40"}`}>
-                Punti: {used}/{POINT_BUY_MAX} {remaining < 0 ? `(-${Math.abs(remaining)})` : `(${remaining} rimasti)`}
-              </span>
-            );
-          })()}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {abilityScoreKeys.map(k => {
-            const score = Number(cd[k]) || 8;
-            const raceKey = findRaceKey(formRef.current?.race || "");
-            const raceData = raceKey ? getRaceData(raceKey) : null;
-            const raceBonus = raceData?.abilityBonuses?.[k] || 0;
-            const totalScore = score + raceBonus;
-            return (
-              <div key={k} className="text-center">
-                <LabelWithGuide fieldKey={k} label={abilityLabels[k]} className="justify-center text-xs text-white/40 mb-1" />
-                <input type="number" className="veil-input w-full text-center text-lg font-bold"
-                  value={score}
-                  onChange={e => updCd(k, Number(e.target.value))}
-                  onBlur={() => save({ [k]: formRef.current?.character_data?.[k as keyof CharacterData] })} />
-                <p className="text-sm text-veil-gold mt-1">{formatMod(getModifier(totalScore))}</p>
-                {raceBonus > 0 && <p className="text-[9px] text-emerald-400/50 mt-0.5">base+{raceBonus}</p>}
-                {raceBonus === 0 && <p className="text-[9px] text-white/20 mt-0.5">base</p>}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tiri Salvezza */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Tiri Salvezza</h3>
-        {(() => {
-          const clsKey = findClassKey(formRef.current?.class || "");
-          const clsData = clsKey ? getClassData(clsKey) : null;
-          const classSt = clsData?.savingThrows || [];
-          const pb = getProficiencyBonus(Number(formRef.current?.level) || 1);
-          return (
-            <>
-              {classSt.length > 0 && <p className="text-[10px] text-veil-gold/50 mb-3">Competenze automatiche: {classSt.map(k => abilityLabels[k.replace("st","").toLowerCase()] || k).join(", ")}</p>}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {abilityScoreKeys.map(k => {
-                  const stKey = "st" + k.charAt(0).toUpperCase() + k.slice(1);
-                  const isClassSt = classSt.includes(stKey);
-                  const score = Number(formRef.current?.character_data?.[k]) || 10;
-                  const modVal = getModifier(score);
-                  const total = isClassSt ? modVal + pb : modVal;
-                  return (
-                    <div key={stKey} className={`flex items-center gap-2 ${isClassSt ? "opacity-100" : "opacity-40"}`}>
-                      <div className={`h-4 w-4 rounded border ${isClassSt ? "bg-veil-gold/20 border-veil-gold/50" : "border-white/10"}`} />
-                      <LabelWithGuide fieldKey={stKey} label={abilityLabels[k]} className={`text-xs ${isClassSt ? "text-white/80" : "text-white/40"}`} />
-                      <span className="text-xs text-veil-gold/50 ml-auto">{formatMod(total)}</span>
-                      {isClassSt && <span className="text-[9px] text-veil-gold/40">✓ classe</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          );
-        })()}
-      </div>
-
-      {/* Abilità */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Abilità</h3>
-        {(() => {
-          const cur = formRef.current;
-          const clsKey = findClassKey(cur?.class || "");
-          const clsData = clsKey ? getClassData(clsKey) : null;
-          const clsPicks = clsData?.skillPicks ?? 0;
-          const clsOptions = clsData?.skillOptions ?? [];
-          const raceKey = findRaceKey(cur?.race || "");
-          const raceData = raceKey ? getRaceData(raceKey) : null;
-          const extraSkills = raceData?.extraSkillCount ?? 0;
-          const totalPicks = clsPicks + extraSkills;
-          const picked = skillKeys.filter(sk => (cd as any)[sk.key]).length;
-          const picksLeft = totalPicks > 0 ? totalPicks - picked : 0;
-          const pb = getProficiencyBonus(Number(cur?.level) || 1);
-          return (
-            <>
-              {totalPicks > 0 && (
-                <p className={`text-[10px] mb-3 ${picksLeft < 0 ? "text-red-400" : "text-veil-gold/50"}`}>
-                  Competenze: {picked}/{totalPicks} ({clsPicks} classe{extraSkills ? ` + ${extraSkills} razza` : ""}) {picksLeft < 0 ? "(superato!)" : `(ancora ${picksLeft})`}
-                </p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-                {skillKeys.map(sk => {
-                  const inClass = clsOptions.includes(sk.key);
-                  const anyOpt = clsOptions.length === 0;
-                  const enabled = anyOpt || inClass;
-                  const score = Number(cur?.character_data?.[sk.ability as keyof CharacterData]) || 10;
-                  const modVal = getModifier(score);
-                  const total = (cd as any)[sk.key] ? modVal + pb : modVal;
-                  return (
-                    <div key={sk.key} className={`flex items-center gap-2 ${enabled ? "" : "opacity-30"}`}>
-                      <input type="checkbox" className="accent-veil-gold"
-                        checked={(cd as any)[sk.key] ?? false}
-                        onChange={e => { updCd(sk.key, e.target.checked); save({ [sk.key]: e.target.checked }); }} />
-                      <LabelWithGuide fieldKey={sk.key} label={`${sk.label} (${abilityLabels[sk.ability]})`} className="text-xs text-white/60" />
-                      <span className="text-[10px] text-veil-gold/40 ml-auto">{formatMod(total)}</span>
-                      {inClass && <span className="text-[9px] text-veil-gold/40">classe</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          );
-        })()}
-      </div>
-
-      {/* Combattimento */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Combattimento</h3>
-        {(() => {
-          const dex = Number(formRef.current?.character_data?.dexterity) || 10;
-          const lv = Number(formRef.current?.level) || 1;
-          const pb = getProficiencyBonus(lv);
-          const initMod = getModifier(dex);
-          return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <SheetInput fieldKey="armorClass" label="CA" value={cd.armorClass} onChange={v => updCd("armorClass", v)} onSave={save} type="number" />
-              <div>
-                <LabelWithGuide fieldKey="initiative" label="Iniziativa" />
-                <div className="veil-input mt-1 w-full flex items-center justify-between px-3 bg-transparent pointer-events-none">
-                  <span>{formatMod(initMod)}</span>
-                  <span className="text-[9px] text-white/20">DES</span>
-                </div>
-              </div>
-              <SheetInput fieldKey="speed" label="Velocità" value={cd.speed} onChange={v => updCd("speed", v)} onSave={save} type="number" />
-              <div>
-                <LabelWithGuide fieldKey="proficiencyBonus" label="Bonus Competenza" />
-                <div className="veil-input mt-1 w-full flex items-center justify-between px-3 bg-transparent pointer-events-none">
-                  <span>+{pb}</span>
-                  <span className="text-[9px] text-white/20">liv.{lv}</span>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer col-span-full">
-                <input type="checkbox" className="accent-veil-gold" checked={cd.inspiration ?? false}
-                  onChange={e => { const v = e.target.checked; updCd("inspiration", v); save({ inspiration: v }); }} />
-                <LabelWithGuide fieldKey="inspiration" label="Ispirazione" />
-              </label>
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* HP */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Punti Ferita</h3>
-        {(() => {
-          const clsKey = findClassKey(formRef.current?.class || "");
-          const clsData = clsKey ? getClassData(clsKey) : null;
-          const hitDie = clsData?.hitDie;
-          const con = Number(formRef.current?.character_data?.constitution) || 10;
-          const conMod = getModifier(con);
-          const lv = Number(formRef.current?.level) || 1;
-          const expectedHP = hitDie ? Math.max(hitDie / 2 + 1 + conMod, 1) * lv : null;
-          return (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <SheetInput fieldKey="hp_max" label="PF Max" value={form?.hp_max} onChange={v => upd("hp_max", v)} onSave={save} type="number" />
-                <SheetInput fieldKey="hp_current" label="PF Correnti" value={form?.hp_current} onChange={v => upd("hp_current", v)} onSave={save} type="number" />
-                <SheetInput fieldKey="temp_hp" label="PF Temp" value={form?.temp_hp} onChange={v => upd("temp_hp", v)} onSave={save} type="number" />
-                <div>
-                  <LabelWithGuide fieldKey="hitDiceTotal" label="Dadi Vita" />
-                  <input className="veil-input mt-1 w-full" value={hitDie ? `${lv}d${hitDie}${conMod >= 0 ? "+" : ""}${conMod * lv}` : ""} readOnly placeholder="—" />
-                  {expectedHP && <p className="text-[9px] text-white/20 mt-0.5">attesi: ~{expectedHP}</p>}
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                  <LabelWithGuide fieldKey="deathSaveSuccesses" label="Tiri Morte - Successi" />
-                  <div className="flex gap-1 mt-1">
-                    {[0,1,2].map(i => (
-                      <button key={i} onClick={() => { const v = Math.min((cd.deathSaveSuccesses||0) === i ? i-1 : i, 3); updCd("deathSaveSuccesses", v); save({ deathSaveSuccesses: v }); }}
-                        className={`h-6 w-6 rounded-full border text-xs ${(cd.deathSaveSuccesses||0) > i ? "bg-emerald-500/30 border-emerald-400/50 text-emerald-200" : "border-white/10 text-white/30"}`}>✓</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <LabelWithGuide fieldKey="deathSaveFailures" label="Tiri Morte - Fallimenti" />
-                  <div className="flex gap-1 mt-1">
-                    {[0,1,2].map(i => (
-                      <button key={i} onClick={() => { const v = Math.min((cd.deathSaveFailures||0) === i ? i-1 : i, 3); updCd("deathSaveFailures", v); save({ deathSaveFailures: v }); }}
-                        className={`h-6 w-6 rounded-full border text-xs ${(cd.deathSaveFailures||0) > i ? "bg-red-500/30 border-red-400/50 text-red-200" : "border-white/10 text-white/30"}`}>✕</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="text-xs text-white/50">Condizioni</label>
-                <p className="mt-1 text-sm text-white/70">{parseConditions(form?.conditions).join(", ") || "nessuna"}</p>
-                <p className="mt-1 text-[10px] text-white/30">Gestite dal DM</p>
-              </div>
-            </>
-          );
-        })()}
-      </div>
-
-      {/* Attacchi */}
-      <div className="veil-panel p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm text-veil-gold/80">Attacchi</h3>
-          <button onClick={() => updCd("attacks", [...attacks, { name:"", bonus:"", damage:"" }])}
-            className="text-xs text-veil-gold/60 hover:text-veil-gold border border-veil-gold/20 rounded-lg px-2 py-1">+ Aggiungi</button>
-        </div>
-        {attacks.length === 0 && <p className="text-xs text-white/30">Nessun attacco registrato.</p>}
-        {attacks.map((a, i) => (
-          <div key={i} className="flex items-center gap-2 mb-2">
-            <input className="veil-input flex-1 text-xs" placeholder="Arma" value={a.name}
-              onChange={e => updCdAll({ attacks: attacks.map((x, j) => j === i ? { ...x, name: e.target.value } : x) })} />
-            <input className="veil-input w-20 text-xs" placeholder="Bonus" value={a.bonus}
-              onChange={e => updCdAll({ attacks: attacks.map((x, j) => j === i ? { ...x, bonus: e.target.value } : x) })} />
-            <input className="veil-input w-28 text-xs" placeholder="Danno/Tipo" value={a.damage}
-              onChange={e => updCdAll({ attacks: attacks.map((x, j) => j === i ? { ...x, damage: e.target.value } : x) })} />
-            <button onClick={() => { const na = attacks.filter((_, j) => j !== i); updCd("attacks", na); save({ attacks: na }); }}
-              className="text-xs text-red-300/50 hover:text-red-300">×</button>
-          </div>
+      {/* Tab nav */}
+      <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            className={`flex-shrink-0 rounded-xl px-3 py-2 text-xs transition flex items-center gap-1.5 ${activeTab === t.id ? "bg-veil-gold/15 border border-veil-gold/30 text-veil-gold" : "bg-white/[0.04] border border-white/[0.06] text-white/50 hover:text-white/70 hover:border-white/[0.10]"}`}>
+            <span>{t.icon}</span>
+            <span>{t.label}</span>
+          </button>
         ))}
       </div>
 
-      {/* Incantesimi */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Incantesimi</h3>
-        {(() => {
-          const sca = cd.spellcastingAbility as string || "";
-          const scaScore = sca ? Number(formRef.current?.character_data?.[sca.toLowerCase() as keyof CharacterData]) || 10 : 10;
-          const scaMod = getModifier(scaScore);
-          const pb = getProficiencyBonus(Number(formRef.current?.level) || 1);
-          const autoDC = 8 + scaMod + pb;
-          const autoAtk = scaMod + pb;
-          return (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <SheetInput fieldKey="spellcastingAbility" label="Caratteristica Incantatore" value={sca} onChange={v => updCd("spellcastingAbility", v)} onSave={save} placeholder="INT/SAG/CAR" />
-                <div>
-                  <LabelWithGuide fieldKey="spellSaveDC" label="CD Incantesimi" />
-                  <div className="veil-input mt-1 w-full flex items-center justify-between px-3 bg-transparent pointer-events-none">
-                    <span>{autoDC}</span>
-                    <span className="text-[9px] text-white/20">8+{formatMod(scaMod)}+{pb}</span>
-                  </div>
-                </div>
-                <div>
-                  <LabelWithGuide fieldKey="spellAttackBonus" label="Bonus Attacco" />
-                  <div className="veil-input mt-1 w-full flex items-center justify-between px-3 bg-transparent pointer-events-none">
-                    <span>+{autoAtk}</span>
-                    <span className="text-[9px] text-white/20">{formatMod(scaMod)}+{pb}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3">
-                <LabelWithGuide fieldKey="cantrips" label="Cantrips" />
-                <input className="veil-input mt-1 w-full text-xs" placeholder="Es: Luci danzanti, Mano magica, Trama..." value={(cd.cantrips||[]).join(", ")}
-                  onChange={e => updCd("cantrips", e.target.value.split(",").map(s => s.trim()).filter(Boolean))} />
-              </div>
-              <div className="mt-4">
-                <p className="text-xs text-white/50 mb-2">Slot Incantesimi</p>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                  {[1,2,3,4,5].map(lv => (
-                    <div key={lv} className="text-center">
-                      <p className="text-[10px] text-white/30">Liv.{lv}</p>
-                      <div className="flex items-center justify-center gap-1 mt-1">
-                        <input type="number" className="veil-input w-10 text-center text-xs" placeholder="0" value={spellSlots[lv]?.total ?? ""}
-                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total: Number(e.target.value), expended: spellSlots[lv]?.expended ?? 0 } } })} />
-                        <span className="text-[10px] text-white/20">/</span>
-                        <input type="number" className="veil-input w-10 text-center text-xs" placeholder="0" value={spellSlots[lv]?.expended ?? ""}
-                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total: spellSlots[lv]?.total ?? 0, expended: Number(e.target.value) } } })} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          );
-        })()}
-      </div>
-
-      {/* Personalità */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Personalità</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SheetTextarea fieldKey="personalityTraits" label="Tratti Personalità" value={cd.personalityTraits} onChange={v => updCd("personalityTraits", v)} onSave={save} />
-          <SheetTextarea fieldKey="ideals" label="Ideali" value={cd.ideals} onChange={v => updCd("ideals", v)} onSave={save} />
-          <SheetTextarea fieldKey="bonds" label="Legami" value={cd.bonds} onChange={v => updCd("bonds", v)} onSave={save} />
-          <SheetTextarea fieldKey="flaws" label="Difetti" value={cd.flaws} onChange={v => updCd("flaws", v)} onSave={save} />
-        </div>
-        <div className="mt-4">
-          <SheetTextarea fieldKey="history" label="Storia" value={form?.history} onChange={v => upd("history", v)} onSave={save} />
-        </div>
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SheetTextarea fieldKey="goals" label="Obiettivo" value={form?.goals} onChange={v => upd("goals", v)} onSave={save} />
-          <SheetInput fieldKey="fear" label="Paura" value={form?.fear} onChange={v => upd("fear", v)} onSave={save} />
-          <SheetInput fieldKey="important_person" label="Persona importante" value={form?.important_person} onChange={v => upd("important_person", v)} onSave={save} />
-          <SheetTextarea fieldKey="secret" label="Segreto" value={form?.secret} onChange={v => upd("secret", v)} onSave={save} />
-        </div>
-      </div>
-
-      {/* Aspetto */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Aspetto</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <SheetInput fieldKey="age" label="Età" value={form?.age} onChange={v => upd("age", v)} onSave={save} />
-          <SheetInput fieldKey="height" label="Altezza" value={cd.height} onChange={v => updCd("height", v)} onSave={save} placeholder="170cm" />
-          <SheetInput fieldKey="weight" label="Peso" value={cd.weight} onChange={v => updCd("weight", v)} onSave={save} placeholder="70kg" />
-          <SheetInput fieldKey="eyes" label="Occhi" value={cd.eyes} onChange={v => updCd("eyes", v)} onSave={save} />
-          <SheetInput fieldKey="skin" label="Pelle" value={cd.skin} onChange={v => updCd("skin", v)} onSave={save} />
-          <SheetInput fieldKey="hair" label="Capelli" value={cd.hair} onChange={v => updCd("hair", v)} onSave={save} />
-        </div>
-      </div>
-
-      {/* Extra */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Extra</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SheetTextarea fieldKey="languages" label="Linguaggi" value={cd.languages} onChange={v => updCd("languages", v)} onSave={save} />
-          <SheetTextarea fieldKey="otherProficiencies" label="Altre Competenze" value={cd.otherProficiencies} onChange={v => updCd("otherProficiencies", v)} onSave={save} />
-          <SheetTextarea fieldKey="allies" label="Alleati e Organizzazioni" value={cd.allies} onChange={v => updCd("allies", v)} onSave={save} />
-          <SheetTextarea fieldKey="treasure" label="Tesoro" value={cd.treasure} onChange={v => updCd("treasure", v)} onSave={save} />
-        </div>
-      </div>
-
-      {/* Monete */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 mb-3">Monete</h3>
-        <div className="grid grid-cols-5 gap-3 text-center">
-          {coinTypes.map(c => (
-            <div key={c.key}>
-              <p className="text-[10px] uppercase text-white/30 mb-1">{c.label}</p>
-              <input type="number" className="veil-input w-full text-center text-sm" value={(cd as any)[c.key] ?? 0}
-                onChange={e => updCd(c.key, Number(e.target.value))} />
-            </div>
-          ))}
-        </div>
+      {/* Tab content */}
+      <div>
+        {tabRenderers[activeTab]?.()}
       </div>
     </div>
   );
