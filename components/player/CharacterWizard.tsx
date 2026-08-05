@@ -18,23 +18,27 @@ import { WEAPON_DB, itemCategory } from "@/lib/data/weapons";
 
 type Props = { player: Player; onComplete: (data: Player) => void; onClose: () => void };
 const WIZARD_KEY = "veil-wizard-done";
-const WIZARD_SAVE_KEY = "veil-wizard-data-v2";
+const wizardDoneKey = (playerId?: string) => (playerId ? `veil-wizard-done-${playerId}` : WIZARD_KEY);
+const wizardSaveKey = (playerId: string) => `veil-wizard-data-${playerId}`;
 
-export function isWizardDone(): boolean {
+export function isWizardDone(playerId?: string): boolean {
   if (typeof window === "undefined") return true;
-  return localStorage.getItem(WIZARD_KEY) === "true";
+  return localStorage.getItem(wizardDoneKey(playerId)) === "true";
 }
-export function markWizardDone() {
-  localStorage.setItem(WIZARD_KEY, "true");
-  localStorage.removeItem(WIZARD_SAVE_KEY);
+export function markWizardDone(playerId?: string) {
+  localStorage.setItem(wizardDoneKey(playerId), "true");
+  if (playerId) localStorage.removeItem(wizardSaveKey(playerId));
+  localStorage.removeItem("veil-wizard-data-v2"); // cleanup vecchio formato condiviso
   localStorage.removeItem("veil-wizard-data"); // cleanup vecchio formato
 }
-function loadWizardData(): any {
+function loadWizardData(playerId: string): any {
   if (typeof window === "undefined") return null;
-  try { return JSON.parse(localStorage.getItem(WIZARD_SAVE_KEY) || "null"); } catch { return null; }
+  try {
+    return JSON.parse(localStorage.getItem(wizardSaveKey(playerId)) || "null");
+  } catch { return null; }
 }
-function saveWizardData(data: any) {
-  localStorage.setItem(WIZARD_SAVE_KEY, JSON.stringify(data));
+function saveWizardData(playerId: string, data: any) {
+  localStorage.setItem(wizardSaveKey(playerId), JSON.stringify(data));
 }
 
 type WizardData = {
@@ -107,13 +111,13 @@ const DEFAULT_DATA: WizardData = {
 };
 
 export function CharacterWizard({ player, onComplete, onClose }: Props) {
-  const saved = loadWizardData();
+  const saved = loadWizardData(player.id);
   const [step, setStep] = useState<number>(saved?.step ?? 0);
   const [data, setData] = useState<WizardData>(saved?.data ?? { ...DEFAULT_DATA, name: player.character_name || "" });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  useEffect(() => { saveWizardData({ step, data }); }, [step, data]);
+  useEffect(() => { saveWizardData(player.id, { step, data }); }, [step, data, player.id]);
 
   const race = data.raceKey ? (races as Record<string, RaceData>)[data.raceKey] : undefined;
   const subRace = data.subRaceKey && race?.subRaces ? race.subRaces.find(sr => sr.key === data.subRaceKey) : undefined;
@@ -409,7 +413,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
             })
           ));
         } catch { /* l'inventario non blocca il completamento */ }
-        markWizardDone();
+        markWizardDone(player.id);
         onComplete(d.player);
       } else {
         setErrors(["Errore nel salvataggio. Riprova."]);

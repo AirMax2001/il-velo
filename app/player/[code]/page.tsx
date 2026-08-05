@@ -37,10 +37,9 @@ function PlayerView() {
         return;
       }
       setPlayer(d.player);
-      if (d.player.character_data && Object.keys(d.player.character_data).length > 0) {
-        markWizardDone();
-      }
-      if (!isWizardDone()) {
+      const hasData = d.player.character_data && Object.keys(d.player.character_data).length > 0;
+      if (hasData) markWizardDone(d.player.id);
+      if (!hasData && !isWizardDone(d.player.id)) {
         setTab("sheet");
         setShowWizard(true);
       }
@@ -97,8 +96,8 @@ function PlayerView() {
       {showWizard && (
         <CharacterWizard
           player={player}
-          onComplete={(p) => { setPlayer(p); setShowWizard(false); }}
-          onClose={() => { markWizardDone(); setShowWizard(false); }}
+          onComplete={(p) => { setPlayer(p); markWizardDone(p.id); setShowWizard(false); }}
+          onClose={() => { markWizardDone(player.id); setShowWizard(false); }}
         />
       )}
 
@@ -137,7 +136,13 @@ function PlayerView() {
 
       <div className="mb-5 flex flex-wrap gap-2">
         {tabs.map(t => (
-          <button key={t.id} onClick={() => { setTab(t.id); if (t.id === "sheet" && !isWizardDone()) setShowWizard(true); }}
+          <button key={t.id} onClick={() => {
+            setTab(t.id);
+            if (t.id === "sheet") {
+              const hasData = player.character_data && Object.keys(player.character_data).length > 0;
+              if (!hasData && !isWizardDone(player.id)) setShowWizard(true);
+            }
+          }}
             className={`rounded-full px-3 py-2 text-sm veil-fable-card ${tab === t.id ? "border border-veil-gold text-veil-gold" : "text-white/70"}`}>
             {t.label}
           </button>
