@@ -13,6 +13,7 @@ import {
   applyRaceBonuses, rollAbilityScores,
 } from "@/lib/characterEngine";
 import type { Player, CharacterData } from "@/lib/types";
+import { skillGuides } from "@/lib/fieldGuides";
 
 type Props = { player: Player; onComplete: (data: Player) => void; onClose: () => void };
 const WIZARD_KEY = "veil-wizard-done";
@@ -157,6 +158,72 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
   const pb = getProficiencyBonus(1);
   const hp = cls && finalScores ? calculateHP(cls, finalScores.constitution, 1) : 0;
 
+  // DB delle armi di base con relative statistiche
+  const WEAPON_DB = useMemo(() => ({
+    "spadone": { damage: "2d6", ability: "str", type: "Tagliente" },
+    "ascia bipenne": { damage: "1d12", ability: "str", type: "Tagliente" },
+    "spada lunga": { damage: "1d8", ability: "str", type: "Tagliente" },
+    "ascia da battaglia": { damage: "1d8", ability: "str", type: "Tagliente" },
+    "stocco": { damage: "1d8", ability: "finesse", type: "Perforante" },
+    "spada corta": { damage: "1d6", ability: "finesse", type: "Perforante" },
+    "arco lungo": { damage: "1d8", ability: "dex", type: "Perforante" },
+    "arco corto": { damage: "1d6", ability: "dex", type: "Perforante" },
+    "balestra leggera": { damage: "1d8", ability: "dex", type: "Perforante" },
+    "giavellotto": { damage: "1d6", ability: "str", type: "Perforante" },
+    "daga": { damage: "1d4", ability: "finesse", type: "Perforante" },
+    "pugnale": { damage: "1d4", ability: "finesse", type: "Perforante" },
+    "mazza": { damage: "1d6", ability: "str", type: "Contundente" },
+    "martello leggero": { damage: "1d4", ability: "str", type: "Contundente" },
+    "clava": { damage: "1d4", ability: "str", type: "Contundente" },
+    "randello": { damage: "1d4", ability: "str", type: "Contundente" },
+    "scimitarra": { damage: "1d6", ability: "finesse", type: "Tagliente" },
+    "fionda": { damage: "1d4", ability: "dex", type: "Contundente" },
+    "lancia": { damage: "1d6", ability: "str", type: "Perforante" },
+    "dardo": { damage: "1d4", ability: "finesse", type: "Perforante" },
+  } as Record<string, { damage: string; ability: "str" | "dex" | "finesse"; type: string }>), []);
+
+  const calculatedAC = useMemo(() => {
+    if (!cls || !finalScores) return 10;
+    const dexMod = getModifier(finalScores.dexterity);
+    const conMod = getModifier(finalScores.constitution);
+    const wisMod = getModifier(finalScores.wisdom);
+
+    const chosenItems: string[] = [];
+    cls.equipment.forEach((eq, i) => {
+      const oi = data.equipmentChoices[i] ?? 0;
+      const option = eq.options[oi] || eq.options[0];
+      if (option) {
+        option.forEach(item => {
+          chosenItems.push(item.name.toLowerCase());
+        });
+      }
+    });
+
+    const hasShield = chosenItems.some(item => item.includes("scudo"));
+
+    let ac = 10;
+    if (data.classKey === "barbarian") {
+      ac = 10 + dexMod + conMod;
+    } else if (data.classKey === "monk") {
+      ac = 10 + dexMod + wisMod;
+    } else if (chosenItems.some(item => item.includes("maglie") || item.includes("pesante"))) {
+      ac = 16;
+    } else if (chosenItems.some(item => item.includes("scaglie") || item.includes("media"))) {
+      ac = 14 + Math.min(dexMod, 2);
+    } else if (chosenItems.some(item => item.includes("cuoio borchiato"))) {
+      ac = 12 + dexMod;
+    } else if (chosenItems.some(item => item.includes("cuoio") || item.includes("leggera"))) {
+      ac = 11 + dexMod;
+    } else {
+      ac = 10 + dexMod;
+    }
+
+    if (hasShield) {
+      ac += 2;
+    }
+    return ac;
+  }, [cls, finalScores, data.equipmentChoices, data.classKey]);
+
   function update<K extends keyof WizardData>(k: K, v: WizardData[K]) {
     setData(prev => ({ ...prev, [k]: v }));
     setErrors([]);
@@ -200,6 +267,20 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
   async function finish() {
     setSaving(true);
     try {
+      // Raccogli gli oggetti dall'equipaggiamento scelto
+      const chosenItems: string[] = [];
+      if (cls) {
+        cls.equipment.forEach((eq, i) => {
+          const oi = data.equipmentChoices[i] ?? 0;
+          const option = eq.options[oi] || eq.options[0];
+          if (option) {
+            option.forEach(item => {
+              chosenItems.push(item.name.toLowerCase());
+            });
+          }
+        });
+      }
+
       // Costruisce il character_data completo
       const cd: CharacterData = {
         strength: finalScores?.strength,
@@ -211,13 +292,57 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         proficiencyBonus: 2,
         initiative: finalScores ? getModifier(finalScores.dexterity) : 0,
         speed: race?.speed || 30,
-        armorClass: finalScores ? 10 + getModifier(finalScores.dexterity) : 10,
+        armorClass: calculatedAC,
         hitDiceTotal: cls ? `1d${cls.hitDie}` : "1d8",
         personalityTraits: bg?.personalityTraits?.[0] || "",
         ideals: bg?.ideals?.[0] || "",
         bonds: bg?.bonds?.[0] || "",
         flaws: bg?.flaws?.[0] || "",
       };
+
+      // Genera gli attacchi iniziali in base alle armi in equipaggiamento
+      const attacksList: any[] = [];
+      const strMod = finalScores ? getModifier(finalScores.strength) : 0;
+      const dexModForAttack = finalScores ? getModifier(finalScores.dexterity) : 0;
+
+      chosenItems.forEach(itemName => {
+        const matchedKey = Object.keys(WEAPON_DB).find(key => itemName.includes(key));
+        if (matchedKey) {
+          const wData = WEAPON_DB[matchedKey];
+          let mod = strMod;
+          if (wData.ability === "dex") {
+            mod = dexModForAttack;
+          } else if (wData.ability === "finesse") {
+            mod = Math.max(strMod, dexModForAttack);
+          }
+
+          const atkBonus = mod + 2; // +2 PB al livello 1
+          const dmgBonus = mod;
+          const damageStr = `${wData.damage}${dmgBonus >= 0 ? "+" : ""}${dmgBonus}`;
+          
+          if (!attacksList.some(a => a.name.toLowerCase() === matchedKey)) {
+            attacksList.push({
+              name: matchedKey.charAt(0).toUpperCase() + matchedKey.slice(1),
+              bonus: `+${atkBonus}`,
+              damage: damageStr,
+              type: wData.type,
+            });
+          }
+        }
+      });
+
+      // Aggiungi un colpo senz'armi di base
+      const monkDie = data.classKey === "monk" ? "1d4" : "1";
+      const unarmedMod = data.classKey === "monk" ? Math.max(strMod, dexModForAttack) : strMod;
+      const unarmedDmg = `${monkDie}${unarmedMod >= 0 ? "+" : ""}${unarmedMod}`;
+      attacksList.push({
+        name: "Colpo Senz'Armi",
+        bonus: `+${unarmedMod + 2}`,
+        damage: unarmedDmg,
+        type: "Contundente"
+      });
+
+      cd.attacks = attacksList;
 
       // Incantesimi
       if (cls?.spellcasting) {
@@ -545,6 +670,25 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
   function renderStep4() {
     const METHOD_LABELS = { standard_array: "Standard Array", point_buy: "Point Buy", roll_4d6: "Tira 4d6" };
 
+    // Caratteristiche consigliate: quelle primarie della classe + Costituzione (per i PF)
+    const recommended: AbilityName[] = (() => {
+      const list: AbilityName[] = [...((cls?.primaryAbility as AbilityName[]) || [])];
+      if (cls && !list.includes("constitution")) list.push("constitution");
+      return list;
+    })();
+
+    // Distribuzione automatica: punteggi più alti alle caratteristiche consigliate
+    function autoDistribute() {
+      const priority: AbilityName[] = [];
+      ((cls?.primaryAbility as AbilityName[]) || []).forEach(a => { if (!priority.includes(a)) priority.push(a); });
+      if (!priority.includes("constitution")) priority.push("constitution");
+      ALL_ABILITIES.forEach(a => { if (!priority.includes(a)) priority.push(a); });
+      const sorted = [...STANDARD_ARRAY].sort((a, b) => b - a);
+      const newIndices: Partial<Record<AbilityName, number>> = {};
+      priority.forEach((a, i) => { newIndices[a] = STANDARD_ARRAY.indexOf(sorted[i]); });
+      setData(prev => ({ ...prev, assignedIndices: newIndices }));
+    }
+
     // Standard Array: get score for ability
     function getStdScore(a: AbilityName): number | undefined {
       const idx = data.assignedIndices[a];
@@ -611,13 +755,29 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         {/* Standard Array */}
         {data.abilityMethod === "standard_array" && (
           <div className="space-y-2">
-            <p className="text-[11px] text-white/35">Assegna ciascuno dei valori [{STANDARD_ARRAY.join(", ")}] a una caratteristica.</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] text-white/35">Assegna ciascuno dei valori [{STANDARD_ARRAY.join(", ")}] a una caratteristica.</p>
+              {cls && (
+                <button onClick={autoDistribute}
+                  className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[11px] text-veil-gold hover:bg-veil-gold/20 transition">
+                  ✨ Distribuzione Consigliata
+                </button>
+              )}
+            </div>
             <div className="grid gap-2">
               {ALL_ABILITIES.map(a => {
                 const assignedIdx = data.assignedIndices[a];
+                const isRecommended = recommended.includes(a);
                 return (
                   <div key={a} className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2">
-                    <span className="w-28 text-sm text-white/60 flex-shrink-0">{ABILITY_LABELS[a]}</span>
+                    <div className="w-28 flex-shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-white/60">{ABILITY_LABELS[a]}</span>
+                        {isRecommended && (
+                          <span className="rounded bg-veil-gold/20 px-1.5 py-0.5 text-[9px] text-veil-gold" title={`Consigliata per ${cls?.name || "la classe"}`}>Consigliata ⭐</span>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex gap-1 flex-wrap flex-1">
                       {STANDARD_ARRAY.map((v, idx) => {
                         const usedByOther = Object.entries(data.assignedIndices).some(([k, i]) => i === idx && k !== a);
@@ -654,9 +814,17 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
               {ALL_ABILITIES.map(a => {
                 const v = data.baseScores[a] ?? POINT_BUY_RANGE.min;
                 const cost = POINT_BUY_COST[v] || 0;
+                const isRecommended = recommended.includes(a);
                 return (
                   <div key={a} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2">
-                    <span className="w-28 text-sm text-white/60 flex-shrink-0">{ABILITY_LABELS[a]}</span>
+                    <div className="w-28 flex-shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-white/60">{ABILITY_LABELS[a]}</span>
+                        {isRecommended && (
+                          <span className="rounded bg-veil-gold/20 px-1.5 py-0.5 text-[9px] text-veil-gold">Consigliata ⭐</span>
+                        )}
+                      </div>
+                    </div>
                     <button onClick={() => setPointBuyScore(a, v - 1)} disabled={v <= POINT_BUY_RANGE.min}
                       className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-xs text-white/60 hover:bg-white/20 disabled:opacity-30">−</button>
                     <span className="w-8 text-center text-lg font-bold text-white">{v}</span>
@@ -683,9 +851,17 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
               <div className="grid gap-2">
                 {ALL_ABILITIES.map(a => {
                   const assignedIdx = data.rolledAssigned[a];
+                  const isRecommended = recommended.includes(a);
                   return (
                     <div key={a} className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2">
-                      <span className="w-28 text-sm text-white/60 flex-shrink-0">{ABILITY_LABELS[a]}</span>
+                      <div className="w-28 flex-shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm text-white/60">{ABILITY_LABELS[a]}</span>
+                          {isRecommended && (
+                            <span className="rounded bg-veil-gold/20 px-1.5 py-0.5 text-[9px] text-veil-gold">Consigliata ⭐</span>
+                          )}
+                        </div>
+                      </div>
                       <div className="flex gap-1 flex-wrap flex-1">
                         {data.rolledScores.map((v, idx) => {
                           const usedByOther = Object.entries(data.rolledAssigned).some(([k, i]) => i === idx && k !== a);
@@ -763,6 +939,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
             const canRemove = isSelected && !isAutomatic;
             const ability = SKILL_ABILITY[skill];
             const mod = finalScores ? getModifier(finalScores[ability]) + (isSelected ? pb : 0) : 0;
+            const guide = skillGuides.find(g => g.key === skill);
 
             // Sorgente dell'abilità
             const source = isAutomatic
@@ -788,17 +965,18 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
                 <div className={`w-5 h-5 rounded border flex items-center justify-center text-[10px] flex-shrink-0 ${isSelected ? isAutomatic ? "bg-emerald-600/30 border-emerald-400 text-emerald-300" : "bg-veil-gold/30 border-veil-gold text-veil-gold" : "border-white/20"}`}>
                   {isSelected ? "✓" : ""}
                 </div>
-                <div className="flex-1">
-                  <span className={`text-sm ${isSelected ? "text-white" : "text-white/60"}`}>{SKILL_LABELS[skill]}</span>
-                  <span className="text-[10px] text-white/30 ml-1.5">({ABILITY_SHORT[ability]})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isSelected && <span className="text-xs text-veil-gold/60">{finalScores ? (mod >= 0 ? `+${mod}` : `${mod}`) : ""}</span>}
-                  {source && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${source === "background" ? "bg-emerald-900/30 text-emerald-300/60" : source === "razza" ? "bg-indigo-900/30 text-indigo-300/60" : "bg-veil-gold/10 text-veil-gold/50"}`}>
-                      {source}
-                    </span>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm ${isSelected ? "text-white" : "text-white/60"}`}>{SKILL_LABELS[skill]}</span>
+                    <span className="text-[10px] text-white/30">({ABILITY_SHORT[ability]})</span>
+                    {isSelected && <span className="text-xs text-veil-gold/60">{finalScores ? (mod >= 0 ? `+${mod}` : `${mod}`) : ""}</span>}
+                    {source && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${source === "background" ? "bg-emerald-900/30 text-emerald-300/60" : source === "razza" ? "bg-indigo-900/30 text-indigo-300/60" : "bg-veil-gold/10 text-veil-gold/50"}`}>
+                        {source}
+                      </span>
+                    )}
+                  </div>
+                  {guide && <p className="text-[10px] text-white/30 mt-0.5">{guide.guide}</p>}
                 </div>
               </button>
             );
@@ -918,7 +1096,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
                       <span className="text-[10px] text-white/30 ml-auto">{spell.school}</span>
                     </div>
                     <p className="text-[10px] text-white/30 mt-1 ml-6">{spell.castingTime} · {spell.range} · {spell.duration}</p>
-                    <p className="text-[10px] text-white/35 mt-0.5 ml-6 line-clamp-1">{spell.description}</p>
+                    <p className="text-[10px] text-white/45 mt-0.5 ml-6">{spell.description}</p>
                   </button>
                 );
               })}
@@ -949,7 +1127,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
                       <span className="text-[10px] text-blue-300/40 ml-auto">1°</span>
                     </div>
                     <p className="text-[10px] text-white/30 mt-1 ml-6">{spell.castingTime} · {spell.range} · {spell.duration}</p>
-                    <p className="text-[10px] text-white/35 mt-0.5 ml-6 line-clamp-1">{spell.description}</p>
+                    <p className="text-[10px] text-white/45 mt-0.5 ml-6">{spell.description}</p>
                   </button>
                 );
               })}
@@ -1044,7 +1222,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
           </div>
           <div className="border-t border-white/[0.06] pt-2 grid grid-cols-3 gap-2">
             <div><span className="text-veil-gold/60">PF</span><p className="text-white/80 font-bold">{hp}</p></div>
-            <div><span className="text-veil-gold/60">CA</span><p className="text-white/80 font-bold">{10 + (finalScores ? getModifier(finalScores.dexterity) : 0)}</p></div>
+            <div><span className="text-veil-gold/60">CA</span><p className="text-white/80 font-bold">{calculatedAC}</p></div>
             <div><span className="text-veil-gold/60">Velocità</span><p className="text-white/80 font-bold">{race?.speed || 30}m</p></div>
           </div>
           {allSelectedSkills.length > 0 && (
