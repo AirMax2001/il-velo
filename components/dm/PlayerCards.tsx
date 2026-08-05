@@ -6,6 +6,9 @@ import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
 import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
+import {
+  getFeaturesUpTo, getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
+} from "@/lib/data/leveling";
 
 type PlayerCardsProps = { sessionId: string };
 type PlayerDetailTab = "character" | "inventory" | "secrets";
@@ -537,6 +540,65 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                   <span className="text-[9px] text-white/20">{formatMod(scaMod)}+{pb}</span>
                 </div>
               </div>
+            </div>
+          );
+        })()}
+      </Section>
+
+      {/* Slot e incantesimi automatici */}
+      <Section title="Incantesimi (slot automatici)">
+        {(() => {
+          const clsKey = findClassKey(player.class || "");
+          const clsData = clsKey ? getClassData(clsKey) : null;
+          const lv = Number(player.level) || 1;
+          if (!clsData?.spellcasting) return <p className="text-xs text-white/30">Questa classe non usa la magia.</p>;
+          const slots = getSpellSlotsAtLevel(clsKey, lv);
+          const cantLimit = getCantripsKnown(clsKey, lv);
+          const sca = clsData.spellcasting.spellcastingAbility;
+          const scaMod = getModifier(Number(cd[sca]) || 10);
+          const knownLimit = getSpellsKnownLimit(clsKey, lv)
+            || (scaMod + (clsKey === "paladin" ? Math.floor(lv / 2) : lv));
+          const slotLevels = Object.keys(slots).map(Number).filter(n => (slots[n] ?? 0) > 0);
+          return (
+            <div className="space-y-3">
+              {slotLevels.length === 0 ? (
+                <p className="text-xs text-white/30">Nessuno slot incantesimo a questo livello.</p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {slotLevels.map(slv => (
+                    <div key={slv} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-center">
+                      <p className="text-[10px] text-white/30">{slv}° liv.</p>
+                      <p className="text-lg font-bold text-blue-200">{slots[slv]}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-white/30">
+                Trucchetti: {(cd.cantrips || []).length}/{cantLimit || "—"}
+                {" · "}Incantesimi 1°: {(cd.spells1 || []).length}/{knownLimit || "—"}
+                {clsKey === "warlock" && <> · slot di livello {WARLOCK_SLOT_LEVEL[lv] ?? 1}</>}
+              </p>
+            </div>
+          );
+        })()}
+      </Section>
+
+      {/* Caratteristiche di classe per livello */}
+      <Section title="Caratteristiche di Classe (per livello)">
+        {(() => {
+          const clsKey = findClassKey(player.class || "");
+          const lv = Number(player.level) || 1;
+          if (!clsKey) return <p className="text-xs text-white/30">Nessuna classe selezionata.</p>;
+          const feats = getFeaturesUpTo(clsKey, lv);
+          if (feats.length === 0) return <p className="text-xs text-white/30">Nessuna capacità registrata.</p>;
+          return (
+            <div className="space-y-2">
+              {feats.map(f => (
+                <div key={f.level + f.name} className="rounded-lg border border-white/[0.06] bg-black/20 p-2.5">
+                  <p className="text-xs text-veil-gold/80"><span className="text-[10px] text-white/30 mr-1.5">Lv {f.level}</span>{f.name}</p>
+                  <p className="text-[11px] text-white/45 mt-0.5">{f.description}</p>
+                </div>
+              ))}
             </div>
           );
         })()}

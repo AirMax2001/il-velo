@@ -14,6 +14,7 @@ import {
 } from "@/lib/characterEngine";
 import type { Player, CharacterData } from "@/lib/types";
 import { skillGuides } from "@/lib/fieldGuides";
+import { WEAPON_DB, itemCategory } from "@/lib/data/weapons";
 
 type Props = { player: Player; onComplete: (data: Player) => void; onClose: () => void };
 const WIZARD_KEY = "veil-wizard-done";
@@ -157,30 +158,6 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
 
   const pb = getProficiencyBonus(1);
   const hp = cls && finalScores ? calculateHP(cls, finalScores.constitution, 1) : 0;
-
-  // DB delle armi di base con relative statistiche
-  const WEAPON_DB = useMemo(() => ({
-    "spadone": { damage: "2d6", ability: "str", type: "Tagliente" },
-    "ascia bipenne": { damage: "1d12", ability: "str", type: "Tagliente" },
-    "spada lunga": { damage: "1d8", ability: "str", type: "Tagliente" },
-    "ascia da battaglia": { damage: "1d8", ability: "str", type: "Tagliente" },
-    "stocco": { damage: "1d8", ability: "finesse", type: "Perforante" },
-    "spada corta": { damage: "1d6", ability: "finesse", type: "Perforante" },
-    "arco lungo": { damage: "1d8", ability: "dex", type: "Perforante" },
-    "arco corto": { damage: "1d6", ability: "dex", type: "Perforante" },
-    "balestra leggera": { damage: "1d8", ability: "dex", type: "Perforante" },
-    "giavellotto": { damage: "1d6", ability: "str", type: "Perforante" },
-    "daga": { damage: "1d4", ability: "finesse", type: "Perforante" },
-    "pugnale": { damage: "1d4", ability: "finesse", type: "Perforante" },
-    "mazza": { damage: "1d6", ability: "str", type: "Contundente" },
-    "martello leggero": { damage: "1d4", ability: "str", type: "Contundente" },
-    "clava": { damage: "1d4", ability: "str", type: "Contundente" },
-    "randello": { damage: "1d4", ability: "str", type: "Contundente" },
-    "scimitarra": { damage: "1d6", ability: "finesse", type: "Tagliente" },
-    "fionda": { damage: "1d4", ability: "dex", type: "Contundente" },
-    "lancia": { damage: "1d6", ability: "str", type: "Perforante" },
-    "dardo": { damage: "1d4", ability: "finesse", type: "Perforante" },
-  } as Record<string, { damage: string; ability: "str" | "dex" | "finesse"; type: string }>), []);
 
   const calculatedAC = useMemo(() => {
     if (!cls || !finalScores) return 10;
@@ -416,6 +393,22 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
       });
       const d = await res.json();
       if (d.player) {
+        // Crea gli oggetti dell'equipaggiamento scelto nell'inventario del player
+        try {
+          await Promise.all(chosenItems.map(name =>
+            fetch("/api/inventory", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                session_id: player.session_id,
+                player_id: player.id,
+                name: name.charAt(0).toUpperCase() + name.slice(1),
+                category: itemCategory(name),
+                item_type: "equipment",
+              }),
+            })
+          ));
+        } catch { /* l'inventario non blocca il completamento */ }
         markWizardDone();
         onComplete(d.player);
       } else {

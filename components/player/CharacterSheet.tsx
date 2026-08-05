@@ -11,6 +11,12 @@ import classes from "@/lib/data/classes";
 import backgrounds from "@/lib/data/backgrounds";
 import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
 import type { AbilityName, SkillKey, SaveKey } from "@/lib/characterEngine";
+import { getSpellsForClass } from "@/lib/data/spells";
+import {
+  getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
+} from "@/lib/data/leveling";
+import { findWeapon, itemCategory } from "@/lib/data/weapons";
+import { LevelUpPanel } from "@/components/player/LevelUpPanel";
 
 type Props = { player: Player; onUpdate: (p: Player) => void };
 type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra";
@@ -94,6 +100,120 @@ function resizeImage(file: File, maxDim: number, quality: number, cb: (dataUrl: 
   img.src = URL.createObjectURL(file);
 }
 
+/* ── Inventario player: armi/oggetti con attacchi derivati ── */
+function PlayerInventoryManager({ player, cd, level, pb, onAddAttack }: {
+  player: Player;
+  cd: CharacterData;
+  level: number;
+  pb: number;
+  onAddAttack: (attack: { name: string; bonus: string; damage: string; type: string }) => void;
+}) {
+  const [items, setItems] = useState<any[]>([]);
+  const [newItem, setNewItem] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const loadItems = useCallback(async () => {
+    if (!player.session_id || !player.id) return;
+    const d = await fetch(`/api/inventory?sessionId=${player.session_id}&playerId=${player.id}`).then(r => r.json());
+    setItems(d.items || []);
+    setLoading(false);
+  }, [player.session_id, player.id]);
+
+  useEffect(() => { loadItems(); }, [loadItems]);
+
+  async function addItem() {
+    const name = newItem.trim();
+    if (!name) return;
+    const res = await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: player.session_id,
+        player_id: player.id,
+        name,
+        category: itemCategory(name),
+        item_type: "equipment",
+      }),
+    });
+    if (res.ok) { setNewItem(""); loadItems(); }
+  }
+
+  async function removeItem(id: string) {
+    await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
+    loadItems();
+  }
+
+  function weaponAttack(name: string) {
+    const w = findWeapon(name);
+    if (!w) return null;
+    const strMod = getModifier(Number(cd.strength) || 10);
+    const dexMod = getModifier(Number(cd.dexterity) || 10);
+    const mod = w.info.ability === "dex" ? dexMod
+      : w.info.ability === "finesse" ? Math.max(strMod, dexMod) : strMod;
+    const bonus = mod + pb;
+    const dmg = `${w.info.damage}${mod >= 0 ? "+" : ""}${mod}`;
+    return {
+      name: w.key.charAt(0).toUpperCase() + w.key.slice(1),
+      bonus: `${bonus >= 0 ? "+" : ""}${bonus}`,
+      damage: dmg,
+      type: w.info.type,
+    };
+  }
+
+  const catLabel: Record<string, string> = { weapon: "arma", armor: "armatura", shield: "scudo", gear: "oggetto" };
+
+  return (
+    <div className="veil-panel p-4">
+      <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Inventario</h3>
+      <p className="text-[10px] text-white/30 mb-3">
+        Le armi qui presenti possono generare gli attacchi nella tab Combattimento. Gli oggetti li assegna anche il DM.
+      </p>
+
+      <div className="flex gap-2 mb-3">
+        <input type="text" className="veil-input flex-1 text-sm" placeholder="Nome oggetto/arma (es. spada lunga)"
+          value={newItem} onChange={e => setNewItem(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") addItem(); }} />
+        <button onClick={addItem} className="rounded-lg border border-veil-gold/20 px-3 text-xs text-veil-gold/70 hover:bg-veil-gold/10 transition">
+          + Aggiungi
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-white/30">Caricamento inventario...</p>
+      ) : items.length === 0 ? (
+        <p className="text-xs text-white/30">Nessun oggetto. Aggiungi le armi e l'equipaggiamento qui sopra.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map(item => {
+            const atk = itemCategory(item.name) === "weapon" ? weaponAttack(item.name) : null;
+            return (
+              <div key={item.id} className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white/80 truncate">{item.name}</p>
+                  <p className="text-[10px] text-white/25">{catLabel[item.category] || "oggetto"}</p>
+                  {atk && (
+                    <p className="text-[10px] text-emerald-300/60">
+                      {atk.bonus} colpire · {atk.damage} · {atk.type}
+                    </p>
+                  )}
+                </div>
+                {atk && (
+                  <button onClick={() => onAddAttack(atk)}
+                    className="shrink-0 rounded-lg border border-emerald-400/20 px-2 py-1 text-[10px] text-emerald-300/70 hover:bg-emerald-400/10 transition">
+                    ⚔️ Aggiungi attacco
+                  </button>
+                )}
+                <button onClick={() => removeItem(item.id)}
+                  className="shrink-0 text-red-300/40 hover:text-red-300 text-sm">×</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Sub-componenti ── */
 function SaveBadge({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
   const cfg = {
@@ -165,6 +285,9 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const updCdAll = useCallback((obj: Record<string, any>) => {
     setForm((prev: any) => ({ ...prev, character_data: { ...(prev.character_data || {}), ...obj } }));
   }, []);
+  const updAll = useCallback((obj: Record<string, any>) => {
+    setForm((prev: any) => ({ ...prev, ...obj }));
+  }, []);
 
   /* ── Save ── */
   const save = useCallback(async (fields: Record<string, any>) => {
@@ -206,6 +329,18 @@ export function CharacterSheet({ player, onUpdate }: Props) {
       savingRef.current = false;
     }
   }, [player.id, onUpdate]);
+
+  /* ── Level-up applicato dal pannello ── */
+  function handleLevelUp(updates: Record<string, any>) {
+    updAll(updates);
+    save(updates);
+  }
+
+  function handleAddAttack(atk: any) {
+    const na = [...attacks, atk];
+    updCd("attacks", na);
+    save({ attacks: na });
+  }
 
   /* ── Dati derivati ── */
   const cd = form?.character_data || {} as CharacterData;
@@ -250,9 +385,16 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const spellDC = 8 + spellAbilityMod + pb;
   const spellAtk = spellAbilityMod + pb;
 
+  // Slot/Trucchetti/Incantesimi automatici dal leveling PHB
+  const autoSlotTotals = clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
+  const cantripLimit = clsKey ? getCantripsKnown(clsKey, level) : 0;
+  const preparedLimit = spellAbilityMod + (clsKey === "paladin" ? Math.floor(level / 2) : level);
+  const spellLimit = (clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999;
+
   // Abilità/Saving Throws: classe garantisce competenze, background aggiunge le sue
   const classSkillSet = new Set(clsData?.savingThrows || []);
   const bgSkillSet = new Set<string>((bgData?.skillProficiencies || []).filter(Boolean));
+  const raceSkillSet = new Set<string>((raceData?.proficiencies?.skills || []).filter(Boolean));
 
   /* ── TABS ── */
   const TABS: { id: SheetTab; label: string; icon: string }[] = [
@@ -507,6 +649,9 @@ export function CharacterSheet({ player, onUpdate }: Props) {
           )}
         </div>
 
+        {/* Level-up guidato da XP */}
+        <LevelUpPanel player={form} onApply={handleLevelUp} />
+
         {/* Stats veloci: CA / Iniziativa / Velocità / PB */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="veil-panel p-3 text-center">
@@ -537,33 +682,30 @@ export function CharacterSheet({ player, onUpdate }: Props) {
               Competenze dalla classe: {clsData.savingThrows.map(s => {
                 const found = SAVE_LIST.find(sl => sl.key === s);
                 return found?.label || s;
-              }).join(", ")}
+              }).join(", ")} · non modificabili
             </p>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SAVE_LIST.map(sv => {
               const isClassSave = classSkillSet.has(sv.key);
-              const isManualChecked = (cd as any)[sv.key] ?? false;
-              const isChecked = isClassSave || isManualChecked;
+              const monkAllSaves = clsKey === "monk" && level >= 14; // Anima di Diamante
+              const isChecked = isClassSave || monkAllSaves;
               const score = getTotalScore(sv.ability);
               const mod = getModifier(score);
               const total = isChecked ? mod + pb : mod;
               return (
-                <label key={sv.key} className={`flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition ${isChecked ? "border-veil-gold/20 bg-veil-gold/[0.04]" : "border-white/[0.04] bg-black/20"}`}>
+                <div key={sv.key} className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition ${isChecked ? "border-veil-gold/20 bg-veil-gold/[0.04]" : "border-white/[0.04] bg-black/20"}`}>
                   <input type="checkbox" className="accent-veil-gold w-4 h-4"
                     checked={isChecked}
-                    disabled={isClassSave} // Le competenze di classe non si possono togliere
-                    onChange={e => {
-                      if (isClassSave) return;
-                      updCd(sv.key, e.target.checked);
-                      save({ [sv.key]: e.target.checked });
-                    }} />
+                    disabled
+                    title="I tiri salvezza derivano solo dalla classe"
+                  />
                   <span className={`text-xs flex-1 ${isChecked ? "text-white/80" : "text-white/40"}`}>{sv.label}</span>
                   <span className={`text-xs font-medium ${isChecked ? "text-veil-gold" : "text-white/30"}`}>
                     {total >= 0 ? `+${total}` : `${total}`}
                   </span>
-                  {isClassSave && <span className="text-[9px] text-veil-gold/30">classe</span>}
-                </label>
+                  {isChecked && <span className="text-[9px] text-veil-gold/30">{monkAllSaves ? "monaco" : "classe"}</span>}
+                </div>
               );
             })}
           </div>
@@ -576,22 +718,36 @@ export function CharacterSheet({ player, onUpdate }: Props) {
             <p className="text-[10px] text-white/30 mb-2">
               {clsData.skillPicks} abilità dalla classe ·
               {bgData && ` ${bgData.skillProficiencies.length} dal background`}
+              {raceSkillSet.size > 0 && ` · ${raceSkillSet.size} dalla razza`}
             </p>
           )}
+          <p className="text-[10px] text-white/20 mb-2">
+            Puoi selezionare solo abilità della lista della classe. Le abilità di background e razza sono automatiche.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {SKILL_LIST.map(sk => {
               const isChecked = (cd as any)[sk.key] ?? false;
               const isClassOption = clsData?.skillOptions.includes(sk.key) || false;
               const isBgSkill = bgSkillSet.has(sk.key);
+              const isRaceSkill = raceSkillSet.has(sk.key);
+              const isLocked = isBgSkill || isRaceSkill;
+              const classCheckedCount = SKILL_LIST.filter(s =>
+                (cd as any)[s.key] && clsData?.skillOptions.includes(s.key)
+                && !bgSkillSet.has(s.key) && !raceSkillSet.has(s.key)
+              ).length;
+              const atClassLimit = classCheckedCount >= (clsData?.skillPicks || 0);
               const score = getTotalScore(sk.ability);
               const mod = getModifier(score);
               const total = isChecked ? mod + pb : mod;
               return (
-                <label key={sk.key} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 cursor-pointer transition text-sm
-                  ${isChecked ? isBgSkill ? "border-emerald-500/20 bg-emerald-900/[0.06]" : "border-veil-gold/20 bg-veil-gold/[0.04]" : isClassOption ? "border-white/[0.06] bg-black/20 hover:border-white/[0.10]" : "border-white/[0.03] bg-black/10 opacity-40"}`}>
+                <label key={sk.key} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition text-sm
+                  ${isChecked ? isLocked ? "border-emerald-500/20 bg-emerald-900/[0.06]" : "border-veil-gold/20 bg-veil-gold/[0.04]" : isClassOption ? "border-white/[0.06] bg-black/20 hover:border-white/[0.10] cursor-pointer" : "border-white/[0.03] bg-black/10 opacity-40"}`}>
                   <input type="checkbox" className="accent-veil-gold w-4 h-4 flex-shrink-0"
                     checked={isChecked}
+                    disabled={!isClassOption && !isLocked}
                     onChange={e => {
+                      if (isLocked) return;
+                      if (e.target.checked && atClassLimit) return;
                       updCd(sk.key, e.target.checked);
                       save({ [sk.key]: e.target.checked });
                     }} />
@@ -603,7 +759,8 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                     {total >= 0 ? `+${total}` : `${total}`}
                   </span>
                   {isBgSkill && <span className="text-[9px] text-emerald-400/40">BG</span>}
-                  {isClassOption && !isBgSkill && <span className="text-[9px] text-veil-gold/30">cls</span>}
+                  {isRaceSkill && !isBgSkill && <span className="text-[9px] text-emerald-400/40">razza</span>}
+                  {isClassOption && !isLocked && <span className="text-[9px] text-veil-gold/30">cls</span>}
                 </label>
               );
             })}
@@ -810,42 +967,62 @@ export function CharacterSheet({ player, onUpdate }: Props) {
             {/* Trucchetti */}
             <div className="veil-panel p-4">
               <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Trucchetti</h3>
-              <p className="text-[10px] text-white/30 mb-2">I trucchetti sono a volontà, non consumano slot. Inserisci i nomi separati da virgola.</p>
-              <input className="veil-input w-full text-sm"
-                placeholder="Es: Luce, Mano magica, Trama dell'Illusore..."
-                value={(cd.cantrips || []).join(", ")}
-                onChange={e => updCd("cantrips", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-                onBlur={() => save({ cantrips: formRef.current?.character_data?.cantrips })} />
-              {(cd.cantrips || []).length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(cd.cantrips || []).map((c: string) => (
-                    <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
-                  ))}
-                </div>
-              )}
+              <p className="text-[10px] text-white/30 mb-2">
+                I trucchetti sono a volontà, non consumano slot. Selezionali dalla lista PHB
+                {cantripLimit > 0 && <> (max <strong className="text-veil-gold/70">{cantripLimit}</strong>)</>}.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-44 overflow-y-auto pr-1 mb-2">
+                {getSpellsForClass(clsKey, 0).map(sp => {
+                  const isSel = (cd.cantrips || []).includes(sp.name);
+                  const atLimit = (cd.cantrips || []).length >= cantripLimit;
+                  return (
+                    <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
+                      <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
+                        checked={isSel}
+                        disabled={!isSel && atLimit}
+                        onChange={e => {
+                          const cur = cd.cantrips || [];
+                          if (e.target.checked && cur.length >= cantripLimit) return;
+                          const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
+                          updCd("cantrips", next);
+                          save({ cantrips: next });
+                        }} />
+                      <span className="flex-1 text-white/70">{sp.name}</span>
+                      <span className="text-[9px] text-white/25">{sp.school}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {(cd.cantrips || []).map((c: string) => (
+                  <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
+                ))}
+                {cantripLimit > 0 && <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/30">{(cd.cantrips || []).length}/{cantripLimit}</span>}
+              </div>
             </div>
 
             {/* Slot incantesimi */}
             <div className="veil-panel p-4">
               <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Slot Incantesimi</h3>
-              <p className="text-[10px] text-white/30 mb-3">Totale = slot disponibili, Usati = slot spesi. Si recuperano dopo un riposo lungo.</p>
+              <p className="text-[10px] text-white/30 mb-3">
+                Gli slot totali sono automatici per livello di classe. Usati = slot spesi, si recuperano dopo un riposo lungo.
+                {clsKey === "warlock" && <> I tuoi slot sono sempre di livello {WARLOCK_SLOT_LEVEL[level] ?? 1}.</>}
+              </p>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
-                  const total = spellSlots[lv]?.total ?? 0;
+                  const total = autoSlotTotals[lv] ?? 0;
                   const used = spellSlots[lv]?.expended ?? 0;
                   const available = Math.max(0, total - used);
                   return (
                     <div key={lv} className="text-center">
                       <p className="text-[10px] text-white/30 mb-1">{lv}° Liv.</p>
                       <div className="flex items-center justify-center gap-1 mb-1">
-                        <input type="number" className="veil-input w-10 text-center text-xs p-1" placeholder="0" min={0} max={9}
-                          value={total || ""}
-                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total: Number(e.target.value), expended: spellSlots[lv]?.expended ?? 0 } } })}
-                          onBlur={() => save({ spellSlots: formRef.current?.character_data?.spellSlots })} />
+                        <div className="veil-input w-10 text-center text-xs p-1 opacity-70" title="Totale automatico">{total || "—"}</div>
                         <span className="text-[10px] text-white/20">/</span>
-                        <input type="number" className="veil-input w-10 text-center text-xs p-1" placeholder="0" min={0}
+                        <input type="number" className="veil-input w-10 text-center text-xs p-1" placeholder="0" min={0} max={Math.max(total, 0)}
                           value={used || ""}
-                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total: spellSlots[lv]?.total ?? 0, expended: Number(e.target.value) } } })}
+                          disabled={total === 0}
+                          onChange={e => updCdAll({ spellSlots: { ...spellSlots, [lv]: { total, expended: Number(e.target.value) } } })}
                           onBlur={() => save({ spellSlots: formRef.current?.character_data?.spellSlots })} />
                       </div>
                       {/* Palline disponibili */}
@@ -871,12 +1048,53 @@ export function CharacterSheet({ player, onUpdate }: Props) {
             {/* Lista incantesimi */}
             <div className="veil-panel p-4">
               <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Incantesimi Noti/Preparati</h3>
-              <p className="text-[10px] text-white/30 mb-2">Inserisci gli incantesimi separati da virgola, raggruppati per livello.</p>
-              {[1, 2, 3, 4, 5].map(lv => (
+              <p className="text-[10px] text-white/30 mb-2">
+                Al 1° livello scegli dalla lista PHB (max <strong className="text-veil-gold/70">{spellLimit}</strong>
+                {spellLimit >= 999 ? "" : ` per ${clsKey === "paladin" ? "metà livello + mod CAR" : clsData?.spellcasting?.spellsKnown ? "i tuoi incantesimi conosciuti" : "preparati = livello + mod"}`}).
+                Per i livelli 2+ inserisci i nomi separati da virgola.
+              </p>
+
+              {/* 1° livello: selezione guidata PHB */}
+              <div className="mb-3">
+                <label className="text-xs text-white/40 mb-1 block">1° Livello</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1 mb-2">
+                  {getSpellsForClass(clsKey, 1).map(sp => {
+                    const cur = (cd.spells1 || []) as string[];
+                    const isSel = cur.includes(sp.name);
+                    const atLimit = cur.length >= spellLimit;
+                    return (
+                      <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
+                        <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
+                          checked={isSel}
+                          disabled={!isSel && atLimit}
+                          onChange={e => {
+                            if (e.target.checked && cur.length >= spellLimit) return;
+                            const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
+                            updCd("spells1", next);
+                            save({ spells1: next });
+                          }} />
+                        <span className="flex-1 text-white/70">{sp.name}</span>
+                        <span className="text-[9px] text-white/25">{sp.school}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {(cd.spells1 || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {(cd.spells1 || []).map((c: string) => (
+                      <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
+                    ))}
+                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/30">{(cd.spells1 || []).length}/{spellLimit >= 999 ? "∞" : spellLimit}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Livelli 2-5: testo libero (lista PHB non ancora completa) */}
+              {[2, 3, 4, 5].map(lv => (
                 <div key={lv} className="mb-2">
                   <label className="text-xs text-white/40 mb-1 block">{lv}° Livello</label>
                   <input className="veil-input w-full text-sm"
-                    placeholder={`Es: ${lv === 1 ? "Proiettile Incantato, Armatura del Mago..." : "Freccia Acida, Invisibilità..."}`}
+                    placeholder="Es: Freccia Acida, Invisibilità..."
                     value={((cd as any)[`spells${lv}`] || []).join(", ")}
                     onChange={e => updCd(`spells${lv}`, e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))}
                     onBlur={() => save({ [`spells${lv}`]: formRef.current?.character_data?.[`spells${lv}` as keyof CharacterData] })} />
@@ -892,6 +1110,9 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   function renderGear() {
     return (
       <div className="space-y-4">
+        {/* Inventario player */}
+        <PlayerInventoryManager player={form} cd={cd} level={level} pb={pb} onAddAttack={handleAddAttack} />
+
         {/* Monete */}
         <div className="veil-panel p-4">
           <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Monete</h3>
