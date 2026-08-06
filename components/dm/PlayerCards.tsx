@@ -5,6 +5,7 @@ import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
+import backgrounds, { getBackgroundData } from "@/lib/data/backgrounds";
 import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
 import {
   getFeaturesUpTo, getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
@@ -373,33 +374,43 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
           const clsOptions = clsData?.skillOptions ?? [];
           const raceKey = findRaceKey(player.race || "");
           const raceData = raceKey ? getRaceData(raceKey) : null;
-          const extraSkills = raceData?.extraSkillCount ?? 0;
-          const totalPicks = clsPicks + extraSkills;
-          const picked = skillKeys.filter(sk => cd[sk.key]).length;
-          const picksLeft = totalPicks - picked;
+          const bgKey = Object.keys(backgrounds).find(k => (backgrounds as any)[k].name === player.background);
+          const bgSkills = new Set<string>((getBackgroundData(bgKey || player.background || "")?.skillProficiencies || []).filter(Boolean));
+          const raceSkills = new Set<string>((raceData?.proficiencies?.skills || []).filter(Boolean));
+          // Solo le abilità dell'elenco della classe contano per i pick (background/razza sono automatiche)
+          const classPicked = skillKeys.filter(sk => cd[sk.key] && clsOptions.includes(sk.key) && !bgSkills.has(sk.key) && !raceSkills.has(sk.key)).length;
+          const over = classPicked > clsPicks;
           const pb = getProficiencyBonus(Number(player.level) || 1);
           return (
             <>
-              {totalPicks > 0 && (
-                <p className={`text-[10px] mb-3 ${picksLeft < 0 ? "text-red-400" : "text-veil-gold/50"}`}>
-                  Competenze: {picked}/{totalPicks} ({clsPicks} classe{extraSkills ? ` + ${extraSkills} razza` : ""}) {picksLeft < 0 ? "(superato!)" : `(ancora ${picksLeft})`}
+              {clsPicks > 0 && (
+                <p className={`text-[10px] mb-3 ${over ? "text-red-400" : "text-veil-gold/50"}`}>
+                  Competenze di classe: {classPicked}/{clsPicks}
+                  {over ? " (superato! deseleziona quelle in più)" : ` (ancora ${clsPicks - classPicked})`}
+                  {bgSkills.size > 0 && <> · background: {bgSkills.size}</>}
+                  {raceSkills.size > 0 && <> · razza: {raceSkills.size}</>}
                 </p>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                 {skillKeys.map(sk => {
                   const inClass = clsOptions.includes(sk.key);
-                  const anyOpt = clsOptions.length === 0;
-                  const enabled = anyOpt || inClass;
+                  const isBg = bgSkills.has(sk.key);
+                  const isRace = raceSkills.has(sk.key);
+                  const locked = isBg || isRace;
+                  const enabled = inClass || locked;
                   const score = Number(cd[sk.ability]) || 10;
                   const modVal = getModifier(score);
                   const total = cd[sk.key] ? modVal + pb : modVal;
                   return (
-                    <label key={sk.key} className={`flex items-center gap-2 text-xs ${enabled ? "text-white/60" : "text-white/30"} cursor-pointer`}>
+                    <label key={sk.key} className={`flex items-center gap-2 text-xs ${enabled ? "text-white/60" : "text-white/30"} ${locked ? "" : "cursor-pointer"}`}>
                       <input type="checkbox" className="accent-veil-gold" checked={cd[sk.key] ?? false}
+                        disabled={locked}
                         onChange={e => onSave({ [sk.key]: e.target.checked })} />
                       <LabelWithGuide fieldKey={sk.key} label={sk.label + " (" + abilityLabels[sk.ability] + ")"} className={`text-xs ${enabled ? "text-white/60" : "text-white/30"}`} />
                       <span className="text-[10px] text-veil-gold/40 ml-auto">{formatMod(total)}</span>
-                      {inClass && <span className="text-[9px] text-veil-gold/40">classe</span>}
+                      {isBg && <span className="text-[9px] text-emerald-400/40">BG</span>}
+                      {isRace && !isBg && <span className="text-[9px] text-emerald-400/40">razza</span>}
+                      {inClass && !locked && <span className="text-[9px] text-veil-gold/40">classe</span>}
                     </label>
                   );
                 })}
