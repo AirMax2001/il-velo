@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
   const base = () => db.from(TABLE).select().eq("session_id", sessionId).order("created_at", { ascending: false });
 
   if (view === "dm") {
-    const { data, error } = await base();
+    let q = base();
+    if (playerId) q = q.eq("player_id", playerId);
+    const { data, error } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ items: data });
   }

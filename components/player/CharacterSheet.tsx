@@ -258,6 +258,41 @@ function NumberBubbles({
   );
 }
 
+/* ── Campo con suggerimenti dai background (tratti/ideali/legami/difetti) ── */
+function SuggestField({ label, fieldKey, value, suggestions, isTop, onChange, onPick, onBlur }: {
+  label: string; fieldKey: string; value: string; suggestions: string[];
+  isTop?: boolean; onChange: (v: string) => void; onPick: (v: string) => void; onBlur: () => void;
+}) {
+  const [showSug, setShowSug] = useState(false);
+  return (
+    <div className="relative">
+      <div className="flex items-center justify-between mb-1">
+        <LabelWithGuide fieldKey={fieldKey} label={label} />
+        {suggestions.length > 0 && (
+          <button onClick={() => setShowSug(s => !s)}
+            className="text-[10px] text-veil-gold/40 hover:text-veil-gold transition">
+            {showSug ? "▲ nascondi" : "💡 suggerimenti"}
+          </button>
+        )}
+      </div>
+      {showSug && suggestions.length > 0 && (
+        <div className={`absolute ${isTop ? "bottom-full mb-1" : "top-full mt-1"} left-0 right-0 z-10 rounded-xl border border-veil-gold/20 bg-[#0d0a06] p-2 space-y-1`}>
+          {suggestions.map((s, i) => (
+            <button key={i} onClick={() => { onChange(s); setShowSug(false); onPick(s); }}
+              className="w-full text-left text-[10px] text-white/50 hover:text-white/80 rounded px-2 py-1 hover:bg-white/[0.04] transition">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      <textarea className="veil-input mt-1 w-full min-h-[60px] text-sm"
+        value={value || ""}
+        onChange={e => onChange(e.target.value)}
+        onBlur={onBlur} />
+    </div>
+  );
+}
+
 /* ── Componente principale ── */
 export function CharacterSheet({ player, onUpdate }: Props) {
   const [form, setForm] = useState(player);
@@ -267,31 +302,40 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const formRef = useRef(form);
   formRef.current = form;
   const savingRef = useRef(false);
+  const dirtyRef = useRef(false);
+  const pendingRef = useRef<Record<string, any> | null>(null);
 
   useEffect(() => {
     if (player && player !== playerRef.current) {
-      setForm(player);
+      if (!dirtyRef.current) setForm(player);
       playerRef.current = player;
     }
   }, [player]);
 
   /* ── State updaters ── */
   const upd = useCallback((key: string, value: any) => {
+    dirtyRef.current = true;
     setForm((prev: any) => ({ ...prev, [key]: value }));
   }, []);
   const updCd = useCallback((key: string, value: any) => {
+    dirtyRef.current = true;
     setForm((prev: any) => ({ ...prev, character_data: { ...(prev.character_data || {}), [key]: value } }));
   }, []);
   const updCdAll = useCallback((obj: Record<string, any>) => {
+    dirtyRef.current = true;
     setForm((prev: any) => ({ ...prev, character_data: { ...(prev.character_data || {}), ...obj } }));
   }, []);
   const updAll = useCallback((obj: Record<string, any>) => {
+    dirtyRef.current = true;
     setForm((prev: any) => ({ ...prev, ...obj }));
   }, []);
 
   /* ── Save ── */
   const save = useCallback(async (fields: Record<string, any>) => {
-    if (savingRef.current) return;
+    if (savingRef.current) {
+      pendingRef.current = { ...(pendingRef.current || {}), ...fields };
+      return;
+    }
     savingRef.current = true;
     setSaveState("saving");
     try {
@@ -318,8 +362,10 @@ export function CharacterSheet({ player, onUpdate }: Props) {
       });
       const d = await res.json();
       if (!res.ok || d.error) throw new Error(d.error || "Salvataggio fallito");
-      setForm(d.player);
-      onUpdate(d.player);
+      const merged = { ...(formRef.current || {}), ...body };
+      setForm(merged);
+      onUpdate(merged);
+      dirtyRef.current = false;
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 1600);
     } catch {
@@ -327,6 +373,9 @@ export function CharacterSheet({ player, onUpdate }: Props) {
       setTimeout(() => setSaveState("idle"), 3000);
     } finally {
       savingRef.current = false;
+      const pending = pendingRef.current;
+      pendingRef.current = null;
+      if (pending) save(pending);
     }
   }, [player.id, onUpdate]);
 
@@ -1163,44 +1212,6 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     const bgBonds = bgData?.bonds || [];
     const bgFlaws = bgData?.flaws || [];
 
-    function SuggestField({ label, fieldKey, value, suggestions, isTop }: {
-      label: string; fieldKey: string; value: string;
-      suggestions: string[]; isTop?: boolean;
-    }) {
-      const [showSug, setShowSug] = useState(false);
-      return (
-        <div className="relative">
-          <div className="flex items-center justify-between mb-1">
-            <LabelWithGuide fieldKey={fieldKey} label={label} />
-            {suggestions.length > 0 && (
-              <button onClick={() => setShowSug(s => !s)}
-                className="text-[10px] text-veil-gold/40 hover:text-veil-gold transition">
-                {showSug ? "▲ nascondi" : "💡 suggerimenti"}
-              </button>
-            )}
-          </div>
-          {showSug && suggestions.length > 0 && (
-            <div className={`absolute ${isTop ? "bottom-full mb-1" : "top-full mt-1"} left-0 right-0 z-10 rounded-xl border border-veil-gold/20 bg-[#0d0a06] p-2 space-y-1`}>
-              {suggestions.map((s, i) => (
-                <button key={i} onClick={() => {
-                  updCd(fieldKey, s);
-                  setShowSug(false);
-                  save({ [fieldKey]: s });
-                }}
-                  className="w-full text-left text-[10px] text-white/50 hover:text-white/80 rounded px-2 py-1 hover:bg-white/[0.04] transition">
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-          <textarea className="veil-input mt-1 w-full min-h-[60px] text-sm"
-            value={value || ""}
-            onChange={e => updCd(fieldKey, e.target.value)}
-            onBlur={() => save({ [fieldKey]: formRef.current?.character_data?.[fieldKey as keyof CharacterData] })} />
-        </div>
-      );
-    }
-
     return (
       <div className="space-y-4">
         <div className="veil-panel p-4 space-y-4">
@@ -1208,10 +1219,18 @@ export function CharacterSheet({ player, onUpdate }: Props) {
             Tratti {bgData && <span className="text-[10px] text-white/30 font-normal ml-1">Background: {bgData.name}</span>}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SuggestField label="Tratti di Personalità" fieldKey="personalityTraits" value={cd.personalityTraits || ""} suggestions={bgTraits} />
-            <SuggestField label="Ideali" fieldKey="ideals" value={cd.ideals || ""} suggestions={bgIdeals} />
-            <SuggestField label="Legami" fieldKey="bonds" value={cd.bonds || ""} suggestions={bgBonds} isTop />
-            <SuggestField label="Difetti" fieldKey="flaws" value={cd.flaws || ""} suggestions={bgFlaws} isTop />
+            <SuggestField label="Tratti di Personalità" fieldKey="personalityTraits" value={cd.personalityTraits || ""} suggestions={bgTraits}
+              onChange={v => updCd("personalityTraits", v)} onPick={v => save({ personalityTraits: v })}
+              onBlur={() => save({ personalityTraits: formRef.current?.character_data?.personalityTraits })} />
+            <SuggestField label="Ideali" fieldKey="ideals" value={cd.ideals || ""} suggestions={bgIdeals}
+              onChange={v => updCd("ideals", v)} onPick={v => save({ ideals: v })}
+              onBlur={() => save({ ideals: formRef.current?.character_data?.ideals })} />
+            <SuggestField label="Legami" fieldKey="bonds" value={cd.bonds || ""} suggestions={bgBonds} isTop
+              onChange={v => updCd("bonds", v)} onPick={v => save({ bonds: v })}
+              onBlur={() => save({ bonds: formRef.current?.character_data?.bonds })} />
+            <SuggestField label="Difetti" fieldKey="flaws" value={cd.flaws || ""} suggestions={bgFlaws} isTop
+              onChange={v => updCd("flaws", v)} onPick={v => save({ flaws: v })}
+              onBlur={() => save({ flaws: formRef.current?.character_data?.flaws })} />
           </div>
         </div>
 

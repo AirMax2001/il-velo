@@ -697,7 +697,7 @@ function PlayerInventory({ sessionId, playerId }: { sessionId: string; playerId:
   const [items, setItems] = useState<any[]>([]);
   useEffect(() => {
     if (!sessionId || !playerId) return;
-    fetch(`/api/inventory?sessionId=${sessionId}&playerId=${playerId}`).then(r => r.json()).then(d => setItems(d.items || []));
+    fetch(`/api/inventory?sessionId=${sessionId}&playerId=${playerId}&view=dm`).then(r => r.json()).then(d => setItems(d.items || []));
   }, [sessionId, playerId]);
 
   async function toggleHidden(itemId: string, current: boolean) {
