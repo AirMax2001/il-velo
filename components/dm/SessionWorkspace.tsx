@@ -231,7 +231,7 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
                         onClick={() => {
                           try {
                             localStorage.setItem(`veil-table-display:${_sid}`,
-                              JSON.stringify({ ...JSON.parse(localStorage.getItem(`veil-table-display:${_sid}`) || "{}"), sceneImageUrl: imgUrl })
+                              JSON.stringify({ ...JSON.parse(localStorage.getItem(`veil-table-display:${_sid}`) || "{}"), sceneImageUrl: imgUrl, combatActive: false })
                             );
                           } catch {}
                           // Also update current_location_id via API for name+description

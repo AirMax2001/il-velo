@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { subscribeToTable } from "@/lib/supabaseClient";
 import { WorldMap } from "@/components/WorldMap/WorldMap";
@@ -46,6 +46,7 @@ function TableView() {
   const [locations, setLocations] = useState<any[]>([]);
   const [activeCombat, setActiveCombat] = useState<any>(null);
   const [combatants, setCombatants] = useState<any[]>([]);
+  const tableCombatActive = useRef(false);
   const [playersBy, setPlayersBy] = useState<Record<string, any>>({});
   const [mapSelectedName, setMapSelectedName] = useState<string | null>(null);
 
@@ -54,6 +55,7 @@ function TableView() {
       const combats = await fetch(`/api/combat?sessionId=${sessionId}&active=true`).then(r => r.json());
       const list = Array.isArray(combats) ? combats : (combats?.items || []);
       const combat = list.find((c: any) => c.is_active) || null;
+      if (combat && !tableCombatActive.current) return;
       setActiveCombat(combat);
       if (combat) {
         const cs = await fetch(`/api/combatants?combatId=${combat.id}`).then(r => r.json());
@@ -91,8 +93,15 @@ function TableView() {
       const raw = localStorage.getItem(`veil-table-display:${sessionId}`);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.combatActive === false) { setActiveCombat(null); setCombatants([]); }
-        if (parsed.combatActive) loadCombat();
+        if (parsed.combatActive === true) {
+          tableCombatActive.current = true;
+          loadCombat();
+        }
+        if (parsed.combatActive === false) {
+          tableCombatActive.current = false;
+          setActiveCombat(null);
+          setCombatants([]);
+        }
       }
     }
     sync();

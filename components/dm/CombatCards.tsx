@@ -115,13 +115,14 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
     }
   }
 
-  function syncToTable(combat: any = activeCombat) {
+  function writeTableCombat(combat: any, force: boolean) {
     if (!sessionId || !combat) return;
-    const aliveList = [...combatants].filter(c => !c.is_dead).sort((a, b) => b.initiative - a.initiative);
-    const current = aliveList[combat.turn_index];
     const key = `veil-table-display:${sessionId}`;
     let prev: Record<string, any> = {};
     try { prev = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
+    if (!force && prev.combatActive !== true) return;
+    const aliveList = [...combatants].filter(c => !c.is_dead).sort((a, b) => b.initiative - a.initiative);
+    const current = aliveList[combat.turn_index];
     localStorage.setItem(key, JSON.stringify({
       ...prev,
       combatActive: true,
@@ -129,6 +130,10 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
       round: combat.round || 1,
       currentTurn: current?.name || "",
     }));
+  }
+
+  function syncToTable(combat: any = activeCombat) {
+    writeTableCombat(combat, false);
   }
 
   function clearTableCombat() {
@@ -153,7 +158,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
       if (others.some(o => o.id === c.id)) return { ...c, is_active: false };
       return c;
     }));
-    syncToTable(updated);
+    writeTableCombat(updated, true);
     setTableSynced(true);
     setTimeout(() => setTableSynced(false), 2500);
   }

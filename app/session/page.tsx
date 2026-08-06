@@ -262,7 +262,7 @@ function SessionMode() {
           <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">Tavolo</p>
           <div className="mt-2 space-y-1">
             <button className="w-full rounded-lg border border-veil-gold/20 bg-veil-gold/8 px-3 py-2 text-left text-xs text-veil-gold/80 hover:bg-veil-gold/15" onClick={() => {
-              const config = { backgroundImageUrl: activeScene?.environment || "", sceneImageUrl: "", soundUrl: activeScene?.music_url || "", mapType: "classic", mapMarkers: "" };
+              const config = { ...JSON.parse(localStorage.getItem(`veil-table-display:${sessionId}`) || "{}"), backgroundImageUrl: activeScene?.environment || "", sceneImageUrl: "", soundUrl: activeScene?.music_url || "", mapType: "classic", mapMarkers: "", combatActive: false };
               localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify(config));
               window.open(`/table?sessionId=${sessionId}`, "_blank");
             }}>
@@ -455,7 +455,7 @@ function SessionMode() {
           <p className="text-xs text-white/50 mb-4">Invia comandi al display tavolo in tempo reale.</p>
           <div className="space-y-3">
             <button className="veil-btn w-full text-xs" onClick={() => {
-              const config = { backgroundImageUrl: activeScene?.environment || "", sceneImageUrl: "", soundUrl: activeScene?.music_url || "", mapType: "classic", mapMarkers: "" };
+              const config = { ...JSON.parse(localStorage.getItem(`veil-table-display:${sessionId}`) || "{}"), backgroundImageUrl: activeScene?.environment || "", sceneImageUrl: "", soundUrl: activeScene?.music_url || "", mapType: "classic", mapMarkers: "", combatActive: false };
               localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify(config));
             }}>Sincronizza scena</button>
             <button className="veil-btn w-full text-xs" onClick={() => {
