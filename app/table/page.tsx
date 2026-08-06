@@ -46,6 +46,7 @@ function TableView() {
   const [locations, setLocations] = useState<any[]>([]);
   const [activeCombat, setActiveCombat] = useState<any>(null);
   const [combatants, setCombatants] = useState<any[]>([]);
+  const [playersBy, setPlayersBy] = useState<Record<string, any>>({});
   const [mapSelectedName, setMapSelectedName] = useState<string | null>(null);
 
   async function loadCombat() {
@@ -109,6 +110,15 @@ function TableView() {
     };
   }, [sessionId]);
 
+  useEffect(() => {
+    if (!sessionId) return;
+    fetch(`/api/players?sessionId=${sessionId}`).then(r => r.json()).then(d => {
+      const map: Record<string, any> = {};
+      (d.players || []).forEach((p: any) => { map[p.character_name] = p; });
+      setPlayersBy(map);
+    });
+  }, [sessionId]);
+
   // Poll combat from API
   useEffect(() => {
     if (!sessionId) return;
@@ -166,6 +176,12 @@ function TableView() {
     backgroundImage: `url(${displayConfig.backgroundImageUrl})`,
     backgroundSize: "cover", backgroundPosition: "center"
   } : undefined;
+
+  const combatEnemies = combatants.filter((c: any) => c.type !== "player" && !c.is_dead);
+  const combatPlayers = combatants.filter((c: any) => c.type === "player" && !c.is_dead);
+  const isPlayerTurn = (name: string) => displayConfig.currentTurn === name;
+  const playerActions = ["⚔ Attacco", "✨ Incantesimo", "💨 Scatto", "🛡 Disimpegno", "🕊 Schiva", "🙈 Nasconditi", "📦 Usa oggetto", "🤝 Aiuto"];
+  const playerData = (name: string) => playersBy[name]?.character_data || {};
 
   return (
     <>
@@ -239,40 +255,115 @@ function TableView() {
         ) : null;
       })()}
 
-      {/* Combat overlay */}
+      {/* COMBAT FULL SCREEN */}
       {activeCombat && !showMap && (
-        <div className="absolute inset-x-0 top-0 z-30">
-          <div className="bg-gradient-to-b from-red-950/80 via-red-950/50 to-transparent px-6 pb-8 pt-4">
-            <div className="mx-auto flex max-w-3xl items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="animate-pulse text-lg">⚔</span>
-                <span className="text-sm font-bold uppercase tracking-[0.2em] text-red-300">Combattimento in corso</span>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-white/60">
-                <span>Round {activeCombat.round || 1}</span>
-                <span className="text-white/80">Turno: <span className="text-red-300 font-medium">{displayConfig.currentTurn || "—"}</span></span>
+        <div className="absolute inset-0 z-10 flex flex-col bg-black">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-red-500/15 bg-black/60 px-8 py-4">
+            <div className="flex items-center gap-3">
+              <span className="animate-pulse text-2xl">⚔</span>
+              <div className="text-left">
+                <p className="text-lg font-bold uppercase tracking-[0.2em] text-red-300">Combattimento in corso</p>
+                <p className="text-sm text-white/40">{activeCombat.title}</p>
               </div>
             </div>
-            <div className="mx-auto mt-3 flex max-w-3xl flex-wrap gap-2">
-              {combatants.filter(c => !c.is_dead).sort((a: any, b: any) => b.initiative - a.initiative).map((c: any) => (
-                <div key={c.id} className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs ${
-                  c.type === "player"
-                    ? "bg-blue-900/40 text-blue-200 border border-blue-500/20"
-                    : "bg-red-900/40 text-red-200 border border-red-500/20"
-                }`}>
-                  <span>{c.type === "player" ? "🧑" : c.type === "boss" ? "⚔" : "○"}</span>
-                  <span>{c.name}</span>
-                  <span className="opacity-60">HP {c.hp_current}/{c.hp_max}</span>
-                  {displayConfig.currentTurn === c.name && <span className="ml-1 text-yellow-300">▶</span>}
+            <div className="flex items-center gap-8 text-base text-white/70">
+              <span className="flex items-center gap-2">Round
+                <b className="rounded-lg bg-red-500/20 px-3 py-1 text-2xl text-red-200">{activeCombat.round || 1}</b>
+              </span>
+              <span className="flex items-center gap-2">Turno
+                <b className="rounded-lg bg-white/10 px-3 py-1 text-2xl text-white">{displayConfig.currentTurn || "—"}</b>
+              </span>
+            </div>
+          </div>
+
+          {/* Enemies (top) */}
+          <div className="flex-1 overflow-y-auto px-8 pb-4 pt-6">
+            <p className="mb-3 text-left text-[11px] uppercase tracking-[0.25em] text-red-400/70">Nemici</p>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {combatEnemies.length === 0 && (
+                <p className="col-span-full text-left text-sm text-white/20">Nessun nemico ancora inserito.</p>
+              )}
+              {combatEnemies.map(c => (
+                <div key={c.id} className="rounded-2xl border-2 border-red-500/25 bg-gradient-to-b from-red-950/50 to-black p-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-2xl text-red-300">{c.type === "boss" ? "⚔" : "○"}</span>
+                    <span className="truncate text-xl font-bold text-white">{c.name}</span>
+                  </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-4xl font-black text-red-200">{c.hp_current}</span>
+                    <span className="text-xl text-white/40">/{c.hp_max}</span>
+                  </div>
+                  <div className="mt-2 h-3 overflow-hidden rounded-full bg-red-950">
+                    <div className="h-full rounded-full bg-gradient-to-r from-red-600 to-red-400 transition-all"
+                      style={{ width: `${Math.max(0, Math.min(100, (c.hp_current / Math.max(1, c.hp_max)) * 100))}%` }} />
+                  </div>
+                  <div className="mt-2 text-center text-xs text-white/40">CA {c.armor_class}</div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Players (bottom) */}
+          <div className="shrink-0 border-t border-white/10 bg-black/50 px-6 py-5">
+            <p className="mb-3 text-left text-[11px] uppercase tracking-[0.25em] text-blue-400/70">Giocatori</p>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {combatPlayers.length === 0 && (
+                <p className="col-span-full text-left text-sm text-white/20">Nessun giocatore nel combattimento.</p>
+              )}
+              {combatPlayers.map(c => {
+                const cd = playerData(c.name);
+                const attacks = Array.isArray(cd.attacks) ? cd.attacks : [];
+                const myTurn = isPlayerTurn(c.name);
+                return (
+                  <div key={c.id} className={`rounded-2xl border-2 p-4 ${myTurn ? "border-blue-400/70 bg-blue-950/30 shadow-[0_0_40px_rgba(59,130,246,0.25)]" : "border-blue-500/20 bg-black/40"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🧑</span>
+                      <div className="min-w-0 text-left">
+                        <p className="truncate text-xl font-bold text-white">{c.name}</p>
+                        <p className="text-xs text-white/40">CA {c.armor_class} · Init {c.initiative}</p>
+                      </div>
+                      <div className="ml-auto text-right">
+                        <p className="text-3xl font-black text-white">{c.hp_current}</p>
+                        <p className="text-xs text-white/40">/{c.hp_max}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-3 overflow-hidden rounded-full bg-blue-950/60">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-300 transition-all"
+                        style={{ width: `${Math.max(0, Math.min(100, (c.hp_current / Math.max(1, c.hp_max)) * 100))}%` }} />
+                    </div>
+                    {myTurn ? (
+                      <div className="mt-3 text-left">
+                        <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-yellow-300">🎯 Il tuo turno</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {playerActions.map(a => (
+                            <span key={a} className="rounded-lg border border-blue-400/30 bg-black/40 px-2.5 py-1.5 text-xs text-blue-100">{a}</span>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-xs text-white/40">🏃 Movimento: {cd.speed ?? 30}</p>
+                        {attacks.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {attacks.map(atk => (
+                              <p key={atk.name} className="rounded-lg bg-black/40 px-2.5 py-1.5 text-xs text-emerald-200">
+                                ⚔ {atk.name} · {atk.bonus} · {atk.damage}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-center text-xs text-white/30">In attesa del tuo turno…</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      {!showMap ? (
+      {!showMap && !activeCombat ? (
         <div className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center">
           {/* Countdown */}
           {countdownDisplay && (
