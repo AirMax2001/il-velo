@@ -13,6 +13,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
   const [players, setPlayers] = useState<any[]>([]);
   const [note, setNote] = useState("");
   const [showInitiativeModal, setShowInitiativeModal] = useState(false);
+  const [tableSynced, setTableSynced] = useState(false);
   const noteKey = activeCombat ? `veil-combat-note-${activeCombat.id}` : "";
 
   async function load() {
@@ -92,6 +93,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
     setCombats(prev => prev.map(c => c.id === updatedCombat.id ? updatedCombat : c));
     setCombatants(sorted);
     setShowInitiativeModal(false);
+    syncToTable(updatedCombat);
   }
 
   function cancelInitiativeModal() {
@@ -109,7 +111,51 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
       setActiveCombat(null);
       setCombatants([]);
       setShowInitiativeModal(false);
+      clearTableCombat();
     }
+  }
+
+  function syncToTable(combat: any = activeCombat) {
+    if (!sessionId || !combat) return;
+    const aliveList = [...combatants].filter(c => !c.is_dead).sort((a, b) => b.initiative - a.initiative);
+    const current = aliveList[combat.turn_index];
+    const key = `veil-table-display:${sessionId}`;
+    let prev: Record<string, any> = {};
+    try { prev = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
+    localStorage.setItem(key, JSON.stringify({
+      ...prev,
+      combatActive: true,
+      combatTitle: combat.title,
+      round: combat.round || 1,
+      currentTurn: current?.name || "",
+    }));
+  }
+
+  function clearTableCombat() {
+    if (!sessionId) return;
+    const key = `veil-table-display:${sessionId}`;
+    let prev: Record<string, any> = {};
+    try { prev = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
+    localStorage.setItem(key, JSON.stringify({ ...prev, combatActive: false }));
+  }
+
+  async function showCombatOnTable() {
+    if (!activeCombat) return;
+    const others = combats.filter(c => c.id !== activeCombat.id && c.is_active);
+    await Promise.all(
+      others.map(c => fetch("/api/combat", { method: "PATCH", body: JSON.stringify({ id: c.id, is_active: false }) }))
+    );
+    await fetch("/api/combat", { method: "PATCH", body: JSON.stringify({ id: activeCombat.id, is_active: true }) });
+    const updated = { ...activeCombat, is_active: true };
+    setActiveCombat(updated);
+    setCombats(prev => prev.map(c => {
+      if (c.id === updated.id) return updated;
+      if (others.some(o => o.id === c.id)) return { ...c, is_active: false };
+      return c;
+    }));
+    syncToTable(updated);
+    setTableSynced(true);
+    setTimeout(() => setTableSynced(false), 2500);
   }
 
   async function nextTurn() {
@@ -117,11 +163,13 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
     const alive = combatants.filter(c => !c.is_dead).sort((a, b) => b.initiative - a.initiative);
     const nextIndex = (activeCombat.turn_index + 1) % alive.length;
     const isNewRound = nextIndex === 0;
+    const updated = { ...activeCombat, turn_index: nextIndex, round: isNewRound ? activeCombat.round + 1 : activeCombat.round };
     await fetch("/api/combat", {
       method: "PATCH",
-      body: JSON.stringify({ id: activeCombat.id, turn_index: nextIndex, round: isNewRound ? activeCombat.round + 1 : activeCombat.round })
+      body: JSON.stringify({ id: activeCombat.id, turn_index: nextIndex, round: updated.round })
     });
-    setActiveCombat((prev: any) => prev ? { ...prev, turn_index: nextIndex, round: isNewRound ? prev.round + 1 : prev.round } : null);
+    setActiveCombat(updated);
+    syncToTable(updated);
     if (isNewRound) engine.nextRound();
     else engine.nextTurn();
   }
@@ -170,6 +218,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
                 await loadCombatants(activeCombat.id);
                 setActiveCombat({ ...activeCombat, turn_index: 0, round: 1, is_active: false });
                 setShowInitiativeModal(true);
+                clearTableCombat();
               }}
                 className="rounded-lg border border-amber-400/30 bg-amber-900/20 px-3 py-1.5 text-xs text-amber-300 hover:bg-amber-900/30 transition">
                 ↻ Resetta
@@ -178,6 +227,16 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
           )}
         </div>
         <div className="flex gap-2">
+          {activeCombat && !showInitiativeModal && (
+            <button onClick={showCombatOnTable}
+              className={`rounded-xl border px-5 py-2 text-sm transition ${
+                tableSynced
+                  ? "border-emerald-500/40 bg-emerald-900/20 text-emerald-300"
+                  : "border-sky-500/30 bg-sky-900/20 text-sky-300 hover:bg-sky-900/30"
+              }`}>
+              {tableSynced ? "✓ Sul tavolo" : "Mostra tavolo"}
+            </button>
+          )}
           {activeCombat && !showInitiativeModal && (
             <button onClick={nextTurn} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-5 py-2 text-sm text-veil-gold hover:bg-veil-gold/20">
               Prossimo turno &rarr;

@@ -51,11 +51,12 @@ function TableView() {
   async function loadCombat() {
     try {
       const combats = await fetch(`/api/combat?sessionId=${sessionId}&active=true`).then(r => r.json());
-      const combat = Array.isArray(combats) ? combats.find((c: any) => c.is_active) : null;
+      const list = Array.isArray(combats) ? combats : (combats?.items || []);
+      const combat = list.find((c: any) => c.is_active) || null;
       setActiveCombat(combat);
       if (combat) {
         const cs = await fetch(`/api/combatants?combatId=${combat.id}`).then(r => r.json());
-        setCombatants(Array.isArray(cs) ? cs : []);
+        setCombatants(Array.isArray(cs) ? cs : (cs?.items || []));
       } else {
         setCombatants([]);
       }

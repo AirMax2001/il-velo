@@ -26,7 +26,11 @@ export function TableWorkspace({ sessionId }: TableWorkspaceProps) {
 
   useEffect(() => {
     if (!sessionId) return;
-    localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify(config));
+    try {
+      const raw = localStorage.getItem(`veil-table-display:${sessionId}`);
+      const prev = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify({ ...prev, ...config }));
+    } catch {}
   }, [sessionId, config]);
 
   const effects = ["fog", "rain", "storm", "glitch"];
