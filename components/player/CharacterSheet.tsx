@@ -163,8 +163,36 @@ function PlayerInventoryManager({ player, cd, level, pb, onAddAttack }: {
 
   const catLabel: Record<string, string> = { weapon: "arma", armor: "armatura", shield: "scudo", gear: "oggetto" };
 
+  /* Equipaggiamento iniziale: salvato nel wizard (cd.equipment) o di classe per i player pre-esistenti */
+  const clsEq = (() => {
+    const cls = player.class ? findClassKey(player.class) : null;
+    const data = cls ? getClassData(cls) : null;
+    if (!data) return null;
+    return data.equipment.flatMap(eq =>
+      (eq.options[0] || []).map(o => ({ name: o.name.toLowerCase(), quantity: 1 }))
+    );
+  })();
+  const initialEquip = (cd.equipment && cd.equipment.length > 0) ? cd.equipment : (clsEq || []);
+
   return (
     <div className="veil-panel p-4">
+      <h3 className="text-sm text-veil-gold/80 font-medium mb-2">🎒 Equipaggiamento Iniziale</h3>
+      <p className="text-[10px] text-white/30 mb-3">
+        Gli oggetti scelti durante la creazione del personaggio (armi, zaino e contenuto). Sono usati anche per
+        generare gli attacchi. Il DM può assegnare ulteriori oggetti qui sotto.
+      </p>
+      {initialEquip.length === 0 ? (
+        <p className="text-xs text-white/30 mb-3">Nessun equipaggiamento iniziale registrato.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {initialEquip.map((e, i) => (
+            <span key={`${e.name}-${i}`} className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] text-white/60">
+              {e.quantity > 1 ? `${e.quantity}× ` : ""}{e.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Inventario</h3>
       <p className="text-[10px] text-white/30 mb-3">
         Le armi qui presenti possono generare gli attacchi nella tab Combattimento. Gli oggetti li assegna anche il DM.

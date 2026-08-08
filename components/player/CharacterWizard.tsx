@@ -281,6 +281,11 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         flaws: bg?.flaws?.[0] || "",
       };
 
+      // Equipaggiamento scelto (con quantità raggruppate) salvato nella scheda
+      const eqCounts: Record<string, number> = {};
+      chosenItems.forEach(n => { eqCounts[n] = (eqCounts[n] || 0) + 1; });
+      cd.equipment = Object.entries(eqCounts).map(([name, quantity]) => ({ name, quantity }));
+
       // Genera gli attacchi iniziali in base alle armi in equipaggiamento
       const attacksList: any[] = [];
       const strMod = finalScores ? getModifier(finalScores.strength) : 0;

@@ -68,6 +68,7 @@ export type CharacterData = {
   spells3?: string[];
   spells4?: string[];
   spells5?: string[];
+  equipment?: { name: string; quantity: number }[];
   notes?: string;
 };
 
