@@ -244,7 +244,7 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
               {detailTab === "character" && selected && (
                 <PlayerDetailSheet player={selected} onSave={(f: any) => save(selected.id, f)} />
               )}
-              {detailTab === "inventory" && <PlayerInventory sessionId={sessionId} playerId={selected.id} />}
+              {detailTab === "inventory" && <PlayerInventory sessionId={sessionId} playerId={selected.id} cd={(selected as any).character_data} />}
               {detailTab === "secrets" && <PlayerSecrets sessionId={sessionId} playerId={selected.id} />}
             </div>
           </div>
@@ -664,6 +664,15 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                   Incantesimi 1°: {safeArray(cd.spells1).join(", ")}
                 </p>
               )}
+              {([2, 3, 4, 5, 6, 7, 8, 9] as const).map(lv => {
+                const list = (cd as any)[`spells${lv}`] || [];
+                if (!Array.isArray(list) || list.length === 0) return null;
+                return (
+                  <p key={lv} className="text-[10px] text-white/50">
+                    Incantesimi {lv}°: {safeArray(list).join(", ")}
+                  </p>
+                );
+              })}
             </div>
           );
         })()}
@@ -768,7 +777,7 @@ function DMField({ label, value, type, onSave, area }: { label: string; value: a
 }
 
 // ---------- Inventory ----------
-function PlayerInventory({ sessionId, playerId }: { sessionId: string; playerId: string }) {
+function PlayerInventory({ sessionId, playerId, cd }: { sessionId: string; playerId: string; cd?: any }) {
   const [items, setItems] = useState<any[]>([]);
   useEffect(() => {
     if (!sessionId || !playerId) return;
@@ -780,21 +789,39 @@ function PlayerInventory({ sessionId, playerId }: { sessionId: string; playerId:
     setItems(prev => prev.map(i => i.id === itemId ? { ...i, hidden: !current } : i));
   }
 
-  if (items.length === 0) return <p className="text-sm text-white/40">Nessun oggetto assegnato.</p>;
+  const initialEquip = (cd?.equipment || []) as { name: string; quantity?: number }[];
+
+  if (items.length === 0 && initialEquip.length === 0) return <p className="text-sm text-white/40">Nessun oggetto assegnato.</p>;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {items.map(item => (
-        <div key={item.id} className={`rounded-xl border p-3 flex items-start gap-3 ${item.hidden ? "border-white/[0.04] bg-black/10 opacity-50" : "border-white/[0.06] bg-black/20"}`}>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{item.name}</p>
-            {item.description && <p className="text-xs text-white/40 mt-0.5 line-clamp-2">{item.description}</p>}
+    <div className="space-y-4">
+      {initialEquip.length > 0 && (
+        <div className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-white/30 mb-2">🎒 Equipaggiamento iniziale</p>
+          <div className="flex flex-wrap gap-1.5">
+            {initialEquip.map((e, i) => (
+              <span key={`${e.name}-${i}`} className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] text-white/60">
+                {e.quantity && e.quantity > 1 ? `${e.quantity}× ` : ""}{e.name}
+              </span>
+            ))}
           </div>
-          <button onClick={() => toggleHidden(item.id, item.hidden)} className="shrink-0 text-sm" title={item.hidden ? "Mostra al player" : "Nascondi al player"}>
-            {item.hidden ? "🙈" : "👁"}
-          </button>
         </div>
-      ))}
+      )}
+      {items.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {items.map(item => (
+            <div key={item.id} className={`rounded-xl border p-3 flex items-start gap-3 ${item.hidden ? "border-white/[0.04] bg-black/10 opacity-50" : "border-white/[0.06] bg-black/20"}`}>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                {item.description && <p className="text-xs text-white/40 mt-0.5 line-clamp-2">{item.description}</p>}
+              </div>
+              <button onClick={() => toggleHidden(item.id, item.hidden)} className="shrink-0 text-sm" title={item.hidden ? "Mostra al player" : "Nascondi al player"}>
+                {item.hidden ? "🙈" : "👁"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
