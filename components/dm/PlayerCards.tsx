@@ -7,6 +7,7 @@ import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
 import backgrounds, { getBackgroundData } from "@/lib/data/backgrounds";
 import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
+import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 import {
   getFeaturesUpTo, getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
 } from "@/lib/data/leveling";
@@ -279,6 +280,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
               <option value="Halfling">Halfling</option><option value="Mezzelfo">Mezzelfo</option><option value="Mezzorco">Mezzorco</option>
               <option value="Nano">Nano</option><option value="Nano delle Colline">Nano delle Colline</option><option value="Nano delle Montagne">Nano delle Montagne</option>
               <option value="Tiefling">Tiefling</option><option value="Umano">Umano</option>
+              <option value="Fata">Fata</option>
               <option value="Gnomo">Gnomo</option><option value="Gnomo delle Foreste">Gnomo delle Foreste</option><option value="Gnomo delle Rocce">Gnomo delle Rocce</option>
               <option value="Halfling Piedelesto">Halfling Piedelesto</option><option value="Halfling Robusto">Halfling Robusto</option>
             </select>
@@ -696,6 +698,11 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       {/* Note private DM */}
       <Section title="Note Private DM">
         <DMField label="Note DM" value={player.dm_private_notes} area onSave={v => onSave({ dm_private_notes: v })} />
+      </Section>
+
+      {/* Riferimento regole */}
+      <Section title="Riferimento Regole">
+        <AbilityReferenceTables />
       </Section>
     </div>
   );

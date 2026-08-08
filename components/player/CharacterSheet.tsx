@@ -17,9 +17,10 @@ import {
 } from "@/lib/data/leveling";
 import { findWeapon, itemCategory } from "@/lib/data/weapons";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
+import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 
 type Props = { player: Player; onUpdate: (p: Player) => void };
-type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra";
+type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra" | "rules";
 
 /* ── Costanti ── */
 const ABILITY_KEYS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const;
@@ -453,6 +454,7 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     { id: "gear", label: "Equipaggiamento", icon: "🎒" },
     { id: "personality", label: "Personalità", icon: "📖" },
     { id: "extra", label: "Extra", icon: "🔧" },
+    { id: "rules", label: "Regole", icon: "📜" },
   ];
 
   /* ── Render Tabs ── */
@@ -1393,6 +1395,19 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     );
   }
 
+  function renderRules() {
+    return (
+      <div className="space-y-4">
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Caratteristiche</h3>
+          <p className="text-[10px] text-white/30 mb-3">Riepilogo di cosa rappresenta e dove si usa ogni caratteristica.</p>
+          <AbilityReferenceTables />
+        </div>
+        <p className="text-[10px] text-white/20 text-center">Tabella riassuntiva delle regole base.</p>
+      </div>
+    );
+  }
+
   const tabRenderers: Record<SheetTab, () => JSX.Element> = {
     core: renderCore,
     combat: renderCombat,
@@ -1400,6 +1415,7 @@ export function CharacterSheet({ player, onUpdate }: Props) {
     gear: renderGear,
     personality: renderPersonality,
     extra: renderExtra,
+    rules: renderRules,
   };
 
   return (

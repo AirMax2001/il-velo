@@ -286,6 +286,21 @@ const races: Record<string, RaceData> = {
     resistances: ["fuoco"],
     hasSubRace: false,
   },
+  fata: {
+    key: "fata",
+    name: "Fata",
+    description: "Le fate sono piccole creature alate del Piano Fatato. Sono creature di tipo Fata: la magia che colpisce solo umanoidi (come Incantesimo, Ipnotizzare, Individuazione dei Pensieri) non le tocca. Sono agili, leggere e intrinsecamente magiche.",
+    abilityBonuses: { dexterity: 2, charisma: 1 },
+    speed: 30,
+    size: "Piccola",
+    languages: ["Comune", "Un linguaggio extra a scelta"],
+    traits: [
+      { name: "Fata", description: "Sei una creatura di tipo Fata: incantesimi che colpiscono solo umanoidi (come Incantare Persona o Ipnotizzare) non funzionano su di te." },
+      { name: "Magia fatata", description: "Conosci il trucchetto Simbolo Druidico (Druidcraft). Al 3° livello, puoi lanciare l'incantesimo Bagliore Fatato una volta. Al 5° livello, puoi lanciare l'incantesimo Ingrandire/Ridurre una volta. Ripeti solo dopo un riposo lungo. La tua caratteristica di lancio è Intelligenza, Saggezza o Carisma (a tua scelta)." },
+      { name: "Volo", description: "Hai una velocità di volo pari alla tua velocità di camminata. Non puoi usarla se indossi un'armatura media o una pesante." },
+    ],
+    hasSubRace: false,
+  },
 };
 
 export default races;
