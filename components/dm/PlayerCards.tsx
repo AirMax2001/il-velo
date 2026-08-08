@@ -261,6 +261,39 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
     return (Number(cd[k]) || 10) + (raceData?.abilityBonuses?.[k] || 0);
   }
 
+  // Campi già mostrati nelle sezioni dedicate: tutto il resto di character_data
+  // finisce in "Altri campi" così nessun dato del player resta nascosto.
+  const coveredKeys = new Set([
+    "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma",
+    "armorClass", "speed", "spellcastingAbility", "inspiration",
+    "deathSaveSuccesses", "deathSaveFailures", "attacks",
+    "cantrips", "spells1", "spellSlots",
+    "alignment", "personalityTraits", "ideals", "bonds", "flaws",
+    "height", "weight", "eyes", "skin", "hair",
+    "languages", "otherProficiencies", "allies", "treasure",
+    ...skillKeys.map(s => s.key),
+  ]);
+  function humanLabel(k: string): string {
+    const map: Record<string, string> = {
+      hitDiceTotal: "Dadi Vita Totali",
+      hitDiceRemaining: "Dadi Vita Rimasti",
+      spellAttackBonus: "Bonus Attacco Magia (salvato)",
+      spellSaveDC: "CD Magia (salvata)",
+      proficiencyBonus: "Bonus Competenza (salvato)",
+      initiative: "Iniziativa (salvata)",
+    };
+    if (map[k]) return map[k];
+    return (k.startsWith("st") ? "Salvataggio " : "") + k
+      .replace(/^skill/, "Abilità ")
+      .replace(/^st/, "")
+      .replace(/([A-Z])/g, " $1")
+      .replace(/_/g, " ")
+      .trim();
+  }
+  const extraFields = Object.keys(cd)
+    .filter(k => !coveredKeys.has(k) && typeof cd[k] !== "object")
+    .sort();
+
   return (
     <div className="space-y-5">
       {/* Info Base */}
@@ -593,12 +626,16 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                 <p className="text-xs text-white/30">Nessuno slot incantesimo a questo livello.</p>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {slotLevels.map(slv => (
-                    <div key={slv} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-center">
-                      <p className="text-[10px] text-white/30">{slv}° liv.</p>
-                      <p className="text-lg font-bold text-blue-200">{slots[slv]}</p>
-                    </div>
-                  ))}
+                  {slotLevels.map(slv => {
+                    const spent = (cd.spellSlots as any)?.[slv]?.expended || 0;
+                    return (
+                      <div key={slv} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-center">
+                        <p className="text-[10px] text-white/30">{slv}° liv.</p>
+                        <p className="text-lg font-bold text-blue-200">{slots[slv] - spent}/{slots[slv]}</p>
+                        {spent > 0 && <p className="text-[9px] text-blue-300/40">usati {spent}</p>}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <p className="text-[10px] text-white/30">
@@ -606,6 +643,17 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                 {" · "}Incantesimi 1°: {(cd.spells1 || []).length}/{knownLimit || "—"}
                 {clsKey === "warlock" && <> · slot di livello {WARLOCK_SLOT_LEVEL[lv] ?? 1}</>}
               </p>
+              {(cd.cantrips || []).length > 0 && (
+                <p className="text-[10px] text-white/50">
+                  Trucchetti: {" "}
+                  {safeArray(cd.cantrips).join(", ")}
+                </p>
+              )}
+              {(cd.spells1 || []).length > 0 && (
+                <p className="text-[10px] text-white/50">
+                  Incantesimi 1°: {safeArray(cd.spells1).join(", ")}
+                </p>
+              )}
             </div>
           );
         })()}
@@ -677,6 +725,17 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       <Section title="Note Private DM">
         <DMField label="Note DM" value={player.dm_private_notes} area onSave={v => onSave({ dm_private_notes: v })} />
       </Section>
+
+      {/* Altri campi del player: ogni chiave di character_data non mostrata sopra */}
+      {extraFields.length > 0 && (
+        <Section title="Altri campi">
+          <div className="grid grid-cols-2 gap-3">
+            {extraFields.map(k => (
+              <DMField key={k} label={humanLabel(k)} value={cd[k]} onSave={v => onSave({ [k]: v })} />
+            ))}
+          </div>
+        </Section>
+      )}
     </div>
   );
 }
