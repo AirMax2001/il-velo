@@ -22,6 +22,7 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   const [echoText, setEchoText] = useState("");
   const [echoAllText, setEchoAllText] = useState("");
   const [echoSent, setEchoSent] = useState(false);
+  const [openRef, setOpenRef] = useState<"ability" | "skill" | null>(null);
 
   async function load() {
     const d = await fetch(`/api/players?sessionId=${sessionId}`).then(r => r.json());
@@ -104,6 +105,36 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   return (
     <div className="mx-auto max-w-6xl">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Giocatori</h2>
+
+      {/* Riferimento regole: due rettangoli cliccabili */}
+      <div className="grid gap-4 md:grid-cols-2 mb-8">
+        <button onClick={() => setOpenRef(openRef === "ability" ? null : "ability")}
+          className={`rounded-2xl border p-5 text-left transition ${
+            openRef === "ability" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
+          }`}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-medium text-veil-gold">Caratteristiche</h3>
+            <span className="text-veil-gold/60 text-sm">{openRef === "ability" ? "−" : "+"}</span>
+          </div>
+          <p className="mt-1 text-xs text-white/40">Cosa rappresenta ogni caratteristica e dove si usa (Forza, Destrezza, Costituzione, Intelligenza, Saggezza, Carisma).</p>
+        </button>
+        <button onClick={() => setOpenRef(openRef === "skill" ? null : "skill")}
+          className={`rounded-2xl border p-5 text-left transition ${
+            openRef === "skill" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
+          }`}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-medium text-veil-gold">Abilità</h3>
+            <span className="text-veil-gold/60 text-sm">{openRef === "skill" ? "−" : "+"}</span>
+          </div>
+          <p className="mt-1 text-xs text-white/40">Ogni abilità, la caratteristica associata e quando si usa.</p>
+        </button>
+      </div>
+
+      {openRef && (
+        <div className="mb-8">
+          <AbilityReferenceTables only={openRef} />
+        </div>
+      )}
 
       {players.length === 0 && (
         <p className="text-sm text-white/40">Nessun giocatore in questa campagna.</p>
@@ -698,11 +729,6 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       {/* Note private DM */}
       <Section title="Note Private DM">
         <DMField label="Note DM" value={player.dm_private_notes} area onSave={v => onSave({ dm_private_notes: v })} />
-      </Section>
-
-      {/* Riferimento regole */}
-      <Section title="Riferimento Regole">
-        <AbilityReferenceTables />
       </Section>
     </div>
   );

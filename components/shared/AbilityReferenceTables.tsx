@@ -30,52 +30,56 @@ const SKILL_REFERENCE = [
   { name: "Persuasione", ability: "Carisma", uses: "Convincere con diplomazia o argomentazioni oneste" },
 ];
 
-export function AbilityReferenceTables() {
+export function AbilityReferenceTables({ only }: { only?: "ability" | "skill" }) {
   const cell = "px-3 py-2 text-xs";
   const th = "px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-veil-gold/70 text-left";
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-white/10 overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-white/[0.03]">
-              <th className={th}>Caratteristica</th>
-              <th className={th}>Cosa rappresenta</th>
-              <th className={th}>Usi principali</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ABILITY_REFERENCE.map(a => (
-              <tr key={a.name} className="border-t border-white/[0.05]">
-                <td className={`${cell} text-white/80 font-medium`}>{a.name}</td>
-                <td className={`${cell} text-white/60`}>{a.means}</td>
-                <td className={`${cell} text-white/45`}>{a.uses}</td>
+      {only !== "skill" && (
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-white/[0.03]">
+                <th className={th}>Caratteristica</th>
+                <th className={th}>Cosa rappresenta</th>
+                <th className={th}>Usi principali</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {ABILITY_REFERENCE.map(a => (
+                <tr key={a.name} className="border-t border-white/[0.05]">
+                  <td className={`${cell} text-white/80 font-medium`}>{a.name}</td>
+                  <td className={`${cell} text-white/60`}>{a.means}</td>
+                  <td className={`${cell} text-white/45`}>{a.uses}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <div className="rounded-xl border border-white/[0.06] overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-white/[0.03]">
-              <th className={th}>Abilità</th>
-              <th className={th}>Caratteristica</th>
-              <th className={th}>Quando si usa</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SKILL_REFERENCE.map(a => (
-              <tr key={a.name} className="border-t border-white/[0.05]">
-                <td className={`${cell} text-white/80 font-medium`}>{a.name}</td>
-                <td className={`${cell} text-veil-gold/60`}>{a.ability}</td>
-                <td className={`${cell} text-white/45`}>{a.uses}</td>
+      {only !== "ability" && (
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-white/[0.03]">
+                <th className={th}>Abilità</th>
+                <th className={th}>Caratteristica</th>
+                <th className={th}>Quando si usa</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {SKILL_REFERENCE.map(a => (
+                <tr key={a.name} className="border-t border-white/[0.05]">
+                  <td className={`${cell} text-white/80 font-medium`}>{a.name}</td>
+                  <td className={`${cell} text-veil-gold/60`}>{a.ability}</td>
+                  <td className={`${cell} text-white/45`}>{a.uses}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
