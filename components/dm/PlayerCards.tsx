@@ -261,39 +261,6 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
     return (Number(cd[k]) || 10) + (raceData?.abilityBonuses?.[k] || 0);
   }
 
-  // Campi già mostrati nelle sezioni dedicate: tutto il resto di character_data
-  // finisce in "Altri campi" così nessun dato del player resta nascosto.
-  const coveredKeys = new Set([
-    "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma",
-    "armorClass", "speed", "spellcastingAbility", "inspiration",
-    "deathSaveSuccesses", "deathSaveFailures", "attacks",
-    "cantrips", "spells1", "spellSlots",
-    "alignment", "personalityTraits", "ideals", "bonds", "flaws",
-    "height", "weight", "eyes", "skin", "hair",
-    "languages", "otherProficiencies", "allies", "treasure",
-    ...skillKeys.map(s => s.key),
-  ]);
-  function humanLabel(k: string): string {
-    const map: Record<string, string> = {
-      hitDiceTotal: "Dadi Vita Totali",
-      hitDiceRemaining: "Dadi Vita Rimasti",
-      spellAttackBonus: "Bonus Attacco Magia (salvato)",
-      spellSaveDC: "CD Magia (salvata)",
-      proficiencyBonus: "Bonus Competenza (salvato)",
-      initiative: "Iniziativa (salvata)",
-    };
-    if (map[k]) return map[k];
-    return (k.startsWith("st") ? "Salvataggio " : "") + k
-      .replace(/^skill/, "Abilità ")
-      .replace(/^st/, "")
-      .replace(/([A-Z])/g, " $1")
-      .replace(/_/g, " ")
-      .trim();
-  }
-  const extraFields = Object.keys(cd)
-    .filter(k => !coveredKeys.has(k) && typeof cd[k] !== "object")
-    .sort();
-
   return (
     <div className="space-y-5">
       {/* Info Base */}
@@ -362,21 +329,26 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
         </div>
       </Section>
 
-      {/* Caratteristiche */}
+      {/* Caratteristiche — identico alla scheda del player (stessi valori) */}
       <Section title="Caratteristiche">
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 text-center">
           {(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).map(k => {
-            const score = Number(cd[k]) || 10;
-            const raceBonus = (raceData?.abilityBonuses?.[k] || 0);
-            const totalScore = score + raceBonus;
+            const base = Number(cd[k]) || 10;
+            const bonus = raceData?.abilityBonuses?.[k] || 0;
+            const total = base + bonus;
+            const mod = getModifier(total);
             return (
               <div key={k}>
-                <LabelWithGuide fieldKey={k} label={abilityLabels[k]} className="justify-center text-xs text-white/40 mb-1" />
-                <input type="number" className="veil-input w-full text-center text-lg font-bold"
-                  value={score}
+                <LabelWithGuide fieldKey={k} label={abilityLabels[k]} className="text-xs text-white/40 mb-1" />
+                <input type="number" min={1} max={20} className="veil-input w-full text-center text-lg font-bold px-1"
+                  value={base}
                   onChange={e => onSave({ [k]: Number(e.target.value) })} />
-                <p className="text-sm text-veil-gold mt-1">{formatMod(getModifier(totalScore))}</p>
-                {raceBonus > 0 && <p className="text-[9px] text-emerald-400/50 mt-0.5">base+{raceBonus}</p>}
+                <p className="text-base text-veil-gold font-bold mt-1">{mod >= 0 ? `+${mod}` : `${mod}`}</p>
+                {bonus > 0 ? (
+                  <p className="text-[9px] text-emerald-400/60 mt-0.5">base+{bonus}={total}</p>
+                ) : (
+                  <p className="text-[9px] text-white/20 mt-0.5">base</p>
+                )}
               </div>
             );
           })}
@@ -725,17 +697,6 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       <Section title="Note Private DM">
         <DMField label="Note DM" value={player.dm_private_notes} area onSave={v => onSave({ dm_private_notes: v })} />
       </Section>
-
-      {/* Altri campi del player: ogni chiave di character_data non mostrata sopra */}
-      {extraFields.length > 0 && (
-        <Section title="Altri campi">
-          <div className="grid grid-cols-2 gap-3">
-            {extraFields.map(k => (
-              <DMField key={k} label={humanLabel(k)} value={cd[k]} onSave={v => onSave({ [k]: v })} />
-            ))}
-          </div>
-        </Section>
-      )}
     </div>
   );
 }
