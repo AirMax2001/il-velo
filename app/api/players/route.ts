@@ -39,6 +39,20 @@ export async function PATCH(req: NextRequest) {
       Object.entries(fields).filter(([, value]) => value !== undefined)
     );
 
+    // Merge consapevole: se character_data arriva con marker "_merge", unisci i
+    // campi parziali sulla riga corrente nel DB (evita che snapshot stale del
+    // DM/player si sovrascrivano a vicenda) e non salvare mai il marker.
+    const cdField = cleanFields.character_data;
+    if (cdField && typeof cdField === "object" && (cdField as any)._merge) {
+      const { _merge, ...cdPartial } = cdField as any;
+      const { data: current } = await db
+        .from("players")
+        .select("character_data")
+        .eq("id", id)
+        .single();
+      cleanFields.character_data = { ...((current?.character_data as Record<string, any>) || {}), ...cdPartial };
+    }
+
     const { data, error } = await db
       .from("players")
       .update(cleanFields)

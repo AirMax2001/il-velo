@@ -24,9 +24,19 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
 
   async function load() {
     const d = await fetch(`/api/players?sessionId=${sessionId}`).then(r => r.json());
-    setPlayers(d.players || []);
+    const list = d.players || [];
+    setPlayers(list);
+    setSelected(prev => prev ? list.find(p => p.id === prev.id) || prev : prev);
   }
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
+
+  // Sync live: mentre la pagina è aperta, ricarica i giocatori ogni 5s
+  // così le modifiche del player arrivano in automatico nella vista DM.
+  useEffect(() => {
+    if (!sessionId) return;
+    const t = setInterval(load, 5000);
+    return () => clearInterval(t);
+  }, [sessionId]);
 
   async function save(id: string, fields: any) {
     const body: any = { id };
@@ -40,16 +50,18 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
         hasCd = true;
       }
     }
-    if (hasCd && selected?.character_data) {
+    if (hasCd) {
       cd._merge = true;
-      body.character_data = { ...selected.character_data, ...cd };
-    } else if (hasCd) {
       body.character_data = cd;
     }
     await fetch("/api/players", { method: "PATCH", body: JSON.stringify(body) });
-    load();
+    await load();
     if (selected?.id === id) {
-      setSelected((p: any) => ({ ...p, ...fields, ...(hasCd ? { character_data: body.character_data } : {}) }));
+      setSelected((p: any) => {
+        if (!p) return p;
+        const { _merge, ...rest } = body.character_data || {};
+        return { ...p, ...fields, ...(hasCd ? { character_data: { ...(p.character_data || {}), ...rest } } : {}) };
+      });
     }
   }
 
@@ -242,6 +254,13 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
 
   const abilityLabels: Record<string, string> = { strength: "FOR", dexterity: "DES", constitution: "COS", intelligence: "INT", wisdom: "SAG", charisma: "CAR" };
 
+  // Bonus razziali come nella scheda del player (CharacterSheet usa getTotalScore)
+  const raceKey = findRaceKey(player.race || "");
+  const raceData = raceKey ? getRaceData(raceKey) : null;
+  function abilityTotal(k: string): number {
+    return (Number(cd[k]) || 10) + (raceData?.abilityBonuses?.[k] || 0);
+  }
+
   return (
     <div className="space-y-5">
       {/* Info Base */}
@@ -315,9 +334,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 text-center">
           {(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).map(k => {
             const score = Number(cd[k]) || 10;
-            const raceKey = findRaceKey(player.race || "");
-            const raceData = raceKey ? getRaceData(raceKey) : null;
-            const raceBonus = raceData?.abilityBonuses?.[k] || 0;
+            const raceBonus = (raceData?.abilityBonuses?.[k] || 0);
             const totalScore = score + raceBonus;
             return (
               <div key={k}>
@@ -347,7 +364,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                 {(["strength","dexterity","constitution","intelligence","wisdom","charisma"] as const).map(k => {
                   const stKey = "st" + k.charAt(0).toUpperCase() + k.slice(1);
                   const isClassSt = classSt.includes(stKey);
-                  const score = Number(cd[k]) || 10;
+                  const score = abilityTotal(k);
                   const modVal = getModifier(score);
                   const total = isClassSt ? modVal + pb : modVal;
                   return (
@@ -398,7 +415,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                   const isRace = raceSkills.has(sk.key);
                   const locked = isBg || isRace;
                   const enabled = inClass || locked;
-                  const score = Number(cd[sk.ability]) || 10;
+                  const score = abilityTotal(sk.ability);
                   const modVal = getModifier(score);
                   const total = cd[sk.key] ? modVal + pb : modVal;
                   return (
@@ -423,7 +440,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       {/* Combattimento */}
       <Section title="Combattimento">
         {(() => {
-          const dex = Number(cd.dexterity) || 10;
+          const dex = abilityTotal("dexterity");
           const lv = Number(player.level) || 1;
           const pb = getProficiencyBonus(lv);
           const initMod = getModifier(dex);
@@ -461,7 +478,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
           const clsKey = findClassKey(player.class || "");
           const clsData = clsKey ? getClassData(clsKey) : null;
           const hitDie = clsData?.hitDie;
-          const con = Number(cd.constitution) || 10;
+          const con = abilityTotal("constitution");
           const conMod = getModifier(con);
           const lv = Number(player.level) || 1;
           return (
@@ -529,7 +546,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       <Section title="Incantesimi">
         {(() => {
           const sca = cd.spellcastingAbility || "";
-          const scaScore = sca ? Number(cd[sca.toLowerCase()]) || 10 : 10;
+          const scaScore = sca ? abilityTotal(sca.toLowerCase()) : 10;
           const scaMod = getModifier(scaScore);
           const pb = getProficiencyBonus(Number(player.level) || 1);
           const autoDC = 8 + scaMod + pb;
@@ -566,7 +583,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
           const slots = getSpellSlotsAtLevel(clsKey, lv);
           const cantLimit = getCantripsKnown(clsKey, lv);
           const sca = clsData.spellcasting.spellcastingAbility;
-          const scaMod = getModifier(Number(cd[sca]) || 10);
+          const scaMod = getModifier(abilityTotal(sca));
           const knownLimit = getSpellsKnownLimit(clsKey, lv)
             || (scaMod + (clsKey === "paladin" ? Math.floor(lv / 2) : lv));
           const slotLevels = Object.keys(slots).map(Number).filter(n => (slots[n] ?? 0) > 0);
