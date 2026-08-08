@@ -1,6 +1,6 @@
 export type Spell = {
   name: string;
-  level: 0 | 1;
+  level: number;
   school: string;
   castingTime: string;
   range: string;
@@ -60,9 +60,64 @@ export const spells: Spell[] = [
   { name: "Tiro Tremante", level: 1, school: "Ammaliamento", castingTime: "1 azione", range: "27m", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Una creatura entro gittata deve superare un TS SAG o essere spaventata di te. Ogni turno può ritentare il TS.", classes: ["bard", "sorcerer", "warlock", "wizard"] },
   { name: "Velocità", level: 1, school: "Trasmutazione", castingTime: "1 azione", range: "18m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Una creatura entro gittata raddoppia la sua velocità, ottiene +2 alla CA, vantaggio ai TS DES e un'azione extra per attaccare.", classes: ["sorcerer", "wizard"] },
   { name: "Viticci di Rovo", level: 1, school: "Evocazione", castingTime: "1 azione", range: "27m", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Il terreno entro 6m da un punto entro gittata diventa terreno difficile. Ogni creatura nell'area deve superare un TS FOR o essere trattenuta.", classes: ["druid", "ranger"] },
+
+  // === 2nd LEVEL ===
+  { name: "Aiuto", level: 2, school: "Abiurazione", castingTime: "1 azione", range: "9m", components: "V, S, M", duration: "8 ore", description: "Fino a 3 creature entro gittata ottengono +5 PF massimi e +5 PF attuali. Se sotto i 5 PF, guadagnano PP e bonus.", classes: ["bard", "cleric", "paladin"] },
+  { name: "Arma Magica", level: 2, school: "Trasmutazione", castingTime: "1 azione bonus", range: "Tocco", components: "V, S", duration: "Concentrazione, fino a 1 ora", description: "Un'arma diventa magica e ottiene +1 a tiri per colpire e danni. I danni da arma non magici non la colpiscono.", classes: ["cleric", "paladin"] },
+  { name: "Cecità e Sordità", level: 2, school: "Necromanzia", castingTime: "1 azione", range: "9m", components: "V", duration: "1 minuto", description: "Una creatura deve superare un TS COS o diventare accecata o sorda (a tua scelta) per la durata.", classes: ["bard", "cleric", "sorcerer", "wizard"] },
+  { name: "Immagine Riflessa", level: 2, school: "Illusione", castingTime: "1 azione", range: "Sé", components: "V, S", duration: "1 minuto", description: "Tre duplicati illusori di te ti circondano: un attacco che ti colpisce ha 1⁄6 di probabilità di colpire un duplicato (ridotti a 1/5 e 1/3).", classes: ["bard", "sorcerer", "warlock", "wizard"] },
+  { name: "Invisibilità", level: 2, school: "Illusione", castingTime: "1 azione", range: "Tocco", components: "V, S, M", duration: "Concentrazione, fino a 1 ora", description: "Una creatura toccata diventa invisibile finché non attacca o lancia un incantesimo.", classes: ["bard", "sorcerer", "warlock", "wizard"] },
+  { name: "Intrufolamento", level: 2, school: "Divinazione", castingTime: "1 azione", range: "Sé", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Percepisci le condizioni di creature entro 9m e vedi brevi ricordi a tua scelta.", classes: ["bard", "sorcerer", "wizard"] },
+  { name: "Metallo Rovente", level: 2, school: "Trasmutazione", castingTime: "1 azione", range: "18m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Un oggetto metallico diventa rovente: chi lo impugna subisce 2d8 danno fuoco e deve superare un TS COS o lasciarlo cadere.", classes: ["bard", "druid"] },
+  { name: "Paralizzare Persona", level: 2, school: "Ammaliamento", castingTime: "1 azione", range: "18m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Una creatura umanoide deve superare un TS SAG o essere paralizzata. Ritenta a fine di ogni suo turno.", classes: ["bard", "cleric", "druid", "sorcerer", "wizard"] },
+  { name: "Passo Nebbioso", level: 2, school: "Evocazione", castingTime: "1 azione bonus", range: "Sé", components: "V", duration: "Istantanea", description: "Ti teletrasporti fino a 9 m in un punto che puoi vedere.", classes: ["bard", "sorcerer", "warlock", "wizard"] },
+  { name: "Ragnatela", level: 2, school: "Evocazione", castingTime: "1 azione", range: "18m", components: "V, S, M", duration: "Concentrazione, fino a 1 ora", description: "Una rete di ragni riempie un cubo di 6 m: terreno difficile e creature trattenute se non superano un TS FOR.", classes: ["sorcerer", "wizard"] },
+  { name: "Suggezione", level: 2, school: "Ammaliamento", castingTime: "1 azione", range: "9m", components: "V, M", duration: "Concentrazione, fino a 8 ore", description: "Una creatura deve superare un TS SAG o compiere una richiesta ragionevole in una frase.", classes: ["bard", "cleric", "sorcerer", "wizard"] },
+  { name: "Tenebra Sanguigna", level: 2, school: "Evocazione", castingTime: "1 azione", range: "27m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Una nube di nebbia densa: le creature all'interno sono accecate, bloccate e devono superare TS FOR per muoversi.", classes: ["sorcerer", "warlock", "wizard"] },
+
+  // === 3rd LEVEL ===
+  { name: "Dissolvi Magie", level: 3, school: "Abiurazione", castingTime: "1 azione", range: "36m", components: "V, S", duration: "Istantanea", description: "Termini un effetto magico su una creatura, oggetto o area a tua scelta.", classes: ["bard", "cleric", "druid", "paladin", "sorcerer", "warlock", "wizard"] },
+  { name: "Fulmine", level: 3, school: "Evocazione", castingTime: "1 azione", range: "Sé", components: "V, S, M", duration: "Istantanea", description: "Una linea di fulmine di 18 m. Ogni creatura sulla linea dal superare un TS DES o subire 8d6 danno fulmine.", classes: ["sorcerer", "wizard"] },
+  { name: "Palla di Fuoco", level: 3, school: "Evocazione", castingTime: "1 azione", range: "36m", components: "V, S, M", duration: "Istantanea", description: "Un esplosione di fuoco di 6 m di raggio. Ogni creatura nell'area deve superare un TS DES o subire 8d6 danno fuoco.", classes: ["sorcerer", "wizard"] },
+  { name: "Parola di Cura di Massa", level: 3, school: "Evocazione", castingTime: "1 azione bonus", range: "18m", components: "V", duration: "Istantanea", description: "Fino a 6 creature nel raggio recuperano 3d4 + mod incantatore PF.", classes: ["bard", "cleric", "druid"] },
+  { name: "Protezione dall'Energia", level: 3, school: "Abiurazione", castingTime: "1 azione", range: "Tocco", components: "V, S", duration: "Concentrazione, fino a 1 ora", description: "Una creatura toccata ottiene resistenza a un tipo di danno: fuoco, freddo, fulmine, tuono o acido.", classes: ["cleric", "druid", "paladin", "ranger", "sorcerer", "wizard"] },
+  { name: "Rianimazione", level: 3, school: "Necromanzia", castingTime: "1 azione", range: "Tocco", components: "V, S, M", duration: "Istantanea", description: "Riporta in vita una creatura morta da non più di 1 minuto, a 1 PF. Le membra mancanti si rigenerano.", classes: ["cleric", "paladin"] },
+  { name: "Tempesta di Neve", level: 3, school: "Evocazione", castingTime: "1 azione", range: "36m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Una tempesta di ghiaccio in un cilindro di 12 m: 2d8 contundenti + 4d6 freddo, e area diventa terreno difficile.", classes: ["druid", "sorcerer", "wizard"] },
+  { name: "Velocità", level: 3, school: "Trasmutazione", castingTime: "1 azione", range: "9m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Una creatura raddoppia velocità, +2 CA, vantaggio ai TS DES e un'azione extra per attaccare.", classes: ["sorcerer", "wizard"] },
+
+  // === 4th LEVEL ===
+  { name: "Banishment", level: 4, school: "Abiurazione", castingTime: "1 azione", range: "18m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Una creatura deve superare un TS CAR o essere esiliata in un altro piano per la durata.", classes: ["cleric", "paladin", "sorcerer", "warlock", "wizard"] },
+  { name: "Confusione", level: 4, school: "Ammaliamento", castingTime: "1 azione", range: "27m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Le creature in un cono di 9 m devono superare un TS SAG o agire in modo casuale.", classes: ["bard", "druid", "sorcerer", "wizard"] },
+  { name: "Invisibilità Maggiore", level: 4, school: "Illusione", castingTime: "1 azione", range: "Tocco", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "La creatura toccata diventa invisibile e resta invisibile anche attaccando o lanciando incantesimi.", classes: ["bard", "sorcerer", "warlock", "wizard"] },
+  { name: "Pietra di Seduzione", level: 4, school: "Ammaliamento", castingTime: "1 azione", range: "18m", components: "V", duration: "Concentrazione, fino a 1 minuto", description: "Fino a 4 creature devono superare un TS SAG o essere affascinanti da te.", classes: ["bard", "cleric", "druid", "sorcerer", "wizard"] },
+  { name: "Scudo di Ghiaccio", level: 4, school: "Abiurazione", castingTime: "1 azione", range: "9m", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Fino a 3 creature ricevono resistenza ai danni e vantaggio sui tiri salvezza.", classes: ["bard", "cleric", "sorcerer", "wizard"] },
+
+  // === 5th LEVEL ===
+  { name: "Cecità e Sordità di Massa", level: 5, school: "Ammaliamento", castingTime: "1 azione", range: "18m", components: "V, S", duration: "1 minuto", description: "Le creature in un cono di 18 m devono superare un TS SAG o subire danni psichici 7d6.", classes: ["bard", "sorcerer", "warlock", "wizard"] },
+  { name: "Cerchio di Teleportazione", level: 5, school: "Evocazione", castingTime: "1 minuto", range: "3m", components: "V, S", duration: "Istantanea", description: "Fino a 5 creature vengono teletrasportate a un punto sicuro noto.", classes: ["bard", "cleric", "sorcerer", "warlock", "wizard"] },
+  { name: "Guarigione di Massa", level: 5, school: "Evocazione", castingTime: "1 azione", range: "36m", components: "V, S", duration: "Istantanea", description: "Fino a 6 creature recuperano 4d8 + mod incantatore PF.", classes: ["cleric", "druid"] },
+  { name: "Reincarnazione", level: 5, school: "Necromanzia", castingTime: "1 azione", range: "Tocco", components: "V, S, M", duration: "Istantanea", description: "Riporta in vita una creatura morta nel nuovo corpo con un nuovo aspetto.", classes: ["druid"] },
+  { name: "Tempesta di Veleno", level: 5, school: "Evocazione", castingTime: "1 azione", range: "36m", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Una nube velenosa di 12 m di raggio, danno 3d10 a chi la attraversa.", classes: ["druid", "sorcerer", "wizard"] },
+
+  // === 6th LEVEL ===
+  { name: "Espulsi", level: 6, school: "Evocazione", castingTime: "1 azione", range: "18m", components: "V, S", duration: "Istantanea", description: "Le creature in un cono di 9 m vengono spostate di 30 m.", classes: ["sorcerer", "wizard"] },
+  { name: "Raggio dell'Alba", level: 6, school: "Evocazione", castingTime: "1 azione", range: "Sé", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Un raggio di luci dorata: le creature nella linea subiscono 6d8 danno radiante.", classes: ["cleric", "druid"] },
+  { name: "Resistenza della Terra", level: 6, school: "Abiurazione", castingTime: "1 azione", range: "Tocco", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "La creatura toccata ottiene resistenza ai danni contundenti, perforanti e taglienti.", classes: ["cleric", "paladin"] },
+
+  // === 7th LEVEL ===
+  { name: "Gabbia di Forza", level: 7, school: "Evocazione", castingTime: "1 azione", range: "27m", components: "V, S, M", duration: "Concentrazione, fino a 1 minuto", description: "Un oggetto o una creatura viene confinata in una gabbia di forza indistruttibile.", classes: ["wizard"] },
+  { name: "Potere del Sole", level: 7, school: "Evocazione", castingTime: "1 azione", range: "36m", components: "V, S", duration: "Concentrazione, fino a 1 minuto", description: "Una sfera di sole in 18 m di raggio infligge 8d6 danni radiante al nemici.", classes: ["cleric"] },
+
+  // === 8th LEVEL ===
+  { name: "Aura di Santo", level: 8, school: "Abiurazione", castingTime: "1 azione", range: "Tocco", components: "V, S, M", duration: "Concentrazione, 1 ora", description: "Le creature amiche entro 2 m hanno vantaggio ai TS, resistenza ai danni, ed emettono luce.", classes: ["cleric", "paladin"] },
+  { name: "Stasi Temporale", level: 8, school: "Trasmutazione", castingTime: "1 azione", range: "Sé", components: "V", duration: "Istantanea", description: "Congela il flusso del tempo per te: prendi 1d4+1 turni extra consecutivi.", classes: ["sorcerer", "wizard"] },
+
+  // === 9th LEVEL ===
+  { name: "Meteore", level: 9, school: "Evocazione", castingTime: "1 azione", range: "3 km", components: "V, S", duration: "Istantanea", description: "Quattro meteore colpiscono il punto scelto: 6 m di raggio ognuna, 8d6 contundente + 6d6 fuoco.", classes: ["sorcerer", "wizard"] },
+  { name: "Rinascita", level: 9, school: "Necromanzia", castingTime: "1 azione", range: "Tocco", components: "V, S, M", duration: "Istantanea", description: "Riporta in vita una creatura morta da non più di 100 anni.", classes: ["cleric"] },
 ];
 
-export function getSpellsForClass(classKey: string, level: 0 | 1): Spell[] {
+export function getSpellsForClass(classKey: string, level: number): Spell[] {
   return spells.filter(s => s.level === level && s.classes.includes(classKey));
 }
 

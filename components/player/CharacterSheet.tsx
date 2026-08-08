@@ -13,7 +13,7 @@ import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngi
 import type { AbilityName, SkillKey, SaveKey } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
 import {
-  getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
+  getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, getFeaturesAtLevel, WARLOCK_SLOT_LEVEL,
 } from "@/lib/data/leveling";
 import { findWeapon, itemCategory } from "@/lib/data/weapons";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
@@ -1100,9 +1100,10 @@ export function CharacterSheet({ player, onUpdate }: Props) {
             <div className="veil-panel p-4">
               <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Incantesimi Noti/Preparati</h3>
               <p className="text-[10px] text-white/30 mb-2">
-                Al 1° livello scegli dalla lista PHB (max <strong className="text-veil-gold/70">{spellLimit}</strong>
-                {spellLimit >= 999 ? "" : ` per ${clsKey === "paladin" ? "metà livello + mod CAR" : clsData?.spellcasting?.spellsKnown ? "i tuoi incantesimi conosciuti" : "preparati = livello + mod"}`}).
-                Per i livelli 2+ inserisci i nomi separati da virgola.
+                Scegli i tuoi incantesimi dalla lista PHB per ogni livello di slot. I livelli superiori si sbloccano
+                salendo di livello.
+                {spellLimit >= 999 ? "" : <> Totale incantesimi noti/preparati: <strong className="text-veil-gold/70">{spellLimit}</strong>
+                  {clsKey === "paladin" ? " (metà livello + mod CAR)" : clsData?.spellcasting?.spellsKnown ? "" : " (preparati = livello + mod)"}.</>}
               </p>
 
               {/* 1° livello: selezione guidata PHB */}
@@ -1140,17 +1141,51 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                 )}
               </div>
 
-              {/* Livelli 2-5: testo libero (lista PHB non ancora completa) */}
-              {[2, 3, 4, 5].map(lv => (
-                <div key={lv} className="mb-2">
-                  <label className="text-xs text-white/40 mb-1 block">{lv}° Livello</label>
-                  <input className="veil-input w-full text-sm"
-                    placeholder="Es: Freccia Acida, Invisibilità..."
-                    value={((cd as any)[`spells${lv}`] || []).join(", ")}
-                    onChange={e => updCd(`spells${lv}`, e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))}
-                    onBlur={() => save({ [`spells${lv}`]: formRef.current?.character_data?.[`spells${lv}` as keyof CharacterData] })} />
-                </div>
-              ))}
+              {/* Livelli 2-9: selezione guidata PHB, si sblocca con lo slot */}
+              {[2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
+                const unlocked = (autoSlotTotals[lv] ?? 0) > 0 || (clsKey === "warlock" && WARLOCK_SLOT_LEVEL[level] >= lv);
+                const list = getSpellsForClass(clsKey, lv);
+                const cur = ((cd as any)[`spells${lv}`] || []) as string[];
+                return (
+                  <div key={lv} className="mb-3">
+                    <label className={`text-xs mb-1 block ${unlocked ? "text-white/40" : "text-white/20"}`}>
+                      {lv}° Livello {unlocked && cur.length > 0 ? "" : unlocked ? "" : " 🔒"}
+                      {unlocked && <span className="ml-1 text-[9px] text-emerald-300/50">sbloccato</span>}
+                    </label>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1 mb-2 ${unlocked ? "" : "opacity-40 pointer-events-none"}`}>
+                      {list.map(sp => {
+                        const isSel = cur.includes(sp.name);
+                        return (
+                          <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
+                            <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
+                              checked={isSel}
+                              onChange={e => {
+                                const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
+                                updCd(`spells${lv}` as any, next);
+                                save({ [`spells${lv}`]: next });
+                              }} />
+                            <span className="flex-1 text-white/70">{sp.name}</span>
+                            <span className="text-[9px] text-white/25">{sp.school}</span>
+                          </label>
+                        );
+                      })}
+                      {list.length === 0 && (
+                        <p className="text-[10px] text-white/25 col-span-2">
+                          {unlocked ? "Nessun incantesimo PHB registrato per questo livello nella tua classe." : "Si sblocca quando avrai slot di questo livello."}
+                        </p>
+                      )}
+                    </div>
+                    {cur.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {cur.map((c: string) => (
+                          <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
+                        ))}
+                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/30">{cur.length} selezionati</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
@@ -1363,12 +1398,21 @@ export function CharacterSheet({ player, onUpdate }: Props) {
 
         <div className="veil-panel p-4">
           <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche di Classe</h3>
-          {clsData?.features.map(f => (
-            <div key={f.name} className="mb-3">
-              <p className="text-xs text-veil-gold/70 font-medium">{f.name}</p>
-              <p className="text-[11px] text-white/40 mt-0.5">{f.description}</p>
-            </div>
-          ))}
+          {Array.from({ length: level }, (_, i) => i + 1).map(lv => {
+            const feats = getFeaturesAtLevel(clsKey || "", lv);
+            if (feats.length === 0) return null;
+            return (
+              <div key={lv} className="mb-3">
+                <p className="text-xs text-white/30 mb-1">Livello {lv}</p>
+                {feats.map(f => (
+                  <div key={f.name} className="mb-2">
+                    <p className="text-xs text-veil-gold/70 font-medium">✦ {f.name}</p>
+                    <p className="text-[11px] text-white/40 mt-0.5">{f.description}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
           {raceData?.traits.map(t => (
             <div key={t.name} className="mb-3">
               <p className="text-xs text-emerald-400/70 font-medium">{t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
