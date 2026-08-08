@@ -440,6 +440,8 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const cantripLimit = clsKey ? getCantripsKnown(clsKey, level) : 0;
   const preparedLimit = spellAbilityMod + (clsKey === "paladin" ? Math.floor(level / 2) : level);
   const spellLimit = (clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999;
+  const totalKnown = [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((acc, lvl) =>
+    acc + ((((cd as any)[`spells${lvl}`]) || []) as string[]).length, 0);
 
   // Abilità/Saving Throws: classe garantisce competenze, background aggiunge le sue
   const classSkillSet = new Set(clsData?.savingThrows || []);
@@ -1102,25 +1104,25 @@ export function CharacterSheet({ player, onUpdate }: Props) {
               <p className="text-[10px] text-white/30 mb-2">
                 Scegli i tuoi incantesimi dalla lista PHB per ogni livello di slot. I livelli superiori si sbloccano
                 salendo di livello.
-                {spellLimit >= 999 ? "" : <> Totale incantesimi noti/preparati: <strong className="text-veil-gold/70">{spellLimit}</strong>
-                  {clsKey === "paladin" ? " (metà livello + mod CAR)" : clsData?.spellcasting?.spellsKnown ? "" : " (preparati = livello + mod)"}.</>}
+                {spellLimit >= 999 ? "" : <> Il totale è limitato a <strong className="text-veil-gold/70">{spellLimit}</strong>
+                  {clsKey === "paladin" ? " (metà livello + mod CAR)" : clsData?.spellcasting?.spellsKnown ? " incantesimi conosciuti" : " preparati (livello + mod)"}.</>}
               </p>
 
-              {/* 1° livello: selezione guidata PHB */}
+              {/* 1° livello: ingera guidata PHB */}
               <div className="mb-3">
                 <label className="text-xs text-white/40 mb-1 block">1° Livello</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1 mb-2">
                   {getSpellsForClass(clsKey, 1).map(sp => {
                     const cur = (cd.spells1 || []) as string[];
                     const isSel = cur.includes(sp.name);
-                    const atLimit = cur.length >= spellLimit;
+                    const atGlobalLimit = totalKnown >= spellLimit;
                     return (
                       <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
                         <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
                           checked={isSel}
-                          disabled={!isSel && atLimit}
+                          disabled={!isSel && atGlobalLimit}
                           onChange={e => {
-                            if (e.target.checked && cur.length >= spellLimit) return;
+                            if (e.target.checked && atGlobalLimit) return;
                             const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
                             updCd("spells1", next);
                             save({ spells1: next });
@@ -1136,12 +1138,11 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                     {(cd.spells1 || []).map((c: string) => (
                       <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
                     ))}
-                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/30">{(cd.spells1 || []).length}/{spellLimit >= 999 ? "∞" : spellLimit}</span>
                   </div>
                 )}
               </div>
 
-              {/* Livelli 2-9: selezione guidata PHB, si sblocca con lo slot */}
+              {/* Livelli 2-9: selezione guidata PHB, si sblocchi con lo slot */}
               {[2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
                 const unlocked = (autoSlotTotals[lv] ?? 0) > 0 || (clsKey === "warlock" && WARLOCK_SLOT_LEVEL[level] >= lv);
                 const list = getSpellsForClass(clsKey, lv);
@@ -1149,17 +1150,19 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                 return (
                   <div key={lv} className="mb-3">
                     <label className={`text-xs mb-1 block ${unlocked ? "text-white/40" : "text-white/20"}`}>
-                      {lv}° Livello {unlocked && cur.length > 0 ? "" : unlocked ? "" : " 🔒"}
-                      {unlocked && <span className="ml-1 text-[9px] text-emerald-300/50">sbloccato</span>}
+                      {lv}° Livello {unlocked && <span className="ml-1 text-[9px] text-emerald-300/50">sbloccato</span>}
                     </label>
                     <div className={`grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1 mb-2 ${unlocked ? "" : "opacity-40 pointer-events-none"}`}>
                       {list.map(sp => {
                         const isSel = cur.includes(sp.name);
+                        const atGlobalLimit = totalKnown >= spellLimit;
                         return (
                           <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
                             <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
                               checked={isSel}
+                              disabled={!isSel && atGlobalLimit}
                               onChange={e => {
+                                if (e.target.checked && atGlobalLimit) return;
                                 const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
                                 updCd(`spells${lv}` as any, next);
                                 save({ [`spells${lv}`]: next });
@@ -1180,12 +1183,23 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                         {cur.map((c: string) => (
                           <span key={c} className="rounded-full bg-blue-900/20 border border-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300/70">{c}</span>
                         ))}
-                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/30">{cur.length} selezionati</span>
                       </div>
                     )}
                   </div>
                 );
               })}
+
+              {/* Contatore globale noti/preparati */}
+              {spellLimit < 999 && (
+                <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/[0.06]">
+                  <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-blue-500/40 transition-all" style={{ width: `${Math.min(100, (totalKnown / Math.max(1, spellLimit)) * 100)}%` }} />
+                  </div>
+                  <span className="text-[10px] text-white/40 flex-shrink-0">
+                    {totalKnown}/{spellLimit} incantesimi
+                  </span>
+                </div>
+              )}
             </div>
           </>
         )}

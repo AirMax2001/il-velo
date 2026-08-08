@@ -645,7 +645,12 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
               )}
               <p className="text-[10px] text-white/30">
                 Trucchetti: {(cd.cantrips || []).length}/{cantLimit || "—"}
-                {" · "}Incantesimi 1°: {(cd.spells1 || []).length}/{knownLimit || "—"}
+                {" · "}Incantesimi 1°: {(cd.spells1 || []).length}
+                {" / "}limite {knownLimit || "—"}
+                {([2, 3, 4, 5, 6, 7, 8, 9] as const).map(lv => {
+                  const n = (((cd as any)[`spells${lv}`]) || []).length;
+                  return n > 0 ? ` · ${lv}°: ${n}` : "";
+                })}
                 {clsKey === "warlock" && <> · slot di livello {WARLOCK_SLOT_LEVEL[lv] ?? 1}</>}
               </p>
               {(cd.cantrips || []).length > 0 && (
