@@ -8,6 +8,7 @@ import { getRaceData, findRaceKey } from "@/lib/data/races";
 import backgrounds, { getBackgroundData } from "@/lib/data/backgrounds";
 import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
 import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
+import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
 import {
   getFeaturesUpTo, getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
 } from "@/lib/data/leveling";
@@ -22,7 +23,7 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   const [echoText, setEchoText] = useState("");
   const [echoAllText, setEchoAllText] = useState("");
   const [echoSent, setEchoSent] = useState(false);
-  const [openRef, setOpenRef] = useState<"ability" | "skill" | null>(null);
+  const [openRef, setOpenRef] = useState<"ability" | "skill" | "cantrips" | "spells" | null>(null);
 
   async function load() {
     const d = await fetch(`/api/players?sessionId=${sessionId}`).then(r => r.json());
@@ -106,8 +107,8 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
     <div className="mx-auto max-w-6xl">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Giocatori</h2>
 
-      {/* Riferimento regole: due rettangoli cliccabili */}
-      <div className="grid gap-4 md:grid-cols-2 mb-8">
+      {/* Riferimento regole: rettangoli cliccabili */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
         <button onClick={() => setOpenRef(openRef === "ability" ? null : "ability")}
           className={`rounded-2xl border p-5 text-left transition ${
             openRef === "ability" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
@@ -128,11 +129,34 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
           </div>
           <p className="mt-1 text-xs text-white/40">Ogni abilità, la caratteristica associata e quando si usa.</p>
         </button>
+        <button onClick={() => setOpenRef(openRef === "cantrips" ? null : "cantrips")}
+          className={`rounded-2xl border p-5 text-left transition ${
+            openRef === "cantrips" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
+          }`}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-medium text-veil-gold">Trucchetti</h3>
+            <span className="text-veil-gold/60 text-sm">{openRef === "cantrips" ? "−" : "+"}</span>
+          </div>
+          <p className="mt-1 text-xs text-white/40">Trucchetti di livello 0 lanciabili a volontà.</p>
+        </button>
+        <button onClick={() => setOpenRef(openRef === "spells" ? null : "spells")}
+          className={`rounded-2xl border p-5 text-left transition ${
+            openRef === "spells" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
+          }`}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-medium text-veil-gold">Incantesimi</h3>
+            <span className="text-veil-gold/60 text-sm">{openRef === "spells" ? "−" : "+"}</span>
+          </div>
+          <p className="mt-1 text-xs text-white/40">Incantesimi di 1°-5° livello, scuola e cosa fanno.</p>
+        </button>
       </div>
 
       {openRef && (
         <div className="mb-8">
-          <AbilityReferenceTables only={openRef} />
+          {openRef === "ability" && <AbilityReferenceTables only="ability" />}
+          {openRef === "skill" && <AbilityReferenceTables only="skill" />}
+          {openRef === "cantrips" && <SpellReferenceTables only="cantrips" />}
+          {openRef === "spells" && <SpellReferenceTables only="spells" />}
         </div>
       )}
 
