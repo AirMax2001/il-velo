@@ -21,7 +21,7 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
   const [assignOpen, setAssignOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const noteKey = selected ? `veil-object-note-${selected.id}` : "";
-  const [createForm, setCreateForm] = useState({ name: "", description: "", rarity: "common", item_type: "other", category: "general" });
+  const [createForm, setCreateForm] = useState({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
 
   useEffect(() => {
     if (!sessionId) return;
@@ -45,12 +45,12 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
     if (!createForm.name.trim()) return;
     const res = await fetch("/api/inventory", {
       method: "POST",
-      body: JSON.stringify({ session_id: sessionId, ...createForm })
+      body: JSON.stringify({ session_id: sessionId, ...createForm, weight: createForm.weight ? Number(createForm.weight) : 0, value: createForm.value ? Number(createForm.value) : 0 })
     });
     const data = await res.json();
     if (data.item) {
       setItems(prev => [data.item, ...prev]);
-      setCreateForm({ name: "", description: "", rarity: "common", item_type: "other", category: "general" });
+      setCreateForm({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
       setShowCreate(false);
     }
   }
@@ -122,6 +122,14 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
                 <option value="relic">Reliquia</option>
               </select>
             </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Peso (kg)</label>
+              <input type="number" step="0.1" min="0" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 focus:border-veil-gold/30 focus:outline-none" value={createForm.weight} onChange={e => setCreateForm({ ...createForm, weight: e.target.value })} placeholder="1.5" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Valore (mo)</label>
+              <input type="number" step="0.1" min="0" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 focus:border-veil-gold/30 focus:outline-none" value={createForm.value} onChange={e => setCreateForm({ ...createForm, value: e.target.value })} placeholder="15" />
+            </div>
             <div className="sm:col-span-2">
               <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Descrizione</label>
               <textarea className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:outline-none focus:border-veil-gold/30" rows={3} value={createForm.description} onChange={e => setCreateForm({ ...createForm, description: e.target.value })} placeholder="Descrizione dell'oggetto..." />
@@ -161,6 +169,13 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
                   <p className="font-medium text-white truncate">{item.name}</p>
                   <p className={`text-[10px] uppercase tracking-wider ${c.text}`}>{c.label}</p>
                   {item.description && <p className="mt-2 text-xs text-white/40 line-clamp-2">{item.description}</p>}
+                  {(Number(item.weight) > 0 || Number(item.value) > 0) && (
+                    <p className="mt-1 text-[10px] text-white/30">
+                      {Number(item.weight) > 0 ? `${item.weight} kg` : ""}
+                      {Number(item.weight) > 0 && Number(item.value) > 0 ? " · " : ""}
+                      {Number(item.value) > 0 ? `${item.value} mo` : ""}
+                    </p>
+                  )}
                   {ownerName && <p className="mt-1 text-xs text-sky-400/70">⊘ {ownerName}</p>}
                 </div>
               </div>
@@ -189,6 +204,8 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
               )}
               <div className="flex flex-wrap gap-2 items-center">
                 {selected.item_type && <span className="rounded-lg border border-white/[0.06] bg-black/30 px-2.5 py-1 text-xs text-white/40">{selected.item_type}</span>}
+                {Number(selected.weight) > 0 && <span className="rounded-lg border border-white/[0.06] bg-black/30 px-2.5 py-1 text-xs text-white/40">⚖ {selected.weight} kg</span>}
+                {Number(selected.value) > 0 && <span className="rounded-lg border border-white/[0.06] bg-black/30 px-2.5 py-1 text-xs text-veil-gold/70">💰 {selected.value} mo</span>}
                 <button onClick={async () => {
                   const newVal = !selected.hidden;
                   await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: selected.id, hidden: newVal }) });

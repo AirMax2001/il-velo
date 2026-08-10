@@ -1,6 +1,6 @@
 "use client";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
-import { PlayerInventoryManager } from "./InventoryManager";
+import { MinecraftInventory } from "./MinecraftInventory";
 import type { CharacterData } from "@/lib/types";
 import type { SheetCtx } from "./types";
 
@@ -17,8 +17,8 @@ export function GearTab({ ctx }: { ctx: SheetCtx }) {
 
   return (
     <div className="space-y-4">
-      {/* Inventario player */}
-      <PlayerInventoryManager player={form || ({} as any)} cd={cd} level={level} pb={pb} onAddAttack={onAddAttack} />
+      {/* Inventario a griglia */}
+      <MinecraftInventory player={form || ({} as any)} cd={cd} level={level} pb={pb} onAddAttack={onAddAttack} save={save} />
 
       {/* Monete */}
       <div className="veil-panel p-4">

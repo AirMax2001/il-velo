@@ -74,6 +74,7 @@ export type CharacterData = {
   spells4?: string[];
   spells5?: string[];
   equipment?: { name: string; quantity: number }[];
+  inventorySeeded?: boolean;
   notes?: string;
 };
 

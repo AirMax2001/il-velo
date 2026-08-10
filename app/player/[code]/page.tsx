@@ -5,8 +5,12 @@ import { subscribeToTable } from "@/lib/supabaseClient";
 import type { PlayerTab } from "@/types/campaign";
 import { CharacterSheet } from "@/components/player/CharacterSheet";
 import { CharacterWizard, isWizardDone, markWizardDone } from "@/components/player/CharacterWizard";
-import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { RulesBrowser } from "@/components/shared/RulesBrowser";
+import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
+import { SaveBadge } from "@/components/player/sheet/ui";
+import { getModifier, getProficiencyBonus } from "@/lib/characterEngine";
+import { getClassData, findClassKey } from "@/lib/data/classes";
+import { getRaceData, findRaceKey } from "@/lib/data/races";
 
 function PlayerView() {
   const router = useRouter();
@@ -18,6 +22,7 @@ function PlayerView() {
   const [player, setPlayer] = useState<any>(null);
   const [tab, setTab] = useState<PlayerTab>("sheet");
   const [showWizard, setShowWizard] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   async function loadPlayer() {
     const r = await fetch(`/api/players?token=${token}`);
@@ -62,6 +67,16 @@ function PlayerView() {
     { id: "rules" as const, label: "Regole" },
   ];
 
+  const cd = player?.character_data || {};
+  const hpPct = player?.hp_max ? (player?.hp_current || 0) / player.hp_max : 0;
+  const clsKey = findClassKey(player?.class || "");
+  const clsData = clsKey ? getClassData(clsKey) : null;
+  const raceKey = findRaceKey(player?.race || "");
+  const raceData = raceKey ? getRaceData(raceKey) : null;
+  const dexMod = getModifier(Number(cd.dexterity) || 10);
+  const level = Number(player?.level) || 1;
+  const pb = getProficiencyBonus(level);
+
   return (
     <main className="min-h-screen p-4 sm:p-6">
       {showWizard && (
@@ -72,37 +87,50 @@ function PlayerView() {
         />
       )}
 
-      <div className="mb-5 rounded-[1.4rem] border border-veil-gold/20 bg-[linear-gradient(120deg,rgba(140,92,30,0.2),rgba(0,0,0,0.38))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <PlayerAvatar url={player.avatar_url} name={player.character_name} size="xl" />
-            <div>
-            <p className="veil-kicker">Il Velo</p>
-            <h1 className="mt-2 text-2xl tracking-[0.24em] text-veil-gold">{player.character_name}</h1>
-            <p className="mt-2 text-sm text-white/60">
-              {player.race || "Personaggio"} · {player.class || "Classe da definire"}
-              {player.level && <span> · Liv. {player.level}</span>}
-            </p>
-          </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => { localStorage.removeItem("veil_player"); localStorage.removeItem("veil_player_code"); router.push("/"); }}
-              className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/50 hover:border-red-300/30 hover:text-red-300 transition"
-              title="Esci e torna alla home"
-            >
-              Esci
-            </button>
-            <div className="veil-panel rounded-lg p-3 text-sm">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-white/40">HP</p>
-              <p className="mt-1 text-white">{player.hp_current ?? "?"}/{player.hp_max ?? "?"}</p>
+      {/* Barra sticky: sopra a tutto (avatar, stat rapide, Esci) */}
+      <div className="sticky top-0 z-30 -mx-2 mb-4 rounded-xl border border-white/[0.08] bg-[#10141b]/95 px-2 py-2 backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <PlayerAvatar url={player.avatar_url} name={player.character_name} size="md" />
+          <div className={`flex-1 grid gap-2 ${clsData ? "grid-cols-3" : "grid-cols-2"} sm:grid-cols-5`}>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">PF</p>
+              <p className={`text-sm font-bold truncate ${hpPct > 0.5 ? "text-emerald-300" : hpPct > 0.25 ? "text-yellow-300" : "text-red-300"}`}>
+                {player?.hp_current ?? "?"}<span className="text-white/30 font-normal">/{player?.hp_max ?? "?"}</span>
+              </p>
             </div>
-            <div className="veil-panel rounded-lg p-3 text-sm">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-white/40">XP</p>
-              <p className="mt-1 text-white">{player.xp ?? 0}</p>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">CA</p>
+              <p className="text-sm font-bold truncate">{cd.armorClass || "—"}</p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Vel.</p>
+              <p className="text-sm font-bold truncate">{cd.speed || raceData?.speed || "—"}</p>
+            </div>
+            {clsData && (
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Init</p>
+                <p className="text-sm font-bold truncate">{dexMod >= 0 ? `+${dexMod}` : dexMod}</p>
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">PB</p>
+              <p className="text-sm font-bold truncate">+{pb}</p>
             </div>
           </div>
+          <SaveBadge state={saveState} />
+          <button
+            onClick={() => { localStorage.removeItem("veil_player"); localStorage.removeItem("veil_player_code"); localStorage.removeItem("veil_player_email"); router.push("/"); }}
+            className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/50 hover:border-red-300/30 hover:text-red-300 transition"
+            title="Esci e torna alla home">
+            Esci
+          </button>
         </div>
+        {player?.hp_max && player.hp_max > 0 && (
+          <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-300 ${hpPct > 0.5 ? "bg-emerald-500" : hpPct > 0.25 ? "bg-yellow-500" : "bg-red-500"}`}
+              style={{ width: `${Math.max(0, Math.min(100, hpPct * 100))}%` }} />
+          </div>
+        )}
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2">
@@ -120,7 +148,19 @@ function PlayerView() {
         ))}
       </div>
 
-      {tab === "sheet" && <CharacterSheet player={player} onUpdate={setPlayer} />}
+      {tab === "sheet" && (
+        <CharacterSheet
+          player={player}
+          onUpdate={setPlayer}
+          onSaveStateChange={setSaveState}
+          onExit={() => {
+            localStorage.removeItem("veil_player");
+            localStorage.removeItem("veil_player_code");
+            localStorage.removeItem("veil_player_email");
+            router.push("/");
+          }}
+        />
+      )}
       {tab === "diary" && <DiaryHub sessionId={sessionId} player={player} />}
       {tab === "rules" && (
         <div className="mx-auto max-w-3xl veil-premium-card p-5">

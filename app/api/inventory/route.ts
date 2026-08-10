@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
     rarity: body.rarity || "common",
     category: body.category || "general",
     item_type: body.item_type || body.type || "other",
+    weight: body.weight ?? 0,
+    value: body.value ?? 0,
+    quantity: body.quantity ?? 1,
     is_relic: body.rarity === "relic" || body.is_relic || false,
     hidden: false,
   }).select().single();

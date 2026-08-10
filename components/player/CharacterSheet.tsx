@@ -7,7 +7,6 @@ import { getBackgroundData } from "@/lib/data/backgrounds";
 import backgrounds from "@/lib/data/backgrounds";
 import { getModifier, getProficiencyBonus, getSpellDC, getSpellAttack, parseConditions, preparedSpellLimit } from "@/lib/characterEngine";
 import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit } from "@/lib/data/leveling";
-import { SaveBadge } from "./sheet/ui";
 import { CoreTab } from "./sheet/CoreTab";
 import { SpellTab } from "./sheet/SpellTab";
 import { MagicTab } from "./sheet/MagicTab";
@@ -17,7 +16,7 @@ import { ExtraTab } from "./sheet/ExtraTab";
 import { RulesTab } from "./sheet/RulesTab";
 import type { SheetCtx } from "./sheet/types";
 
-type Props = { player: Player; onUpdate: (p: Player) => void };
+type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void };
 type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra" | "rules";
 
 const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
@@ -30,7 +29,7 @@ const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
   { id: "rules", label: "Regole", short: "Regole", icon: "📜" },
 ];
 
-export function CharacterSheet({ player, onUpdate }: Props) {
+export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange }: Props) {
   const [form, setForm] = useState(player);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [activeTab, setActiveTab] = useState<SheetTab>("core");
@@ -40,6 +39,10 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const savingRef = useRef(false);
   const dirtyRef = useRef(false);
   const pendingRef = useRef<Record<string, any> | null>(null);
+
+  useEffect(() => {
+    onSaveStateChange?.(saveState);
+  }, [saveState, onSaveStateChange]);
 
   useEffect(() => {
     if (player && player !== playerRef.current) {
@@ -126,7 +129,6 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const attacks = Array.isArray(cd.attacks) ? cd.attacks : [];
   const spellSlots = (cd.spellSlots || {}) as Record<number, { total?: number; expended?: number }>;
   const conditions = parseConditions(form?.conditions);
-  const hpPct = form?.hp_max ? (form?.hp_current || 0) / form.hp_max : 0;
 
   const clsKey = findClassKey(formRef.current?.class || "");
   const clsData = clsKey ? getClassData(clsKey) : null;
@@ -201,48 +203,6 @@ export function CharacterSheet({ player, onUpdate }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl pb-24 md:pb-0">
-      {/* Header scheda */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg text-veil-gold font-medium">Scheda Personaggio</h2>
-        <SaveBadge state={saveState} />
-      </div>
-
-      {/* Stat rapide sticky */}
-      <div className="sticky top-0 z-20 -mx-2 mb-3 rounded-xl border border-white/[0.08] bg-[#10141b]/95 px-2 py-2 backdrop-blur-md">
-        <div className={`grid gap-2 ${clsData ? "grid-cols-4" : "grid-cols-2"} sm:grid-cols-5`}>
-          <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">PF</p>
-            <p className={`text-sm font-bold truncate ${hpPct > 0.5 ? "text-emerald-300" : hpPct > 0.25 ? "text-yellow-300" : "text-red-300"}`}>
-              {form?.hp_current ?? "?"}<span className="text-white/30 font-normal">/{form?.hp_max ?? "?"}</span>
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">CA</p>
-            <p className="text-sm font-bold truncate">{cd.armorClass || "—"}</p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Vel.</p>
-            <p className="text-sm font-bold truncate">{cd.speed || raceSpeed || "—"}</p>
-          </div>
-          {clsData && (
-            <div className="min-w-0">
-              <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Init</p>
-              <p className="text-sm font-bold truncate">{dexMod >= 0 ? `+${dexMod}` : dexMod}</p>
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">PB</p>
-            <p className="text-sm font-bold truncate">+{pb}</p>
-          </div>
-        </div>
-        {form?.hp_max && form.hp_max > 0 && (
-          <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-300 ${hpPct > 0.5 ? "bg-emerald-500" : hpPct > 0.25 ? "bg-yellow-500" : "bg-red-500"}`}
-              style={{ width: `${Math.max(0, Math.min(100, hpPct * 100))}%` }} />
-          </div>
-        )}
-      </div>
-
       {/* Tab nav: desktop (sopra) */}
       <div className="hidden md:flex gap-1 mb-4 overflow-x-auto pb-1">
         {TABS.map(t => (
