@@ -139,13 +139,14 @@ const CAT_LABEL: Record<string, string> = {
   consumable: "consumabile", key: "chiave", lore: "documento", other: "oggetto",
 };
 
-export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save }: {
+export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, updCd }: {
   player: Player;
   cd: CharacterData;
   level: number;
   pb: number;
   onAddAttack: (attack: { name: string; bonus: string; damage: string; type: string }) => void;
   save: (fields: Record<string, any>) => void;
+  updCd: (key: string, value: any) => void;
 }) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,16 +178,28 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save }:
         let fresh = (await fetch(`/api/inventory?sessionId=${player.session_id}&playerId=${player.id}`).then(r => r.json())).items || [];
         fresh = fresh.filter((i: any) => !i.hidden);
         if (fresh.length === 0) {
-          const source = (cd.equipment && cd.equipment.length > 0)
-            ? cd.equipment
-            : (() => {
-                const clsKey = findClassKey(player.class || "");
-                const data = clsKey ? getClassData(clsKey) : null;
-                if (!data) return [] as { name: string; quantity: number }[];
-                return data.equipment.flatMap(eq =>
-                  (eq.options[0] || []).map(o => ({ name: o.name.toLowerCase(), quantity: o.quantity ?? 1 })));
-              })();
+          const source = (() => {
+            if (cd.equipmentChoices && Object.keys(cd.equipmentChoices).length > 0) {
+              const clsKey = findClassKey(player.class || "");
+              const data = clsKey ? getClassData(clsKey) : null;
+              if (data) {
+                return data.equipment.flatMap((eq, i) => {
+                  const oi = cd.equipmentChoices?.[i] ?? 0;
+                  return (eq.options[oi] || eq.options[0] || []).map(o => ({ name: o.name.toLowerCase(), quantity: o.quantity ?? 1 }));
+                });
+              }
+            }
+            if (cd.equipment && cd.equipment.length > 0) return cd.equipment;
+            const clsKey = findClassKey(player.class || "");
+            const data = clsKey ? getClassData(clsKey) : null;
+            if (!data) return [] as { name: string; quantity: number }[];
+            return data.equipment.flatMap(eq =>
+              (eq.options[0] || []).map(o => ({ name: o.name.toLowerCase(), quantity: o.quantity ?? 1 })));
+          })();
+          const existing = new Set(fresh.map((i: any) => i.name.toLowerCase()));
           for (const e of source) {
+            if (existing.has(e.name.toLowerCase())) continue;
+            existing.add(e.name.toLowerCase());
             const cat = itemCategory(e.name);
             const stats = itemStats(e.name);
             await fetch("/api/inventory", {
@@ -250,6 +263,40 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save }:
     loadItems();
   }
 
+  const isWeaponItem = (it: any) => itemCategory(it.name) === "weapon";
+
+  /* Equipaggia/rimuovi arma: una sola alla volta. L'arma equipaggiata
+     genera l'attacco (regole: d20 + PB + mod. caratteristica) che
+     compare nel tab Spell, pronto per il combattimento. */
+  async function toggleEquip(it: any) {
+    const equipped = !it.equipped;
+    const atk = isWeaponItem(it)
+      ? buildAttackFromWeapon(it.name, Number(cd.strength) || 10, Number(cd.dexterity) || 10, pb)
+      : null;
+    if (equipped) {
+      for (const other of items) {
+        if (other.id !== it.id && isWeaponItem(other) && other.equipped) {
+          await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: other.id, equipped: false }) });
+        }
+      }
+      await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: it.id, equipped: true }) });
+      if (atk && !(cd.attacks || []).some(a => a.name === atk.name)) {
+        const na = [...(cd.attacks || []), atk];
+        updCd("attacks", na);
+        save({ attacks: na });
+      }
+    } else {
+      await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: it.id, equipped: false }) });
+      if (atk) {
+        const na = (cd.attacks || []).filter(a => a.name !== atk.name);
+        updCd("attacks", na);
+        save({ attacks: na });
+      }
+    }
+    setSelected((prev: any) => prev ? { ...prev, equipped } : prev);
+    loadItems();
+  }
+
   const weightCls = weightPct > 0.9 ? "bg-red-500" : weightPct > 0.5 ? "bg-yellow-500" : "bg-emerald-500";
 
   return (
@@ -272,9 +319,12 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save }:
                 title={it?.name}
                 className={`relative flex aspect-square items-center justify-center rounded-lg border text-lg transition select-none
                   ${it
-                    ? `${r.border} ${r.bg} cursor-pointer hover:scale-105 hover:border-veil-gold/50`
+                    ? `${r.border} ${r.bg} cursor-pointer hover:scale-105 hover:border-veil-gold/50 ${it.equipped ? "ring-2 ring-veil-gold/70" : ""}`
                     : "border-white/[0.05] bg-white/[0.02] text-white/10"}`}>
                 {it ? itemEmoji(it) : "·"}
+                {it && it.equipped && (
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full bg-veil-gold text-[9px] text-black shadow-md w-4 h-4">⚔</span>
+                )}
                 {it && (Number(it.quantity) > 1) && (
                   <span className="absolute bottom-0 right-0.5 text-[8px] font-bold text-white/70">{it.quantity}</span>
                 )}
@@ -386,14 +436,30 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save }:
 
             {itemCategory(selected.name) === "weapon" && (() => {
               const atk = buildAttackFromWeapon(selected.name, Number(cd.strength) || 10, Number(cd.dexterity) || 10, pb);
-              if (!atk) return null;
               return (
                 <div className="mt-3 rounded-xl border border-emerald-400/15 bg-emerald-900/10 p-3">
-                  <p className="text-xs text-emerald-300/70">{atk.bonus} colpire · {atk.damage} · {atk.type}</p>
-                  <button onClick={() => onAddAttack(atk)}
-                    className="mt-2 rounded-lg border border-emerald-400/20 px-3 py-1.5 text-xs text-emerald-300/80 hover:bg-emerald-400/10 transition">
-                    ⚔️ Aggiungi come attacco
-                  </button>
+                  <p className="text-xs text-emerald-300/70">
+                    {selected.equipped ? "✓ Arma equipaggiata" : "Non è l'arma in mano"}
+                    {atk && <span className="text-white/40"> · {atk.bonus} colpire · {atk.damage} · {atk.type}</span>}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button onClick={() => toggleEquip(selected)}
+                      className={`rounded-lg border px-3 py-1.5 text-xs transition ${selected.equipped
+                        ? "border-white/15 text-white/50 hover:border-red-300/30 hover:text-red-300"
+                        : "border-veil-gold/30 bg-veil-gold/10 text-veil-gold hover:bg-veil-gold/20"}`}>
+                      {selected.equipped ? "🔓 Togli dall'equipaggiamento" : "⚔️ Equipaggia"}
+                    </button>
+                    {atk && !selected.equipped && (
+                      <button onClick={() => onAddAttack(atk)}
+                        className="rounded-lg border border-emerald-400/20 px-3 py-1.5 text-xs text-emerald-300/80 hover:bg-emerald-400/10 transition">
+                        ⚡ Usa come attacco
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-2 text-[10px] text-white/25">
+                    L'arma equipaggiata compare nel tab Spell come attacco pronto, con le regole del manuale
+                    (colpire: d20 + Bonus Competenza + modificatore; danno: dado + modificatore).
+                  </p>
                 </div>
               );
             })()}

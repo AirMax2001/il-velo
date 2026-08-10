@@ -82,7 +82,12 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   const db = supabaseAdmin();
   const { id, ...fields } = body;
-  const { error } = await db.from(TABLE).update(fields).eq("id", id);
+  const cols = await getColumns();
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (cols.includes(k)) clean[k] = v;
+  }
+  const { error } = await db.from(TABLE).update(clean).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

@@ -205,6 +205,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
       const eqCounts: Record<string, number> = {};
       chosenItems.forEach(n => { eqCounts[n] = (eqCounts[n] || 0) + 1; });
       cd.equipment = Object.entries(eqCounts).map(([name, quantity]) => ({ name, quantity }));
+      cd.equipmentChoices = data.equipmentChoices;
 
       const strScore = finalScores?.strength ?? 10;
       const dexScore = finalScores?.dexterity ?? 10;
@@ -295,19 +296,25 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
       const d = await res.json();
       if (d.player) {
         try {
-          await Promise.all(chosenItems.map(name =>
-            fetch("/api/inventory", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                session_id: player.session_id,
-                player_id: player.id,
-                name: name.charAt(0).toUpperCase() + name.slice(1),
-                category: itemCategory(name),
-                item_type: "equipment",
-              }),
-            })
-          ));
+          // Salva l'equipaggiamento cercando di non duplicare oggetti già presenti
+          const existing = await fetch(`/api/inventory?sessionId=${player.session_id}&playerId=${player.id}`)
+            .then(r => r.json()).then(d2 => (d2.items || []).map((i: any) => i.name.toLowerCase()));
+          const present = new Set(existing);
+          await Promise.all(chosenItems
+            .filter(name => !present.has(name.toLowerCase()))
+            .map(name =>
+              fetch("/api/inventory", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  session_id: player.session_id,
+                  player_id: player.id,
+                  name: name.charAt(0).toUpperCase() + name.slice(1),
+                  category: itemCategory(name),
+                  item_type: "equipment",
+                }),
+              })
+            ));
         } catch { /* l'inventario non blocca il completamento */ }
         markWizardDone(player.id);
         onComplete(d.player);
