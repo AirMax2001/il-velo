@@ -205,25 +205,14 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange }: 
   };
 
   return (
-    <div className="mx-auto max-w-3xl pb-24 md:pb-0">
-      {/* Tab nav: desktop (sopra) */}
-      <div className="hidden md:flex gap-1 mb-4 overflow-x-auto pb-1">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex-shrink-0 rounded-xl px-3 py-2 text-xs transition flex items-center gap-1.5 ${activeTab === t.id ? "bg-veil-gold/15 border border-veil-gold/30 text-veil-gold" : "bg-white/[0.04] border border-white/[0.06] text-white/50 hover:text-white/70 hover:border-white/[0.10]"}`}>
-            <span>{t.icon}</span>
-            <span>{t.label}</span>
-          </button>
-        ))}
-      </div>
-
+    <div className="mx-auto max-w-3xl pb-24">
       {/* Tab content */}
       <div>
         {tabRenderers[activeTab]?.()}
       </div>
 
-      {/* Bottom nav: mobile */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden border-t border-veil-gold/20 bg-[#10141b]/95 backdrop-blur-md">
+      {/* Bottom nav: sempre visibile, bloccata in basso */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-veil-gold/20 bg-[#10141b]/95 backdrop-blur-md">
         <div className="flex overflow-x-auto">
           {TABS.map(t => {
             const active = activeTab === t.id;
