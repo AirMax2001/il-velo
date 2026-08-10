@@ -15,7 +15,7 @@ import {
   applyRaceBonuses,
 } from "@/lib/characterEngine";
 import type { Player, CharacterData } from "@/lib/types";
-import { itemCategory, buildAttackFromWeapon, buildUnarmedAttack } from "@/lib/data/weapons";
+import { itemCategory, buildUnarmedAttack } from "@/lib/data/weapons";
 import { getSpellsForClass } from "@/lib/data/spells";
 import {
   isWizardDone, markWizardDone, loadWizardData, saveWizardData,
@@ -209,15 +209,9 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
 
       const strScore = finalScores?.strength ?? 10;
       const dexScore = finalScores?.dexterity ?? 10;
-      const attacksList: any[] = [];
-      for (const itemName of chosenItems) {
-        const atk = buildAttackFromWeapon(itemName, strScore, dexScore, pb1);
-        if (atk && !attacksList.some(a => a.name.toLowerCase() === atk.name.toLowerCase())) {
-          attacksList.push(atk);
-        }
-      }
-      attacksList.push(buildUnarmedAttack(data.classKey, strScore, dexScore, pb1));
-      cd.attacks = attacksList;
+      // Attacchi: solo Colpo Senz'Armi. Le armi si equipaggiano poi dall'inventario (tab Equip.),
+      // e solo l'arma equipaggiata genera il suo attacco nel tab Spell. Niente doppioni.
+      cd.attacks = [buildUnarmedAttack(data.classKey, strScore, dexScore, pb1)];
 
       // Incantesimi
       if (cls?.spellcasting) {

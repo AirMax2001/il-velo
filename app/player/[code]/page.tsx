@@ -95,27 +95,27 @@ function PlayerView() {
           </div>
           <div className={`flex-1 grid gap-1.5 ${clsData ? "grid-cols-3" : "grid-cols-2"} sm:grid-cols-5`}>
             <div className="flex min-w-0 flex-col items-center rounded-xl border border-emerald-400/15 bg-emerald-900/10 px-1 py-1.5">
-              <span className="text-[11px] leading-none text-emerald-300/70">❤️</span>
+              <span className="flex items-center gap-1 text-[11px] leading-none text-emerald-300/70">❤️ <span className="text-[7px] uppercase tracking-wider text-emerald-300/50">PF</span></span>
               <p className={`mt-0.5 text-xs font-bold truncate ${hpPct > 0.5 ? "text-emerald-300" : hpPct > 0.25 ? "text-yellow-300" : "text-red-300"}`}>
                 {player?.hp_current ?? "?"}<span className="text-white/30 font-normal">/{player?.hp_max ?? "?"}</span>
               </p>
             </div>
             <div className="flex min-w-0 flex-col items-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-1 py-1.5">
-              <span className="text-[11px] leading-none text-veil-gold/70">🛡️</span>
+              <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">🛡️ <span className="text-[7px] uppercase tracking-wider text-white/35">CA</span></span>
               <p className="mt-0.5 text-xs font-bold truncate text-white">{cd.armorClass || "—"}</p>
             </div>
             <div className="flex min-w-0 flex-col items-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-1 py-1.5">
-              <span className="text-[11px] leading-none text-veil-gold/70">👢</span>
+              <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">👢 <span className="text-[7px] uppercase tracking-wider text-white/35">Vel.</span></span>
               <p className="mt-0.5 text-xs font-bold truncate text-white">{cd.speed || raceData?.speed || "—"}</p>
             </div>
             {clsData && (
               <div className="flex min-w-0 flex-col items-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-1 py-1.5">
-                <span className="text-[11px] leading-none text-veil-gold/70">⚡</span>
+                <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">⚡ <span className="text-[7px] uppercase tracking-wider text-white/35">Init</span></span>
                 <p className="mt-0.5 text-xs font-bold truncate text-white">{dexMod >= 0 ? `+${dexMod}` : dexMod}</p>
               </div>
             )}
             <div className="flex min-w-0 flex-col items-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-1 py-1.5">
-              <span className="text-[11px] leading-none text-veil-gold/70">🎖️</span>
+              <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">🎖️ <span className="text-[7px] uppercase tracking-wider text-white/35">PB</span></span>
               <p className="mt-0.5 text-xs font-bold truncate text-white">+{pb}</p>
             </div>
           </div>
