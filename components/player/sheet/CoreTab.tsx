@@ -485,26 +485,13 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
                   ))}
                   {actives.length > 0 && (
                     <div className="rounded-lg bg-indigo-950/20 border border-indigo-500/15 p-2 mb-1.5">
-                      <p className="text-[10px] text-indigo-300/60 mb-1">Attivabili in gioco — sposta in "Spell":</p>
-                      {actives.map(a => {
-                        const isOn = (cd.classAbilities || []).includes(a.key);
-                        return (
-                          <label key={a.key} className="flex items-center gap-2 py-1 cursor-pointer">
-                            <input type="checkbox" className="accent-indigo-400 w-4 h-4"
-                              checked={isOn}
-                              onChange={e => {
-                                const cur = cd.classAbilities || [];
-                                const next = e.target.checked ? [...cur, a.key] : cur.filter(k => k !== a.key);
-                                updCd("classAbilities", next);
-                                save({ classAbilities: next });
-                              }} />
-                            <span className={`text-xs ${isOn ? "text-indigo-200" : "text-white/50"}`}>
-                              {a.name} {a.die ? `(${a.die})` : ""}
-                              <span className="text-[10px] text-white/30"> · {a.action} · {a.uses}</span>
-                            </span>
-                          </label>
-                        );
-                      })}
+                      <p className="text-[10px] text-indigo-300/60 mb-1">Usabile in gioco (compare automaticamente nel tab Spell):</p>
+                      {actives.map(a => (
+                        <p key={a.key} className="text-xs text-white/60 py-0.5">
+                          ⚡ {a.name} {a.die ? `(${a.die})` : ""}
+                          <span className="text-[10px] text-white/30"> · {a.action} · {a.uses}</span>
+                        </p>
+                      ))}
                     </div>
                   )}
                 </div>

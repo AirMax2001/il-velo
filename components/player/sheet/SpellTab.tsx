@@ -5,7 +5,7 @@ import {
   getModifier, ALL_SKILLS, SKILL_ABILITY, ABILITY_SHORT, SKILL_LABELS,
 } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
-import { CLASS_ABILITIES, type ClassAbility } from "@/lib/data/classAbilities";
+import { CLASS_ABILITIES } from "@/lib/data/classAbilities";
 import { NumberBubbles } from "./ui";
 import type { SheetCtx } from "./types";
 
@@ -22,9 +22,9 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const knownSpells = [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(lv =>
     (((cd as any)[`spells${lv}`] || []) as string[]).map(name => ({ name, lv })));
 
-  const selectedAbilities: ClassAbility[] = (cd.classAbilities || [])
-    .map(key => (CLASS_ABILITIES[clsKey || ""] || []).find(a => a.key === key))
-    .filter((a): a is ClassAbility => !!a);
+  const availableAbilities = (CLASS_ABILITIES[clsKey || ""] || [])
+    .filter(a => a.level <= level)
+    .sort((a, b) => a.level - b.level);
 
   const chosenSkills = SKILL_LIST.filter(s => (cd as any)[s.key]);
 
@@ -146,15 +146,15 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
       <div className="veil-panel p-4">
         <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Capacità di Classe</h3>
         <p className="text-[10px] text-white/30 mb-3">
-          Attivate nel tab Nucleo → Caratteristiche di Classe ({selectedAbilities.length} attive).
+          Le capacità usabili in gioco della tua classe (livello {level}).
         </p>
-        {selectedAbilities.length === 0 && (
+        {availableAbilities.length === 0 && (
           <p className="text-xs text-white/30 text-center py-2">
-            Nessuna capacità attivabile selezionata. Vai nel tab Nucleo, sezione "Caratteristiche di Classe", e spunta le capacità da usare in gioco.
+            Nessuna capacità attivabile per la tua classe a questo livello.
           </p>
         )}
         <div className="space-y-2">
-          {selectedAbilities.map(a => (
+          {availableAbilities.map(a => (
             <div key={a.key} className="rounded-xl border border-indigo-500/20 bg-indigo-950/10 p-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <p className="text-sm text-white/80 font-medium">✦ {a.name}</p>
