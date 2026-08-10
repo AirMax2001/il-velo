@@ -6,7 +6,7 @@ import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
 import backgrounds, { getBackgroundData } from "@/lib/data/backgrounds";
-import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
+import { getModifier, formatMod, getProficiencyBonus, ABILITY_SHORT, parseConditions, serializeConditions } from "@/lib/characterEngine";
 import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
 import {
@@ -204,7 +204,7 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {(Array.isArray(p.conditions) ? p.conditions : []).slice(0, 2).map((c: string) => (
+                  {(parseConditions(p.conditions)).slice(0, 2).map((c: string) => (
                     <span key={c} className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] text-rose-200">{c}</span>
                   ))}
                   {p.coins > 0 && (
@@ -306,13 +306,11 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
 function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) => void }) {
   const cd = player.character_data || {};
 
-  const abilityLabels: Record<string, string> = { strength: "FOR", dexterity: "DES", constitution: "COS", intelligence: "INT", wisdom: "SAG", charisma: "CAR" };
+  const abilityLabels: Record<string, string> = ABILITY_SHORT;
 
-  // Bonus razziali come nella scheda del player (CharacterSheet usa getTotalScore)
-  const raceKey = findRaceKey(player.race || "");
-  const raceData = raceKey ? getRaceData(raceKey) : null;
+  // I punteggi in character_data sono FINALI (bonus razziali già inclusi alla creazione)
   function abilityTotal(k: string): number {
-    return (Number(cd[k]) || 10) + (raceData?.abilityBonuses?.[k] || 0);
+    return Number(cd[k]) || 10;
   }
 
   return (
@@ -384,14 +382,12 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
         </div>
       </Section>
 
-      {/* Caratteristiche — identico alla scheda del player (stessi valori) */}
+      {/* Caratteristiche — identico alla scheda del player (valori finali, bonus razziali già inclusi) */}
       <Section title="Caratteristiche">
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 text-center">
           {(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).map(k => {
             const base = Number(cd[k]) || 10;
-            const bonus = raceData?.abilityBonuses?.[k] || 0;
-            const total = base + bonus;
-            const mod = getModifier(total);
+            const mod = getModifier(base);
             return (
               <div key={k}>
                 <LabelWithGuide fieldKey={k} label={abilityLabels[k]} className="text-xs text-white/40 mb-1" />
@@ -399,11 +395,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                   value={base}
                   onChange={e => onSave({ [k]: Number(e.target.value) })} />
                 <p className="text-base text-veil-gold font-bold mt-1">{mod >= 0 ? `+${mod}` : `${mod}`}</p>
-                {bonus > 0 ? (
-                  <p className="text-[9px] text-emerald-400/60 mt-0.5">base+{bonus}={total}</p>
-                ) : (
-                  <p className="text-[9px] text-white/20 mt-0.5">base</p>
-                )}
+                <p className="text-[9px] text-white/20 mt-0.5">valore finale</p>
               </div>
             );
           })}
@@ -575,8 +567,8 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
                 </div>
               </div>
               <div className="mt-3">
-                <DMField label="Condizioni (separate da virgola)" value={Array.isArray(player.conditions) ? player.conditions.join(", ") : ""}
-                  onSave={v => onSave({ conditions: v.split(",").map((s: string) => s.trim()).filter(Boolean) })} />
+                <DMField label="Condizioni (separate da virgola)" value={parseConditions(player.conditions).join(", ")}
+                  onSave={v => onSave({ conditions: serializeConditions(v.split(",").map((s: string) => s.trim()).filter(Boolean)) })} />
               </div>
             </>
           );

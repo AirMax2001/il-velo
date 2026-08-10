@@ -5,6 +5,10 @@ export type CharacterData = {
   intelligence?: number;
   wisdom?: number;
   charisma?: number;
+  subRaceKey?: string;
+  sex?: string;
+  deity?: string;
+  appearance?: string;
   stStrength?: boolean;
   stDexterity?: boolean;
   stConstitution?: boolean;

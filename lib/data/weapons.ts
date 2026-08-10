@@ -52,3 +52,46 @@ export function itemCategory(name: string): "weapon" | "armor" | "shield" | "gea
     || lower.includes("cuoio") || lower.includes("gambeson")) return "armor";
   return "gear";
 }
+
+export type AttackInfo = {
+  name: string;
+  bonus: string;
+  damage: string;
+  type: string;
+};
+
+/* Unica risoluzione "arma → attacco": usata dal wizard in creazione
+   e dalla scheda quando l'attacco viene derivato dall'inventario. */
+export function buildAttackFromWeapon(name: string, strength: number, dexterity: number, pb: number): AttackInfo | null {
+  function mod(score: number) { return Math.floor((score - 10) / 2); }
+  const strMod = mod(strength);
+  const dexMod = mod(dexterity);
+  const w = findWeapon(name);
+  if (!w) return null;
+  const m = w.info.ability === "dex" ? dexMod
+    : w.info.ability === "finesse" ? Math.max(strMod, dexMod) : strMod;
+  const bonus = m + pb;
+  const dmg = `${w.info.damage}${m >= 0 ? "+" : ""}${m}`;
+  return {
+    name: w.key.charAt(0).toUpperCase() + w.key.slice(1),
+    bonus: `${bonus >= 0 ? "+" : ""}${bonus}`,
+    damage: dmg,
+    type: w.info.type,
+  };
+}
+
+export function buildUnarmedAttack(classKey: string, strength: number, dexterity: number, pb: number): AttackInfo {
+  function mod(score: number) { return Math.floor((score - 10) / 2); }
+  const strMod = mod(strength);
+  const dexMod = mod(dexterity);
+  const isMonk = classKey === "monk";
+  const m = isMonk ? Math.max(strMod, dexMod) : strMod;
+  const die = isMonk ? "1d4" : "1";
+  const dmg = `${die}${m >= 0 ? "+" : ""}${m}`;
+  return {
+    name: "Colpo Senz'Armi",
+    bonus: `+${m + pb}`,
+    damage: dmg,
+    type: "Contundente",
+  };
+}

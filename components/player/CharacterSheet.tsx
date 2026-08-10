@@ -9,13 +9,18 @@ import { getBackgroundData } from "@/lib/data/backgrounds";
 import races from "@/lib/data/races";
 import classes from "@/lib/data/classes";
 import backgrounds from "@/lib/data/backgrounds";
-import { getModifier, formatMod, getProficiencyBonus } from "@/lib/characterEngine";
-import type { AbilityName, SkillKey, SaveKey } from "@/lib/characterEngine";
+import { getModifier, formatMod, getProficiencyBonus, getSpellDC, getSpellAttack, parseConditions, serializeConditions, preparedSpellLimit } from "@/lib/characterEngine";
+import {
+  ALL_ABILITIES, ALL_SKILLS, ALL_SAVES,
+  ABILITY_LABELS as ABILITY_LABELS_ENG, ABILITY_SHORT as ABILITY_SHORT_ENG,
+  SKILL_LABELS, SAVE_LABELS, SKILL_ABILITY, SAVE_ABILITY, CONDITIONS_LIST,
+  type AbilityName, type SkillKey, type SaveKey,
+} from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
 import {
   getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, getFeaturesAtLevel, WARLOCK_SLOT_LEVEL,
 } from "@/lib/data/leveling";
-import { findWeapon, itemCategory } from "@/lib/data/weapons";
+import { itemCategory, buildAttackFromWeapon } from "@/lib/data/weapons";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
 import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
@@ -23,46 +28,16 @@ import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
 type Props = { player: Player; onUpdate: (p: Player) => void };
 type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra" | "rules";
 
-/* ── Costanti ── */
-const ABILITY_KEYS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const;
-const ABILITY_LABELS: Record<string, string> = {
-  strength: "Forza", dexterity: "Destrezza", constitution: "Costituzione",
-  intelligence: "Intelligenza", wisdom: "Saggezza", charisma: "Carisma",
-};
-const ABILITY_SHORT: Record<string, string> = {
-  strength: "FOR", dexterity: "DES", constitution: "COS",
-  intelligence: "INT", wisdom: "SAG", charisma: "CAR",
-};
+/* ── Costanti (singola fonte: lib/characterEngine) ── */
+const ABILITY_KEYS = ALL_ABILITIES;
+const ABILITY_LABELS: Record<string, string> = ABILITY_LABELS_ENG;
+const ABILITY_SHORT: Record<string, string> = ABILITY_SHORT_ENG;
 
-const SKILL_LIST: { key: SkillKey; label: string; ability: AbilityName }[] = [
-  { key: "skillAthletics", label: "Atletica", ability: "strength" },
-  { key: "skillAcrobatics", label: "Acrobazia", ability: "dexterity" },
-  { key: "skillSleightOfHand", label: "Rapidità di Mano", ability: "dexterity" },
-  { key: "skillStealth", label: "Furtività", ability: "dexterity" },
-  { key: "skillArcana", label: "Arcano", ability: "intelligence" },
-  { key: "skillHistory", label: "Storia", ability: "intelligence" },
-  { key: "skillInvestigation", label: "Indagare", ability: "intelligence" },
-  { key: "skillNature", label: "Natura", ability: "intelligence" },
-  { key: "skillReligion", label: "Religione", ability: "intelligence" },
-  { key: "skillAnimalHandling", label: "Addestrare Animali", ability: "wisdom" },
-  { key: "skillInsight", label: "Intuizione", ability: "wisdom" },
-  { key: "skillMedicine", label: "Medicina", ability: "wisdom" },
-  { key: "skillPerception", label: "Percezione", ability: "wisdom" },
-  { key: "skillSurvival", label: "Sopravvivenza", ability: "wisdom" },
-  { key: "skillDeception", label: "Inganno", ability: "charisma" },
-  { key: "skillIntimidation", label: "Intimidire", ability: "charisma" },
-  { key: "skillPerformance", label: "Intrattenere", ability: "charisma" },
-  { key: "skillPersuasion", label: "Persuasione", ability: "charisma" },
-];
+const SKILL_LIST: { key: SkillKey; label: string; ability: AbilityName }[] =
+  ALL_SKILLS.map(k => ({ key: k, label: SKILL_LABELS[k], ability: SKILL_ABILITY[k] }));
 
-const SAVE_LIST: { key: SaveKey; label: string; ability: AbilityName }[] = [
-  { key: "stStrength", label: "Forza", ability: "strength" },
-  { key: "stDexterity", label: "Destrezza", ability: "dexterity" },
-  { key: "stConstitution", label: "Costituzione", ability: "constitution" },
-  { key: "stIntelligence", label: "Intelligenza", ability: "intelligence" },
-  { key: "stWisdom", label: "Saggezza", ability: "wisdom" },
-  { key: "stCharisma", label: "Carisma", ability: "charisma" },
-];
+const SAVE_LIST: { key: SaveKey; label: string; ability: AbilityName }[] =
+  (ALL_SAVES as readonly SaveKey[]).map(k => ({ key: k, label: SAVE_LABELS[k], ability: SAVE_ABILITY[k] }));
 
 const COIN_TYPES = [
   { key: "pp", label: "PP", desc: "Platino", color: "text-blue-200" },
@@ -71,20 +46,6 @@ const COIN_TYPES = [
   { key: "sp", label: "SA", desc: "Argento", color: "text-gray-300" },
   { key: "cp", label: "MC", desc: "Rame", color: "text-orange-300" },
 ];
-
-const CONDITIONS_LIST = [
-  "Accecato", "Affascinato", "Assordato", "Atterrito", "Avvelenato",
-  "Esausto", "Grappling", "Incapacitato", "Inconscio", "Invisibile",
-  "Paralizzato", "Pietrificato", "Prono", "Rallentato", "Spaventato",
-  "Stordito", "Trattenuto",
-];
-
-/* ── Helpers ── */
-function parseConditions(raw: any): string[] {
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === "string") try { return JSON.parse(raw); } catch { return []; }
-  return [];
-}
 
 function resizeImage(file: File, maxDim: number, quality: number, cb: (dataUrl: string) => void) {
   const img = new Image();
@@ -146,20 +107,7 @@ function PlayerInventoryManager({ player, cd, level, pb, onAddAttack }: {
   }
 
   function weaponAttack(name: string) {
-    const w = findWeapon(name);
-    if (!w) return null;
-    const strMod = getModifier(Number(cd.strength) || 10);
-    const dexMod = getModifier(Number(cd.dexterity) || 10);
-    const mod = w.info.ability === "dex" ? dexMod
-      : w.info.ability === "finesse" ? Math.max(strMod, dexMod) : strMod;
-    const bonus = mod + pb;
-    const dmg = `${w.info.damage}${mod >= 0 ? "+" : ""}${mod}`;
-    return {
-      name: w.key.charAt(0).toUpperCase() + w.key.slice(1),
-      bonus: `${bonus >= 0 ? "+" : ""}${bonus}`,
-      damage: dmg,
-      type: w.info.type,
-    };
+    return buildAttackFromWeapon(name, Number(cd.strength) || 10, Number(cd.dexterity) || 10, pb);
   }
 
   const catLabel: Record<string, string> = { weapon: "arma", armor: "armatura", shield: "scudo", gear: "oggetto" };
@@ -438,16 +386,12 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const level = Number(formRef.current?.level) || 1;
   const pb = getProficiencyBonus(level);
 
-  // Caratteristiche con bonus razziali
+  // Caratteristiche: i valori in scheda sono FINALI (bonus razziali già inclusi alla creazione)
   function getAbilityScore(ability: string): number {
     return Number(cd[ability as keyof CharacterData]) || 10;
   }
-  function getRaceBonus(ability: string): number {
-    const bonus = raceData?.abilityBonuses?.[ability] || 0;
-    return bonus;
-  }
   function getTotalScore(ability: string): number {
-    return getAbilityScore(ability) + getRaceBonus(ability);
+    return getAbilityScore(ability);
   }
 
   // Auto-calcoli dalla classe/razza
@@ -461,13 +405,13 @@ export function CharacterSheet({ player, onUpdate }: Props) {
   const spellAbility = clsData?.spellcasting?.spellcastingAbility;
   const spellAbilityScore = spellAbility ? getTotalScore(spellAbility) : 10;
   const spellAbilityMod = getModifier(spellAbilityScore);
-  const spellDC = 8 + spellAbilityMod + pb;
-  const spellAtk = spellAbilityMod + pb;
+  const spellDC = spellAbility ? getSpellDC(spellAbility as AbilityName, { [spellAbility as AbilityName]: spellAbilityScore } as any, pb) : 0;
+  const spellAtk = spellAbility ? getSpellAttack(spellAbility as AbilityName, { [spellAbility as AbilityName]: spellAbilityScore } as any, pb) : 0;
 
   // Slot/Trucchetti/Incantesimi automatici dal leveling PHB
   const autoSlotTotals = clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
   const cantripLimit = clsKey ? getCantripsKnown(clsKey, level) : 0;
-  const preparedLimit = spellAbilityMod + (clsKey === "paladin" ? Math.floor(level / 2) : level);
+  const preparedLimit = clsKey ? preparedSpellLimit(clsKey, level, spellAbilityMod) : 0;
   const spellLimit = (clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999;
   const totalKnown = [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((acc, lvl) =>
     acc + ((((cd as any)[`spells${lvl}`]) || []) as string[]).length, 0);
@@ -664,9 +608,7 @@ export function CharacterSheet({ player, onUpdate }: Props) {
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {ABILITY_KEYS.map(k => {
               const base = getAbilityScore(k);
-              const bonus = getRaceBonus(k);
-              const total = getTotalScore(k);
-              const mod = getModifier(total);
+              const mod = getModifier(base);
               return (
                 <div key={k} className="text-center">
                   <p className="text-[10px] uppercase tracking-[0.15em] text-white/35 mb-1">{ABILITY_SHORT[k]}</p>
@@ -676,11 +618,7 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                     onChange={e => updCd(k, Number(e.target.value))}
                     onBlur={() => save({ [k]: formRef.current?.character_data?.[k as keyof CharacterData] })} />
                   <p className="text-base text-veil-gold font-bold mt-1">{mod >= 0 ? `+${mod}` : `${mod}`}</p>
-                  {bonus > 0 ? (
-                    <p className="text-[9px] text-emerald-400/60 mt-0.5">base+{bonus}={total}</p>
-                  ) : (
-                    <p className="text-[9px] text-white/20 mt-0.5">base</p>
-                  )}
+                  <p className="text-[9px] text-white/20 mt-0.5">valore finale</p>
                 </div>
               );
             })}
@@ -985,8 +923,8 @@ export function CharacterSheet({ player, onUpdate }: Props) {
                 {c}
                 <button onClick={() => {
                   const nc = conditions.filter(x => x !== c);
-                  upd("conditions", JSON.stringify(nc));
-                  save({ conditions: JSON.stringify(nc) });
+                  upd("conditions", serializeConditions(nc));
+                  save({ conditions: serializeConditions(nc) });
                 }} className="text-red-300/40 hover:text-red-300 ml-0.5">×</button>
               </span>
             ))}
@@ -996,8 +934,8 @@ export function CharacterSheet({ player, onUpdate }: Props) {
             {CONDITIONS_LIST.filter(c => !conditions.includes(c)).map(c => (
               <button key={c} onClick={() => {
                 const nc = [...conditions, c];
-                upd("conditions", JSON.stringify(nc));
-                save({ conditions: JSON.stringify(nc) });
+                upd("conditions", serializeConditions(nc));
+                save({ conditions: serializeConditions(nc) });
               }} className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/35 hover:border-white/25 hover:text-white/60 transition">
                 + {c}
               </button>

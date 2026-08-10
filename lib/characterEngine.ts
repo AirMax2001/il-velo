@@ -6,6 +6,15 @@ import { type Spell, getSpellsForClass, getSpellByName } from "@/lib/data/spells
 export type AbilityName = "strength" | "dexterity" | "constitution" | "intelligence" | "wisdom" | "charisma";
 export const ALL_ABILITIES: AbilityName[] = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
 
+export const ABILITY_LABELS: Record<AbilityName, string> = {
+  strength: "Forza", dexterity: "Destrezza", constitution: "Costituzione",
+  intelligence: "Intelligenza", wisdom: "Saggezza", charisma: "Carisma",
+};
+export const ABILITY_SHORT: Record<AbilityName, string> = {
+  strength: "FOR", dexterity: "DES", constitution: "COS",
+  intelligence: "INT", wisdom: "SAG", charisma: "CAR",
+};
+
 export type AbilityScores = Record<AbilityName, number>;
 
 export type AbilityMethod = "standard_array" | "point_buy" | "roll_4d6";
@@ -104,6 +113,18 @@ export const ALL_SKILLS: SkillKey[] = [
   "skillDeception", "skillIntimidation", "skillPerformance", "skillPersuasion",
 ];
 
+export const SKILL_LABELS: Record<SkillKey, string> = {
+  skillAthletics: "Atletica", skillAcrobatics: "Acrobazia",
+  skillSleightOfHand: "Rapidità di Mano", skillStealth: "Furtività",
+  skillArcana: "Arcano", skillHistory: "Storia",
+  skillInvestigation: "Indagare", skillNature: "Natura",
+  skillReligion: "Religione", skillAnimalHandling: "Addestrare Animali",
+  skillInsight: "Intuizione", skillMedicine: "Medicina",
+  skillPerception: "Percezione", skillSurvival: "Sopravvivenza",
+  skillDeception: "Inganno", skillIntimidation: "Intimidire",
+  skillPerformance: "Intrattenere", skillPersuasion: "Persuasione",
+};
+
 export const SKILL_ABILITY: Record<SkillKey, AbilityName> = {
   skillAthletics: "strength",
   skillAcrobatics: "dexterity",
@@ -129,6 +150,11 @@ export const SKILL_ABILITY: Record<SkillKey, AbilityName> = {
 export const ALL_SAVES = ["stStrength", "stDexterity", "stConstitution", "stIntelligence", "stWisdom", "stCharisma"] as const;
 export type SaveKey = typeof ALL_SAVES[number];
 
+export const SAVE_LABELS: Record<SaveKey, string> = {
+  stStrength: "Forza", stDexterity: "Destrezza", stConstitution: "Costituzione",
+  stIntelligence: "Intelligenza", stWisdom: "Saggezza", stCharisma: "Carisma",
+};
+
 export const SAVE_ABILITY: Record<SaveKey, AbilityName> = {
   stStrength: "strength",
   stDexterity: "dexterity",
@@ -139,16 +165,28 @@ export const SAVE_ABILITY: Record<SaveKey, AbilityName> = {
 };
 
 // ─── Derived Stats ─────────────────────────────────────────
-export function calculateAC(scores: AbilityScores, armorProficiencies: string[]): number {
-  const dex = scores.dexterity;
-  const mod = getModifier(dex);
-  if (armorProficiencies.includes("media") || armorProficiencies.includes("pesante")) {
-    return 12 + Math.min(mod, 2); // armatura media approssimata
+export function calculateACFromLoadout(classKey: string, scores: AbilityScores, chosenItems: string[]): number {
+  const dexMod = getModifier(scores.dexterity);
+  const hasShield = chosenItems.some(item => item.includes("scudo"));
+
+  let ac: number;
+  if (classKey === "barbarian") {
+    ac = 10 + dexMod + getModifier(scores.constitution);
+  } else if (classKey === "monk") {
+    ac = 10 + dexMod + getModifier(scores.wisdom);
+  } else if (chosenItems.some(item => item.includes("maglie") || item.includes("pesante"))) {
+    ac = 16;
+  } else if (chosenItems.some(item => item.includes("scaglie") || item.includes("media"))) {
+    ac = 14 + Math.min(dexMod, 2);
+  } else if (chosenItems.some(item => item.includes("cuoio borchiato"))) {
+    ac = 12 + dexMod;
+  } else if (chosenItems.some(item => item.includes("cuoio") || item.includes("leggera"))) {
+    ac = 11 + dexMod;
+  } else {
+    ac = 10 + dexMod;
   }
-  if (armorProficiencies.includes("leggera")) {
-    return 11 + mod; // cuoio borchiato approssimato
-  }
-  return 10 + mod + (armorProficiencies.includes("monk") ? getModifier(scores.wisdom) : 0);
+  if (hasShield) ac += 2;
+  return ac;
 }
 
 export function calculateHP(classData: ClassData, conScore: number, level: number): number {
@@ -167,6 +205,40 @@ export function getSpellDC(spellAbility: AbilityName, scores: AbilityScores, pb:
 
 export function getSpellAttack(spellAbility: AbilityName, scores: AbilityScores, pb: number): number {
   return pb + getModifier(scores[spellAbility]);
+}
+
+// ─── Regole condivise ──────────────────────────────────────
+export const ALIGNMENTS = [
+  "Legale Buono", "Neutrale Buono", "Caotico Buono",
+  "Legale Neutrale", "Neutrale", "Caotico Neutrale",
+  "Legale Malvagio", "Neutrale Malvagio", "Caotico Malvagio",
+];
+
+export const CONDITIONS_LIST = [
+  "Accecato", "Affascinato", "Assordato", "Atterrito", "Avvelenato",
+  "Esausto", "Grappling", "Incapacitato", "Inconscio", "Invisibile",
+  "Paralizzato", "Pietrificato", "Prono", "Rallentato", "Spaventato",
+  "Stordito", "Trattenuto",
+];
+
+export function parseConditions(raw: any): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    if (raw.trim().startsWith("[")) {
+      try { return JSON.parse(raw); } catch { /* fallthrough */ }
+    }
+    return raw.split(",").map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+export function serializeConditions(list: string[]): string {
+  return JSON.stringify(list);
+}
+
+// Incantesimi preparati (PHB): paladino metà livello, gli altri livello + mod.
+export function preparedSpellLimit(clsKey: string | null | undefined, level: number, spellAbilityMod: number): number {
+  if (clsKey === "paladin") return spellAbilityMod + Math.floor(level / 2);
+  return spellAbilityMod + level;
 }
 
 // ─── Validation ────────────────────────────────────────────

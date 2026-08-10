@@ -7,14 +7,15 @@ import { getSpellsForClass } from "@/lib/data/spells";
 import {
   type AbilityName, type AbilityScores, type SkillKey, type SaveKey,
   ALL_ABILITIES, ALL_SKILLS, SKILL_ABILITY, ALL_SAVES, SAVE_ABILITY,
+  ABILITY_LABELS, ABILITY_SHORT, SKILL_LABELS, SAVE_LABELS, ALIGNMENTS,
   STANDARD_ARRAY, POINT_BUY_COST, POINT_BUY_MAX, POINT_BUY_RANGE,
-  getModifier, formatMod, getProficiencyBonus, calculateHP,
+  getModifier, formatMod, getProficiencyBonus, calculateHP, calculateACFromLoadout,
   getSpellDC, getSpellAttack,
   applyRaceBonuses, rollAbilityScores,
 } from "@/lib/characterEngine";
 import type { Player, CharacterData } from "@/lib/types";
 import { skillGuides } from "@/lib/fieldGuides";
-import { WEAPON_DB, itemCategory } from "@/lib/data/weapons";
+import { itemCategory, buildAttackFromWeapon, buildUnarmedAttack } from "@/lib/data/weapons";
 
 type Props = { player: Player; onComplete: (data: Player) => void; onClose: () => void };
 const WIZARD_KEY = "veil-wizard-done";
@@ -66,41 +67,11 @@ type WizardData = {
   equipmentChoices: Record<number, number>;
 };
 
-const ALIGNMENTS = [
-  "Legale Buono", "Neutrale Buono", "Caotico Buono",
-  "Legale Neutrale", "Neutrale", "Caotico Neutrale",
-  "Legale Malvagio", "Neutrale Malvagio", "Caotico Malvagio",
-];
-
 const STEP_LABELS = [
   "Info Base", "Razza", "Classe", "Background",
   "Caratteristiche", "Abilità", "Tiri Salvezza",
   "Incantesimi", "Equipaggiamento", "Riepilogo",
 ];
-
-const ABILITY_LABELS: Record<AbilityName, string> = {
-  strength: "Forza", dexterity: "Destrezza", constitution: "Costituzione",
-  intelligence: "Intelligenza", wisdom: "Saggezza", charisma: "Carisma",
-};
-const ABILITY_SHORT: Record<AbilityName, string> = {
-  strength: "FOR", dexterity: "DES", constitution: "COS",
-  intelligence: "INT", wisdom: "SAG", charisma: "CAR",
-};
-const SKILL_LABELS: Record<SkillKey, string> = {
-  skillAthletics: "Atletica", skillAcrobatics: "Acrobazia",
-  skillSleightOfHand: "Rapidità di Mano", skillStealth: "Furtività",
-  skillArcana: "Arcano", skillHistory: "Storia",
-  skillInvestigation: "Indagare", skillNature: "Natura",
-  skillReligion: "Religione", skillAnimalHandling: "Addestrare Animali",
-  skillInsight: "Intuizione", skillMedicine: "Medicina",
-  skillPerception: "Percezione", skillSurvival: "Sopravvivenza",
-  skillDeception: "Inganno", skillIntimidation: "Intimidire",
-  skillPerformance: "Intrattenere", skillPersuasion: "Persuasione",
-};
-const SAVE_LABELS: Record<SaveKey, string> = {
-  stStrength: "Forza", stDexterity: "Destrezza", stConstitution: "Costituzione",
-  stIntelligence: "Intelligenza", stWisdom: "Saggezza", stCharisma: "Carisma",
-};
 
 const DEFAULT_DATA: WizardData = {
   name: "", raceKey: "", subRaceKey: "", classKey: "",
@@ -165,10 +136,6 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
 
   const calculatedAC = useMemo(() => {
     if (!cls || !finalScores) return 10;
-    const dexMod = getModifier(finalScores.dexterity);
-    const conMod = getModifier(finalScores.constitution);
-    const wisMod = getModifier(finalScores.wisdom);
-
     const chosenItems: string[] = [];
     cls.equipment.forEach((eq, i) => {
       const oi = data.equipmentChoices[i] ?? 0;
@@ -179,30 +146,7 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         });
       }
     });
-
-    const hasShield = chosenItems.some(item => item.includes("scudo"));
-
-    let ac = 10;
-    if (data.classKey === "barbarian") {
-      ac = 10 + dexMod + conMod;
-    } else if (data.classKey === "monk") {
-      ac = 10 + dexMod + wisMod;
-    } else if (chosenItems.some(item => item.includes("maglie") || item.includes("pesante"))) {
-      ac = 16;
-    } else if (chosenItems.some(item => item.includes("scaglie") || item.includes("media"))) {
-      ac = 14 + Math.min(dexMod, 2);
-    } else if (chosenItems.some(item => item.includes("cuoio borchiato"))) {
-      ac = 12 + dexMod;
-    } else if (chosenItems.some(item => item.includes("cuoio") || item.includes("leggera"))) {
-      ac = 11 + dexMod;
-    } else {
-      ac = 10 + dexMod;
-    }
-
-    if (hasShield) {
-      ac += 2;
-    }
-    return ac;
+    return calculateACFromLoadout(data.classKey, finalScores, chosenItems);
   }, [cls, finalScores, data.equipmentChoices, data.classKey]);
 
   function update<K extends keyof WizardData>(k: K, v: WizardData[K]) {
@@ -262,7 +206,8 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         });
       }
 
-      // Costruisce il character_data completo
+      // Costruisce il character_data completo (i punteggi salvati sono FINALI, bonus razziali inclusi)
+      const pb1 = getProficiencyBonus(1);
       const cd: CharacterData = {
         strength: finalScores?.strength,
         dexterity: finalScores?.dexterity,
@@ -270,7 +215,12 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         intelligence: finalScores?.intelligence,
         wisdom: finalScores?.wisdom,
         charisma: finalScores?.charisma,
-        proficiencyBonus: 2,
+        subRaceKey: data.subRaceKey || undefined,
+        sex: data.sex || undefined,
+        deity: data.deity || undefined,
+        appearance: data.appearance || undefined,
+        alignment: data.alignment,
+        proficiencyBonus: pb1,
         initiative: finalScores ? getModifier(finalScores.dexterity) : 0,
         speed: race?.speed || 30,
         armorClass: calculatedAC,
@@ -287,46 +237,18 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
       cd.equipment = Object.entries(eqCounts).map(([name, quantity]) => ({ name, quantity }));
 
       // Genera gli attacchi iniziali in base alle armi in equipaggiamento
+      const strScore = finalScores?.strength ?? 10;
+      const dexScore = finalScores?.dexterity ?? 10;
       const attacksList: any[] = [];
-      const strMod = finalScores ? getModifier(finalScores.strength) : 0;
-      const dexModForAttack = finalScores ? getModifier(finalScores.dexterity) : 0;
-
-      chosenItems.forEach(itemName => {
-        const matchedKey = Object.keys(WEAPON_DB).find(key => itemName.includes(key));
-        if (matchedKey) {
-          const wData = WEAPON_DB[matchedKey];
-          let mod = strMod;
-          if (wData.ability === "dex") {
-            mod = dexModForAttack;
-          } else if (wData.ability === "finesse") {
-            mod = Math.max(strMod, dexModForAttack);
-          }
-
-          const atkBonus = mod + 2; // +2 PB al livello 1
-          const dmgBonus = mod;
-          const damageStr = `${wData.damage}${dmgBonus >= 0 ? "+" : ""}${dmgBonus}`;
-          
-          if (!attacksList.some(a => a.name.toLowerCase() === matchedKey)) {
-            attacksList.push({
-              name: matchedKey.charAt(0).toUpperCase() + matchedKey.slice(1),
-              bonus: `+${atkBonus}`,
-              damage: damageStr,
-              type: wData.type,
-            });
-          }
+      for (const itemName of chosenItems) {
+        const atk = buildAttackFromWeapon(itemName, strScore, dexScore, pb1);
+        if (atk && !attacksList.some(a => a.name.toLowerCase() === atk.name.toLowerCase())) {
+          attacksList.push(atk);
         }
-      });
+      }
 
-      // Aggiungi un colpo senz'armi di base
-      const monkDie = data.classKey === "monk" ? "1d4" : "1";
-      const unarmedMod = data.classKey === "monk" ? Math.max(strMod, dexModForAttack) : strMod;
-      const unarmedDmg = `${monkDie}${unarmedMod >= 0 ? "+" : ""}${unarmedMod}`;
-      attacksList.push({
-        name: "Colpo Senz'Armi",
-        bonus: `+${unarmedMod + 2}`,
-        damage: unarmedDmg,
-        type: "Contundente"
-      });
+      // Colpo senz'armi di base
+      attacksList.push(buildUnarmedAttack(data.classKey, strScore, dexScore, pb1));
 
       cd.attacks = attacksList;
 
@@ -334,13 +256,17 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
       if (cls?.spellcasting) {
         cd.spellcastingAbility = cls.spellcasting.spellcastingAbility;
         cd.spellSaveDC = finalScores
-          ? getSpellDC(cls.spellcasting.spellcastingAbility as AbilityName, finalScores, 2)
+          ? getSpellDC(cls.spellcasting.spellcastingAbility as AbilityName, finalScores, pb1)
           : 10;
         cd.spellAttackBonus = finalScores
-          ? getSpellAttack(cls.spellcasting.spellcastingAbility as AbilityName, finalScores, 2)
+          ? getSpellAttack(cls.spellcasting.spellcastingAbility as AbilityName, finalScores, pb1)
           : 2;
         cd.cantrips = data.selectedSpells.filter(s => {
           const sp = getSpellsForClass(data.classKey, 0).find(sp => sp.name === s);
+          return !!sp;
+        });
+        cd.spells1 = data.selectedSpells.filter(s => {
+          const sp = getSpellsForClass(data.classKey, 1).find(sp => sp.name === s);
           return !!sp;
         });
         cd.spellSlots = { 1: { total: cls.spellcasting.spellSlots[1] || 0, expended: 0 } };

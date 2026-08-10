@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseClient";
+import { updatePlayerWithMerge, deletePlayerCascade } from "@/lib/playerRoutes";
 
 function checkAuth(req: NextRequest) {
   const auth = req.headers.get("authorization");
@@ -48,11 +49,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID richiesto" }, { status: 400 });
 
-  const cleanFields = Object.fromEntries(
-    Object.entries(fields).filter(([, v]) => v !== undefined)
-  );
-
-  const { error } = await db.from("players").update(cleanFields).eq("id", id);
+  const { error } = await updatePlayerWithMerge(db, id, fields);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
@@ -68,14 +65,7 @@ export async function DELETE(req: NextRequest) {
 
   const db = supabaseAdmin();
   if (cascade) {
-    await db.from("inventory_items").delete().eq("player_id", id);
-    await db.from("memory_entries").delete().eq("player_id", id);
-    await db.from("echo_messages").delete().eq("player_id", id);
-    await db.from("secrets").delete().eq("player_id", id);
-    await db.from("player_diary_entries").delete().eq("player_id", id);
-    await db.from("player_thoughts").delete().eq("player_id", id);
-    await db.from("roleplay_messages").delete().eq("player_id", id);
-    await db.from("entity_links").delete().or(`source_id.eq.${id},target_id.eq.${id}`);
+    await deletePlayerCascade(db, id);
   }
 
   const { error } = await db.from("players").delete().eq("id", id);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseClient";
+import { updatePlayerWithMerge, deletePlayerCascade } from "@/lib/playerRoutes";
 
 // GET: lista giocatori di una sessione (DM Party Management) o un singolo player per token
 export async function GET(req: NextRequest) {
@@ -35,33 +36,13 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "ID giocatore mancante" }, { status: 400 });
     }
 
-    const cleanFields = Object.fromEntries(
-      Object.entries(fields).filter(([, value]) => value !== undefined)
-    );
-
-    // Merge consapevole: se character_data arriva con marker "_merge", unisci i
-    // campi parziali sulla riga corrente nel DB (evita che snapshot stale del
-    // DM/player si sovrascrivano a vicenda) e non salvare mai il marker.
-    const cdField = cleanFields.character_data;
-    if (cdField && typeof cdField === "object" && (cdField as any)._merge) {
-      const { _merge, ...cdPartial } = cdField as any;
-      const { data: current } = await db
-        .from("players")
-        .select("character_data")
-        .eq("id", id)
-        .single();
-      cleanFields.character_data = { ...((current?.character_data as Record<string, any>) || {}), ...cdPartial };
-    }
-
-    const { data, error } = await db
-      .from("players")
-      .update(cleanFields)
-      .eq("id", id)
-      .select()
-      .single();
-
+    // Merge consapevole e sempre attivo: i campi parziali di character_data
+    // vengono uniti sulla riga corrente nel DB, così snapshot stale del
+    // DM/player non si sovrascrivono a vicenda (il marker "_merge" è accettato
+    // per retro-compatibilità ma non è più necessario).
+    const { data: updated, error } = await updatePlayerWithMerge(db, id, fields);
     if (error) return NextResponse.json({ error: explainPlayerError(error.message) }, { status: 500 });
-    return NextResponse.json({ ok: true, player: data });
+    return NextResponse.json({ ok: true, player: updated });
   } catch (error: any) {
     return NextResponse.json({ error: explainPlayerError(error.message || "Errore nel salvataggio della scheda") }, { status: 500 });
   }
@@ -75,14 +56,7 @@ export async function DELETE(req: NextRequest) {
 
     const db = supabaseAdmin();
     if (cascade) {
-      await db.from("inventory_items").delete().eq("player_id", id);
-      await db.from("memory_entries").delete().eq("player_id", id);
-      await db.from("echo_messages").delete().eq("player_id", id);
-      await db.from("secrets").delete().eq("player_id", id);
-      await db.from("player_diary_entries").delete().eq("player_id", id);
-      await db.from("player_thoughts").delete().eq("player_id", id);
-      await db.from("roleplay_messages").delete().eq("player_id", id);
-      await db.from("entity_links").delete().or(`source_id.eq.${id},target_id.eq.${id}`);
+      await deletePlayerCascade(db, id);
     }
     const { error } = await db.from("players").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
