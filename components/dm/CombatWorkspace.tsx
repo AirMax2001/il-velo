@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useGameEngine } from "@/lib/mythos/GameEngineContext";
+import { writeTableDisplay } from "@/lib/tableDisplay";
 
 type CombatWorkspaceProps = { sessionId?: string; combatId: string; onDelete?: () => void; onClose?: () => void };
 
@@ -158,12 +159,12 @@ export function CombatWorkspace({ sessionId, combatId, onDelete, onClose }: Comb
     if (!sessionId || !combat) return;
     try {
       const ordered = orderedOverride ?? [...combatants].filter(c => !c.is_dead).sort((a, b) => a.sort_order - b.sort_order);
-      localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify({
+      writeTableDisplay(sessionId, {
         combatActive: true,
         combatTitle: combat.title,
         currentTurn: ordered[0]?.name || "",
         round: 1,
-      }));
+      });
     } catch {}
   }
 
@@ -180,12 +181,12 @@ export function CombatWorkspace({ sessionId, combatId, onDelete, onClose }: Comb
     else engine.nextTurn();
     try {
       const aliveNow = [...combatants].filter(c => !c.is_dead).sort((a, b) => a.sort_order - b.sort_order);
-      localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify({
+      writeTableDisplay(sessionId, {
         combatActive: true,
         combatTitle: combat?.title,
         currentTurn: aliveNow[nextIndex]?.name || "",
         round: newRound,
-      }));
+      });
     } catch {}
   }
 

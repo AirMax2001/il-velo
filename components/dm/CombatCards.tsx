@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useGameEngine } from "@/lib/mythos/GameEngineContext";
+import { readTableDisplay, writeTableDisplay } from "@/lib/tableDisplay";
 
 type CombatCardsProps = { sessionId?: string };
 
@@ -117,19 +118,16 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
 
   function writeTableCombat(combat: any, force: boolean) {
     if (!sessionId || !combat) return;
-    const key = `veil-table-display:${sessionId}`;
-    let prev: Record<string, any> = {};
-    try { prev = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
+    const prev = readTableDisplay(sessionId);
     if (!force && prev.combatActive !== true) return;
     const aliveList = [...combatants].filter(c => !c.is_dead).sort((a, b) => b.initiative - a.initiative);
     const current = aliveList[combat.turn_index];
-    localStorage.setItem(key, JSON.stringify({
-      ...prev,
+    writeTableDisplay(sessionId, {
       combatActive: true,
       combatTitle: combat.title,
       round: combat.round || 1,
       currentTurn: current?.name || "",
-    }));
+    });
   }
 
   function syncToTable(combat: any = activeCombat) {
@@ -138,10 +136,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
 
   function clearTableCombat() {
     if (!sessionId) return;
-    const key = `veil-table-display:${sessionId}`;
-    let prev: Record<string, any> = {};
-    try { prev = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
-    localStorage.setItem(key, JSON.stringify({ ...prev, combatActive: false }));
+    writeTableDisplay(sessionId, { combatActive: false });
   }
 
   async function showCombatOnTable() {

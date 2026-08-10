@@ -6,6 +6,7 @@ import { LocationPopup } from "@/components/dm/popups/LocationPopup";
 import { ItemPopup } from "@/components/dm/popups/ItemPopup";
 import { CombatCards } from "@/components/dm/CombatCards";
 import { FirstSessionGuide } from "@/components/dm/FirstSessionGuide";
+import { writeTableDisplay } from "@/lib/tableDisplay";
 
 type PopupType = "npc" | "location" | "item" | null;
 
@@ -230,9 +231,7 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
                       <button
                         onClick={() => {
                           try {
-                            localStorage.setItem(`veil-table-display:${_sid}`,
-                              JSON.stringify({ ...JSON.parse(localStorage.getItem(`veil-table-display:${_sid}`) || "{}"), sceneImageUrl: imgUrl, combatActive: false })
-                            );
+                            writeTableDisplay(_sid, { sceneImageUrl: imgUrl, combatActive: false });
                           } catch {}
                           // Also update current_location_id via API for name+description
                           fetch(`/api/locations?sessionId=${_sid}`)

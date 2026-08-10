@@ -1,39 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
+import { readTableDisplay, writeTableDisplay, clearTableDisplay, DEFAULT_TABLE_DISPLAY, type TableDisplayConfig, type TableEffect } from "@/lib/tableDisplay";
 
 type TableWorkspaceProps = { sessionId: string };
 
 export function TableWorkspace({ sessionId }: TableWorkspaceProps) {
-  const [config, setConfig] = useState({
-    backgroundImageUrl: "",
-    sceneImageUrl: "",
-    soundUrl: "",
-    mapType: "classic" as string,
-    mapMarkers: "",
-    effect: "" as string,
-    title: "",
-    subtitle: "",
-    countdown: 0,
-  });
+  const [config, setConfig] = useState<TableDisplayConfig>(DEFAULT_TABLE_DISPLAY);
 
   useEffect(() => {
     if (!sessionId) return;
     try {
-      const raw = localStorage.getItem(`veil-table-display:${sessionId}`);
-      if (raw) setConfig(c => ({ ...c, ...JSON.parse(raw) }));
+      setConfig(readTableDisplay(sessionId));
     } catch {}
   }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
     try {
-      const raw = localStorage.getItem(`veil-table-display:${sessionId}`);
-      const prev = raw ? JSON.parse(raw) : {};
-      localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify({ ...prev, ...config }));
+      writeTableDisplay(sessionId, config);
     } catch {}
   }, [sessionId, config]);
 
-  const effects = ["fog", "rain", "storm", "glitch"];
+  const effects: TableEffect[] = ["fog", "rain", "storm", "glitch"];
 
   return (
     <div className="flex h-full gap-6">
@@ -90,18 +78,7 @@ export function TableWorkspace({ sessionId }: TableWorkspaceProps) {
 
         <div>
           <p className="text-[10px] text-white/30 mb-1">Countdown (secondi)</p>
-          <input className="w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/60 focus:border-veil-gold/30 focus:outline-none" type="number" value={config.countdown} onChange={e => setConfig({ ...config, countdown: Number(e.target.value) })} />
-        </div>
-
-        <div>
-          <p className="text-[10px] text-white/30 mb-1">Mappa</p>
-          <select className="w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/60 focus:border-veil-gold/30 focus:outline-none" value={config.mapType} onChange={e => setConfig({ ...config, mapType: e.target.value })}>
-            <option value="classic">Classica</option>
-            <option value="tactical">Tattica</option>
-            <option value="region">Regionale</option>
-            <option value="nodes">Nodi</option>
-          </select>
-          <textarea className="mt-2 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/60 focus:border-veil-gold/30 focus:outline-none" rows={2} placeholder="Marker mappa" value={config.mapMarkers} onChange={e => setConfig({ ...config, mapMarkers: e.target.value })} />
+          <input className="w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/60 focus:border-veil-gold/30 focus:outline-none" type="number" value={config.countdown ?? 0} onChange={e => setConfig({ ...config, countdown: Number(e.target.value) })} />
         </div>
 
         <div className="flex gap-2">
@@ -114,7 +91,7 @@ export function TableWorkspace({ sessionId }: TableWorkspaceProps) {
             Apri schermo
           </a>
           <button
-            onClick={() => { localStorage.removeItem(`veil-table-display:${sessionId}`); setConfig({ backgroundImageUrl: "", sceneImageUrl: "", soundUrl: "", mapType: "classic", mapMarkers: "", effect: "", title: "", subtitle: "", countdown: 0 }); }}
+            onClick={() => { clearTableDisplay(sessionId); setConfig(DEFAULT_TABLE_DISPLAY); }}
             className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-2.5 text-sm text-white/30 hover:border-white/[0.12]"
           >
             Reset

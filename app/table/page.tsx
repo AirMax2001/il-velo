@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { subscribeToTable } from "@/lib/supabaseClient";
 import { WorldMap } from "@/components/WorldMap/WorldMap";
+import { readTableDisplay, writeTableDisplay, type TableDisplayConfig } from "@/lib/tableDisplay";
 
 function slugify(name: string): string {
   return name
@@ -10,16 +11,6 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
-
-type EffectConfig = {
-  showFog: boolean; fogOpacity: number;
-  showRain: boolean; rainIntensity: number;
-  showStorm: boolean; stormIntensity: number;
-  countdown: number | null;
-  glitchIntensity: number;
-  title: string;
-  subtitle: string;
-};
 
 function TableView() {
   const search = useSearchParams();
@@ -29,20 +20,7 @@ function TableView() {
   const [state, setState] = useState<any>(null);
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [showMap, setShowMap] = useState(false);
-  const [effects, setEffects] = useState<EffectConfig>({
-    showFog: false, fogOpacity: 0.3,
-    showRain: false, rainIntensity: 0.5,
-    showStorm: false, stormIntensity: 0.5,
-    countdown: null, glitchIntensity: 0,
-    title: "", subtitle: ""
-  });
-  const [displayConfig, setDisplayConfig] = useState<{
-    backgroundImageUrl: string; sceneImageUrl: string; soundUrl: string;
-    mapUrl: string; combatActive?: boolean; combatTitle?: string; currentTurn?: string; round?: number;
-  }>({
-    backgroundImageUrl: "", sceneImageUrl: "", soundUrl: "",
-    mapUrl: ""
-  });
+  const [displayConfig, setDisplayConfig] = useState<TableDisplayConfig>(readTableDisplay(sessionId));
   const [locations, setLocations] = useState<any[]>([]);
   const [activeCombat, setActiveCombat] = useState<any>(null);
   const [combatants, setCombatants] = useState<any[]>([]);
@@ -84,24 +62,18 @@ function TableView() {
   useEffect(() => {
     if (!sessionId) return;
     function sync() {
-      const raw = localStorage.getItem(`veil-table-display:${sessionId}`);
-      if (raw) setDisplayConfig(prev => ({ ...prev, ...JSON.parse(raw) }));
-      const effRaw = localStorage.getItem(`veil-table-effects:${sessionId}`);
-      if (effRaw) setEffects(prev => ({ ...prev, ...JSON.parse(effRaw) }));
+      setDisplayConfig(readTableDisplay(sessionId));
     }
     function syncCombat() {
-      const raw = localStorage.getItem(`veil-table-display:${sessionId}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.combatActive === true) {
-          tableCombatActive.current = true;
-          loadCombat();
-        }
-        if (parsed.combatActive === false) {
-          tableCombatActive.current = false;
-          setActiveCombat(null);
-          setCombatants([]);
-        }
+      const parsed = readTableDisplay(sessionId);
+      if (parsed.combatActive === true) {
+        tableCombatActive.current = true;
+        loadCombat();
+      }
+      if (parsed.combatActive === false) {
+        tableCombatActive.current = false;
+        setActiveCombat(null);
+        setCombatants([]);
       }
     }
     sync();
@@ -148,8 +120,8 @@ function TableView() {
   // Countdown timer
   const [countdownDisplay, setCountdownDisplay] = useState<string | null>(null);
   useEffect(() => {
-    if (effects.countdown === null || effects.countdown <= 0) { setCountdownDisplay(null); return; }
-    let remaining = effects.countdown;
+    if (displayConfig.countdown === null || displayConfig.countdown <= 0) { setCountdownDisplay(null); return; }
+    let remaining = displayConfig.countdown;
     const interval = setInterval(() => {
       remaining--;
       const mins = Math.floor(remaining / 60);
@@ -158,22 +130,10 @@ function TableView() {
       if (remaining <= 0) { clearInterval(interval); setCountdownDisplay("00:00"); }
     }, 1000);
     return () => clearInterval(interval);
-  }, [effects.countdown]);
+  }, [displayConfig.countdown]);
 
-  function updateConfig(partial: Partial<typeof displayConfig>) {
-    setDisplayConfig(prev => {
-      const next = { ...prev, ...partial };
-      localStorage.setItem(`veil-table-display:${sessionId}`, JSON.stringify(next));
-      return next;
-    });
-  }
-
-  function updateEffects(partial: Partial<EffectConfig>) {
-    setEffects(prev => {
-      const next = { ...prev, ...partial };
-      localStorage.setItem(`veil-table-effects:${sessionId}`, JSON.stringify(next));
-      return next;
-    });
+  function updateConfig(partial: Partial<TableDisplayConfig>) {
+    setDisplayConfig(writeTableDisplay(sessionId, partial));
   }
 
   const atmosphere = location?.atmosphere || "calm";
@@ -201,17 +161,17 @@ function TableView() {
       )}
 
       {/* Fog Effect */}
-      {effects.showFog && (
+      {displayConfig.effect === "fog" && (
         <div className="pointer-events-none absolute inset-0" style={{
-          background: `radial-gradient(ellipse at center, transparent 30%, rgba(200,200,220,${effects.fogOpacity}) 100%)`,
+          background: `radial-gradient(ellipse at center, transparent 30%, rgba(200,200,220,${displayConfig.intensity}) 100%)`,
           animation: "veil-fog 8s ease-in-out infinite alternate"
         }} />
       )}
 
       {/* Rain Effect */}
-      {effects.showRain && (
+      {displayConfig.effect === "rain" && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {Array.from({ length: Math.floor(60 * effects.rainIntensity) }).map((_, i) => (
+          {Array.from({ length: Math.floor(60 * displayConfig.intensity) }).map((_, i) => (
             <div key={i} className="absolute h-16 w-px bg-white/10"
               style={{
                 left: `${Math.random() * 100}%`,
@@ -225,19 +185,19 @@ function TableView() {
       )}
 
       {/* Storm Effect */}
-      {effects.showStorm && (
+      {displayConfig.effect === "storm" && (
         <div className="pointer-events-none absolute inset-0"
           style={{
-            animation: `veil-flash ${3 - effects.stormIntensity * 2}s infinite`,
+            animation: `veil-flash ${3 - displayConfig.intensity * 2}s infinite`,
             background: "rgba(255,255,255,0.03)"
           }} />
       )}
 
       {/* Glitch Effect */}
-      {effects.glitchIntensity > 0 && (
+      {displayConfig.effect === "glitch" && (
         <div className="pointer-events-none absolute inset-0" style={{
-          background: `repeating-linear-gradient(0deg, rgba(138,43,226,${effects.glitchIntensity * 0.08}) 0px, transparent 2px, transparent ${4 - effects.glitchIntensity * 2}px)`,
-          animation: `veil-shift ${0.2 + (1 - effects.glitchIntensity) * 0.3}s infinite`
+          background: `repeating-linear-gradient(0deg, rgba(138,43,226,${displayConfig.intensity * 0.08}) 0px, transparent 2px, transparent ${4 - displayConfig.intensity * 2}px)`,
+          animation: `veil-shift ${0.2 + (1 - displayConfig.intensity) * 0.3}s infinite`
         }} />
       )}
 
@@ -382,11 +342,11 @@ function TableView() {
           )}
 
           {/* Title */}
-          {effects.title && (
-            <h2 className="mb-2 text-3xl tracking-[0.2em] text-white/90">{effects.title}</h2>
+          {displayConfig.title && (
+            <h2 className="mb-2 text-3xl tracking-[0.2em] text-white/90">{displayConfig.title}</h2>
           )}
-          {effects.subtitle && (
-            <p className="mb-6 text-lg text-white/50">{effects.subtitle}</p>
+          {displayConfig.subtitle && (
+            <p className="mb-6 text-lg text-white/50">{displayConfig.subtitle}</p>
           )}
 
 
