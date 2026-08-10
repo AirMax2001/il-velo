@@ -216,7 +216,7 @@ const races: Record<string, RaceData> = {
         name: "Gnomo delle Foreste",
         abilityBonuses: { dexterity: 1 },
         traits: [
-          { name: "Illusionista naturale", description: "Conosci il trucchetto Immagine che hai. La caratteristica per lanciarlo è Intelligenza." },
+          { name: "Illusionista naturale", description: "Conosci il trucchetto Immagine Minore. La caratteristica per lanciarlo è Intelligenza." },
           { name: "Comunicare con le piccole bestie", description: "Puoi comunicare idee semplici con animali di taglia Piccola o inferiore." },
         ],
         description: "Gli gnomi delle foreste hanno un talento naturale per le illusioni e un legame con gli animali."
@@ -296,7 +296,7 @@ const races: Record<string, RaceData> = {
     languages: ["Comune", "Un linguaggio extra a scelta"],
     traits: [
       { name: "Fata", description: "Sei una creatura di tipo Fata: incantesimi che colpiscono solo umanoidi (come Incantare Persona o Ipnotizzare) non funzionano su di te." },
-      { name: "Magia fatata", description: "Conosci il trucchetto Simbolo Druidico (Druidcraft). Al 3° livello, puoi lanciare l'incantesimo Bagliore Fatato una volta. Al 5° livello, puoi lanciare l'incantesimo Ingrandire/Ridurre una volta. Ripeti solo dopo un riposo lungo. La tua caratteristica di lancio è Intelligenza, Saggezza o Carisma (a tua scelta)." },
+      { name: "Magia fatata", description: "Conosci il trucchetto Simbolo Druidico (Druidcraft). Al 3° livello, puoi lanciare l'incantesimo Bagliore Fatato una volta. Al 5° livello, puoi lanciare l'incantesimo Ingrandire/Rimpicciolire una volta. Ripeti solo dopo un riposo lungo. La tua caratteristica di lancio è Intelligenza, Saggezza o Carisma (a tua scelta)." },
       { name: "Volo", description: "Hai una velocità di volo pari alla tua velocità di camminata. Non puoi usarla se indossi un'armatura media o una pesante." },
     ],
     hasSubRace: false,

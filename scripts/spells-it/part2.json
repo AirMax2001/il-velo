@@ -1,0 +1,474 @@
+{
+ "Acid Arrow": {
+  "name": "Freccia Acida",
+  "description": "Una freccia verde di acido colpisce una creatura entro 27 m. Tiro a distanza: 4d4 acido e, al turno successivo, altri 2d4. +1d4+1d4 per slot sopra il 2°."
+ },
+ "Aid": {
+  "name": "Aiuto",
+  "description": "Fino a 3 creature entro 9 m ottengono +5 PF massimi e +5 PF attuali per 8 ore. A livelli più alti il bonus aumenta di 5 per ogni slot sopra il 2°."
+ },
+ "Alter Self": {
+  "name": "Alterazione del Sé",
+  "description": "Per 1 ora (concentrazione) puoi cambiare il tuo aspetto, adattare gli arti alle circostanze o far crescere armi naturali dalle tue mani (1d6 tagliente o 1d6 perforante, uso SAG/CAR/INT)."
+ },
+ "Animal Messenger": {
+  "name": "Messaggero Animale",
+  "description": "Una piccola bestia entro 9 m porta un messaggio di 25 parole a una creatura specifica (che riconosce dal tuo descrittore) entro 40 km, viaggiando a passo veloce. 24 ore (o fino al completamento)."
+ },
+ "Arcane Lock": {
+  "name": "Serratura Arcana",
+  "description": "Tocchi una porta, finestra o scrigno: resta chiuso magicamente per 10 giorni. I tiri per aprirla richiedono una prova di Scasso +10 e puoi aprirla tu con la parola d'ordine."
+ },
+ "Arcanist’s Magic Aura": {
+  "name": "Aura Magica di Arcanista",
+  "description": "Nascondi o alteri l'aura magica di una creatura o oggetto entro 9 m per 24 ore: puoi farla sembrare non magica, o del tipo o della scuola che preferisci (anche per i rilevamenti di ammaliamento e i mostri)."
+ },
+ "Augury": {
+  "name": "Auspicio",
+  "description": "Ottieni un segno dal destino su un'azione che intendi compiere nei prossimi 30 minuti: bene, male, bene e male o nulla. Richiede un oggetto sacro. Se lanciato due volte nella stessa giornata le risposte non sono più affidabili. Rituale."
+ },
+ "Barkskin": {
+  "name": "Pelle di Corteccia",
+  "description": "La pelle di una creatura toccata diventa dura come la corteccia: la sua CA diventa 16 (se non indossa armatura) per 1 ora. Concentrazione."
+ },
+ "Beast Sense": {
+  "name": "Sensi della Bestia",
+  "description": "Tocchi una bestia volenterosa: per 1 ora puoi vedere e sentire attraverso i suoi sensi mentre rimani concentrato."
+ },
+ "Blindness/Deafness": {
+  "name": "Cecità e Sordità",
+  "description": "Una creatura entro 9 m deve superare un TS COS o diventare accecata o sorda (a tua scelta) per 1 minuto. Può ripetere il TS alla fine di ogni suo turno."
+ },
+ "Blur": {
+  "name": "Sfocatura",
+  "description": "Il tuo corpo diventa sfocato per 1 minuto: qualsiasi attacco contro di te ha svantaggio, a meno che chi attacca non abbia un senso non visivo. Concentrazione."
+ },
+ "Branding Smite": {
+  "name": "Colpo Marchiante",
+  "description": "Azione bonus: la tua arma emette luce. Se colpisci, +2d6 radiante e il bersaglio è illuminato (invisibilità inutile fino alla fine dell'incantesimo). +1d6 per slot sopra il 2°."
+ },
+ "Calm Emotions": {
+  "name": "Calmare Emozioni",
+  "description": "Le creature umanoidi entro 6 m da un punto a 18 m devono superare un TS CAR o non poter essere ammaliate o spaventate, e gli effetti di questi stati sospesi per la durata. Concentrazione fino a 1 minuto."
+ },
+ "Cloud of Daggers": {
+  "name": "Nube di Pugnali",
+  "description": "Un turbine di pugnali riempie un cubo di 1,5 m entro 18 m: chi ci entra o comincia il turno lì subisce 4d4 tagliente. +2d4 per slot sopra il 2°. Concentrazione fino a 1 minuto."
+ },
+ "Continual Flame": {
+  "name": "Fiamma Perpetua",
+  "description": "Una fiamma magica nasce da un oggetto entro 9 m: non consuma ossigeno e arde per sempre, illuminando come una torcia. Può essere coperta ma non spenta."
+ },
+ "Cordon Of Arrows": {
+  "name": "Ronda di Frecce",
+  "description": "Planti fino a 4 frecce entro 9 m da te: quando una creatura passa entro 9 m da loro, una freccia scatta e la colpisce (attacco: 1d6 perforante). Durano 8 ore."
+ },
+ "Crown of Madness": {
+  "name": "Corona della Follia",
+  "description": "Un umanoide entro 36 m deve superare un TS SAG o essere ammaliato: a ogni suo turno può usare la propria azione solo per attaccare la creatura che gli è più vicina (a tua scelta se c'è parità). Concentrazione fino a 1 minuto."
+ },
+ "Darkness": {
+  "name": "Tenebre",
+  "description": "Oscurità magica di 4,5 m di raggio entro 18 m: la scurovisione non la penetra, ma la visione crepuscolare e le fonti di luce magiche sì (a meno che non lanciata a livelli più alti). 10 minuti di concentrazione."
+ },
+ "Darkvision": {
+  "name": "Scurovisione",
+  "description": "Tocchi una creatura: ottiene scurovisione (18 m) per 8 ore. +9 m di raggio per slot sopra il 2°."
+ },
+ "Detect Thoughts": {
+  "name": "Individuazione dei Pensieri",
+  "description": "Sondi i pensieri di creature entro 9 m: percepisci presenza di intelligenza e, con un'azione, puoi leggere i pensieri superficiali di un bersaglio (TS SAG per resistere alla lettura profonda). Concentrazione fino a 1 minuto."
+ },
+ "Dust Devil": {
+  "name": "Mulinello di Polvere",
+  "description": "Un mulinello di polvere alto 3 m appare entro 18 m: chi entra al suo interno è spinto a 1,5 m (TS FOR) e le creature al suo interno hanno svantaggio ai TS su vista, fiuto e udito. Concentrazione fino a 1 minuto."
+ },
+ "Earthbind": {
+  "name": "Legare alla Terra",
+  "description": "Una creatura entro 90 m che vola deve superare un TS FOR o essere tirata giù a terra (velocità di volo 0, caduta di 18 m a round). Concentrazione fino a 1 minuto."
+ },
+ "Enhance Ability": {
+  "name": "Potenzia Caratteristica",
+  "description": "Tocchi una creatura: una caratteristica ottiene vantaggio sulle prove (FOR: doppio carico/insollevabile; DES: zero danno da caduta; CAR: incanta; SAG: +1d4 a occulti e salvezze; INT: memoria; COS: +2d6 PF temporanei). 1 ora di concentrazione."
+ },
+ "Enlarge/Reduce": {
+  "name": "Ingrandire/Rimpicciolire",
+  "description": "Una creatura o oggetto entro 9 m cresce o si riduce del doppio/metà per 1 minuto. Ingrandita: +1d4 danno, vantaggio su FOR. Rimpicciolita: svantaggio su FOR, -1d4 danno. Concentrazione."
+ },
+ "Enthrall": {
+  "name": "Ammaliare",
+  "description": "Una creatura entro 18 m che non può vederti è affascinata: la sua attenzione è su di te per 1 minuto (vantaggio sui tuoi tiri di esibizione e performance)."
+ },
+ "Find Steed": {
+  "name": "Trovare Cavalcatura",
+  "description": "Evochi uno spirito di cavalcatura (cavallo, pony o cammello) che è celestiale, fatato o fiendo: ti è alleato, combatte per te e comprende il tuo linguaggio. Se muore puoi richiamarlo. 10 minuti, rituale."
+ },
+ "Find Traps": {
+  "name": "Trovare Trappole",
+  "description": "Percepisci la posizione di trappole entro 36 m che puoi vedere (tranne le naturali): identifichi il tipo di innesco e quanto danno fa. Concentrazione fino a 10 minuti."
+ },
+ "Flame Blade": {
+  "name": "Lama di Fuoco",
+  "description": "Azione bonus: una spada di fuoco appare nella tua mano: attacca con la tua caratteristica di lancio, 3d6 fuoco, e illumina. 10 minuti di concentrazione. +1d6 a slot 4°+, +2d6 a 6°+."
+ },
+ "Flaming Sphere": {
+  "name": "Sfera Fiammeggiante",
+  "description": "Una sfera di fuoco di 1,5 m appare entro 18 m: chi le sta accanto deve superare un TS DES o subire 2d6 fuoco. Con un'azione bonus la muovi fino a 9 m, passando sopra i bersagli. Concentrazione fino a 1 minuto. +1d6 per slot sopra il 2°."
+ },
+ "Gentle Repose": {
+  "name": "Riposo Sereno",
+  "description": "Tocchi un corpo: non può diventare non morto e la decomposizione è sospesa per 10 giorni (estendibile con rilanci). Rituale."
+ },
+ "Gust of Wind": {
+  "name": "Raffica di Vento",
+  "description": "Una linea di vento di 18 m per 3 m: spinge le creature (TS FOR o 4,5 m indietro), spegne fuochi non protetti, rende difficile volare e sposta gas. Concentrazione fino a 1 minuto."
+ },
+ "Heat Metal": {
+  "name": "Metallo Rovente",
+  "description": "Un oggetto metallico entro 18 m diventa rovente: chi lo tiene in mano o lo indossa subisce 2d8 fuoco e deve superare un TS COS o lasciarlo cadere (non applicabile ai punti d'attacco legati). +1d8 per slot sopra il 2°. Concentrazione fino a 1 minuto."
+ },
+ "Hold Person": {
+  "name": "Paralizzare Persona",
+  "description": "Un umanoide entro 18 m deve superare un TS SAG o essere paralizzato: è incapaciato, immobile, i suoi attacchi falliscono e i tiri salvezza su FOR e DES falliscono automaticamente. Ripete il TS a fine turno. +1 bersaglio per slot sopra il 2°."
+ },
+ "Invisibility": {
+  "name": "Invisibilità",
+  "description": "Tocchi una creatura: diventa invisibile per 1 ora (concentrazione). L'attacco o il lancio di un incantesimo svela per quel momento; l'incantesimo continua o termina (oggetti trasportati si nascondono). +1 bersaglio per slot sopra il 2°."
+ },
+ "Knock": {
+  "name": "Scassinare",
+  "description": "Apri una porta, un cancello o un contenitore chiuso (anche incantato): il lucchetto viene distrutto se serrato magicamente. Puoi anche alzare un portoncino. 10 minuti di tuono udibile a 90 m."
+ },
+ "Lesser Restoration": {
+  "name": "Restauro Minore",
+  "description": "Tocchi una creatura: rimuovi una condizione o effetto (cecità, sordità, paralisi o avvelenamento) che la affligge."
+ },
+ "Levitate": {
+  "name": "Levitazione",
+  "description": "Una creatura o oggetto entro 18 m fino a 225 kg si solleva fino a 6 m: resta sospeso, puoi spostarlo in verticale con le tue azioni. Chi lo subisce può muoversi solo aggrappandosi o volando. Concentrazione fino a 10 minuti."
+ },
+ "Locate Animals or Plants": {
+  "name": "Trovare Animali o Piante",
+  "description": "Dai un nome a una specie: la direzione e la distanza della più vicina entro 7 km ti sono rivelate finché ti muovi e concentri (fino a 10 minuti)."
+ },
+ "Locate Object": {
+  "name": "Trovare l'Oggetto",
+  "description": "Percepisci la direzione di un oggetto familiare o di un tipo di oggetto entro 300 m: con una visione mentale. Se ti muovi restando concentrato, l'oggetto può essere rintracciato per 10 minuti."
+ },
+ "Magic Mouth": {
+  "name": "Bocca Magica",
+  "description": "Un'immagine di bocca appare su un oggetto: pronuncia un messaggio quando si verifica la condizione che hai scelto (che può essere anche un suono, un tipo di creatura o la distanza). 8 ore per lanciatore e avversari visibili."
+ },
+ "Magic Weapon": {
+  "name": "Arma Magica",
+  "description": "Tocchi un'arma non magica: diventa magica e ottiene +1 ai tiri per colpire e ai danni per 1 ora. +1 bonus ogni 2 slot sopra il 2° (aggiunta in versione mobili). Concentrazione."
+ },
+ "Mirror Image": {
+  "name": "Immagine Riflessa",
+  "description": "Tre duplicati illusori ti circondano per 1 minuto. Quando vieni colpito, tira 1d20: se ottieni un risultato pari o inferiore al numero di duplicati rimasti, l'attacco colpisce un duplicato e lo distrugge (se 3: 1-3; 2: 1-2; 1: 1)."
+ },
+ "Misty Step": {
+  "name": "Passo Nebbioso",
+  "description": "Azione bonus: ti teletrasporti fino a 9 m in uno spazio libero che puoi vedere, avvolto da una nube di nebbia."
+ },
+ "Moonbeam": {
+  "name": "Raggio di Luna",
+  "description": "Un cilindro di luce lunare di 1,5 m di raggio entro 36 m: chi inizia il turno dentro o vi entra subisce 2d10 radiante e deve superare un TS COS o trasformarsi (lupi mannari tornano umani). Con un'azione bonus lo muovi fino a 18 m. 1 minuto di concentrazione. +1d10 per slot sopra il 2°."
+ },
+ "Pass without Trace": {
+  "name": "Passo Senza Tracce",
+  "description": "Un alone di silenzio avvolge 10 creature (te compreso) entro 9 m da te: +10 alle prove di Furtività e nessuna traccia da seguire (tranne la magia). 1 ora di concentrazione."
+ },
+ "Phantasmal Force": {
+  "name": "Forza Fantasmatica",
+  "description": "Un'illusione appare nella mente di una creatura entro 18 m (una persona, un oggetto o uno scenario): per 1 minuto la creatura considera reale la visione, reagendo fisicamente (danni 1d6 psichici per round) a meno che non superi una prova INT per ignorarla. Concentrazione."
+ },
+ "Prayer of Healing": {
+  "name": "Preghiera di Guarigione",
+  "description": "Fino a 6 creature entro 9 m recuperano 2d8 + modificatore di lancio. +1d8 per slot sopra il 2°. 10 minuti."
+ },
+ "Protection from Poison": {
+  "name": "Protezione dal Veleno",
+  "description": "Tocchi una creatura: è protetta dagli effetti del veleno (vantaggio sui TS) e, se avvelenata, la condizione termina. 1 ora."
+ },
+ "Pyrotechnics": {
+  "name": "Pirotecnica",
+  "description": "Un fuoco non magico entro 18 m si spegne: in cambio emette una luce abbagliante (TS COS o accecata per 1 minuto) o un fumo denso che oscura 12 m di raggio per 1 minuto (fino a 10 minuti con vento)."
+ },
+ "Ray of Enfeeblement": {
+  "name": "Raggio di Debolezza",
+  "description": "Un raggio nero colpisce una creatura entro 18 m: TS COS o i suoi attacchi con arma infliggono metà danno per 1 minuto (ripete il TS a fine turno). Concentrazione."
+ },
+ "Rope Trick": {
+  "name": "Trucco della Corde",
+  "description": "Una corda si alza verso un portale invisibile in una stanza extra-dimensionale per 6 creature: chi entra si nasconde completamente, invisibile dall'esterno. 1 ora. Rituale."
+ },
+ "Scorching Ray": {
+  "name": "Raggio Rovente",
+  "description": "Crei 3 raggi di fuoco entro 36 m: ogni raggio è un tiro a distanza da 2d6 fuoco (puoi bersagliare creature diverse). +1 raggio per slot sopra il 2°."
+ },
+ "See Invisibility": {
+  "name": "Vedere l'Invisibilità",
+  "description": "Per 1 ora vedi le creature e gli oggetti invisibili come sagome traslucide, vedi anche nel piano etereo per 3 m. Concentrazione."
+ },
+ "Shatter": {
+  "name": "Frantumare",
+  "description": "Un suono assordante in una sfera di 3 m di raggio entro 18 m: le creature devono superare un TS COS o subire 3d8 tuono e restare assordate 1 minuto; gli oggetti di cristallo/ceramica subiscono il danno pieno. +1d8 per slot sopra il 2°."
+ },
+ "Silence": {
+  "name": "Silenzio",
+  "description": "Una sfera di 6 m di raggio entro 36 m diventa silenziosa: nessun suono (urla, incantesimi verbali, tuono) può attraversarla. 10 minuti di concentrazione. Rituale."
+ },
+ "Skywrite": {
+  "name": "Scrittura nel Cielo",
+  "description": "Fino a 10 parole appaiono nel cielo entro 36 m, visibili fino a 15 km, e si dissolvono dopo 1 minuto (o 3 ore se c'è vento). Rituale."
+ },
+ "Spider Climb": {
+  "name": "Camminare sul Soffitto",
+  "description": "Tocchi una creatura: può camminare su pareti e soffitti e ha velocità di arrampicata pari a quella di passo per 1 ora. Concentrazione."
+ },
+ "Spike Growth": {
+  "name": "Crescita di Spine",
+  "description": "Il terreno entro 6 m da un punto entro 36 m si copre di spine: è terreno difficile e chi lo attraversa subisce 2d4 perforante ogni 1,5 m. 10 minuti di concentrazione."
+ },
+ "Spiritual Weapon": {
+  "name": "Arma Spirituale",
+  "description": "Azione bonus: un'arma di forza appare entro 18 m e attacca da sola con la tua caratteristica di lancio (1d8+modificatore, danno da forza; 1d10 con le armi a due mani). Con un'azione bonus puoi spostarla fino a 6 m e attaccare. 1 minuto, non richiede concentrazione. +1d8 per slot sopra il 2°."
+ },
+ "Suggestion": {
+  "name": "Suggezione",
+  "description": "Suggerisci a una creatura entro 9 m una richiesta ragionevole (in 2 frasi): se fallisce il TS SAG, la esegue al meglio delle sue capacità finché la richiesta non è completata o subisce danno. Concentrazione fino a 8 ore."
+ },
+ "Warding Bond": {
+  "name": "Legame Protettivo",
+  "description": "Tocchi una creatura volenterosa: per 1 ora lei ottiene +1 CA e +1 ai tiri salvezza, e il danno che subisce è diviso a metà con te (reci la tua parte). Se il tuo PF scende a 0, anche lei subisce le conseguenze? No: il legame non si spezza se muori? Sì: termina se uno dei due muore."
+ },
+ "Warding Wind": {
+  "name": "Vento Protettivo",
+  "description": "Un vento forte ti circonda per 10 minuti: trasforma le frecce in folate, ti isola dai gas (arena personale di 9 m), rallenta i nemici, spegne fuochi e rende l'area difficile da attraversare. Concentrazione."
+ },
+ "Web": {
+  "name": "Ragnatela",
+  "description": "Un ammasso di ragnatele riempie un cubo di 6 m entro 18 m: terreno difficile; chi inizia il turno dentro o entra deve superare un TS FOR o essere trattenuto (liberarsi = azione, TS FOR). Le ragnatele bruciano facilmente. 1 ora di concentrazione."
+ },
+ "Zone of Truth": {
+  "name": "Zona di Verità",
+  "description": "Un'area di 4,5 m di raggio entro 18 m: chi ci entra deve superare un TS CAR o non poter mentire (le mezze verità restano possibili). 10 minuti."
+ },
+ "Animate Dead": {
+  "name": "Animare i Morti",
+  "description": "Crei uno zombie o uno scheletro da un corpo umanoide entro 3 m: segue i tuoi comandi (azione bonus) per 24 ore, poi richiede una rilancio per ogni corpo. +2 creature per slot sopra il 3°. 1 minuto."
+ },
+ "Aura Of Vitality": {
+  "name": "Aura di Vitalità",
+  "description": "Un'aura di luce vitale ti circonda: con un'azione bonus puoi far recuperare 2d6 PF a una creatura entro 9 m. Concentrazione fino a 1 minuto."
+ },
+ "Beacon of Hope": {
+  "name": "Faro di Speranza",
+  "description": "Le creature amiche entro 9 m hanno vantaggio sui TS SAG e SAG contro la morte, e guariscono il massimo possibile. Concentrazione fino a 10 minuti."
+ },
+ "Bestow Curse": {
+  "name": "Imporre Maledizione",
+  "description": "Una creatura entro 9 m deve superare un TS SAG o subire una maledizione a tua scelta: svantaggio su una prova o TS (2d8 necrotico su di lei se attacca da te?), svantaggio sugli attacchi contro di te, o TS SAG per trattarti con prudenza. 1 minuto; con slot 5° 8 ore, 7° 24 ore, 9° permanente."
+ },
+ "Blinding Smite": {
+  "name": "Colpo Accecante",
+  "description": "Azione bonus: la tua arma si accende di luce. Se l'attacco colpisce, +3d8 radiante e il bersaglio deve superare un TS COS o essere accecato. Concentrazione fino a 1 minuto."
+ },
+ "Blink": {
+  "name": "Scintillio",
+  "description": "Alla fine del tuo turno tira 1d20: con 11+ ti sposti nel piano etereo; all'inizio del turno successivo appari nel tuo spazio precedente (o libero vicino). 1 minuto."
+ },
+ "Call Lightning": {
+  "name": "Invoca Fulmine",
+  "description": "Una tempesta si raccoglie sopra di te e, con la tua azione, un fulmine colpisce un punto entro 36 m: ogni creatura entro 1,5 m subisce 3d10 fulmine (TS DES dimezza). In caso di tempesta naturale: +1d10. Concentrazione fino a 10 minuti; +1d10 per slot sopra il 3°."
+ },
+ "Clairvoyance": {
+  "name": "Chiaroveggenza",
+  "description": "Crei un sensore invisibile entro 1,5 km: puoi vedere (scurovisione 9 m) o sentire (fiuto, udito) attraverso di esso. 10 minuti di concentrazione."
+ },
+ "Conjure Animals": {
+  "name": "Evoca Animali",
+  "description": "Evochi un branco di bestie entro 18 m: fino a 2 bestie da CR 1/4 o 1 da CR 1/2 (8 bestie CR 1/4 per i gruppi numerosi), obbedienti ai tuoi comandi. 1 ora di concentrazione. Opzioni più forti con slot superiori."
+ },
+ "Conjure Barrage": {
+  "name": "Convocazione di Missili",
+  "description": "Scagli nel cielo una quantità di munizioni (frecce, giavellotti): ogni creatura entro 18 m da un punto a tua scelta deve superare un TS DES o subire 3d8 tagliente."
+ },
+ "Counterspell": {
+  "name": "Controincantesimo",
+  "description": "Reazione: quando una creatura entro 18 m lancia un incantesimo, tenti di interromperlo. Se il livello dello slot è uguale o inferiore al tuo slot (o una prova con mod. di lancio se maggiore), l'incantesimo fallisce."
+ },
+ "Create Food and Water": {
+  "name": "Creare Cibo e Acqua",
+  "description": "Crei 45 kg di cibo e 110 litri di acqua (o più secondo il livello dello slot adattato) su una superficie entro 9 m: il cibo è semplice ma nutriente. 30 minuti."
+ },
+ "Crusader's Mantle": {
+  "name": "Mantello del Crociato",
+  "description": "Un'aura radiante ti avvolge: tu e le creature alleate entro 9 m infliggete +1d4 radiante ai vostri danni con arma. Concentrazione fino a 1 minuto."
+ },
+ "Daylight": {
+  "name": "Luce Diurna",
+  "description": "Una luce intensa scaturisce da un punto entro 6 m (o acceca) e illumina 18 m di luce brillante + 18 fioca: dissipa le tenebre magiche e danneggia i non morti sensibili. 1 ora."
+ },
+ "Dispel Magic": {
+  "name": "Dissolvi Magie",
+  "description": "Scegli una creatura, un oggetto o un'area entro 36 m: tutti gli incantesimi di livello ≤ 3 (o tuo slot) terminano. Prove di caratteristica per quelli più alti. I trucchetti e le caratteristiche permanenti non sono influenzati."
+ },
+ "Elemental Weapon": {
+  "name": "Arma Elementale",
+  "description": "Tocchi un'arma non magica: per 1 ora diventa magica e infligge +1d4 extra (acido, freddo, fuoco, fulmine o tuono) con +1 ai tiri per colpire. Bonus cresce con slot superiori. Concentrazione."
+ },
+ "Erupting Earth": {
+  "name": "Terra Erotta",
+  "description": "Il terreno entro 36 m erutta in un cubo di 6 m: ogni creatura nell'area deve superare un TS DES o subire 3d12 contundente; il terreno diventa difficile. +1d12 per slot sopra il 3°."
+ },
+ "Fear": {
+  "name": "Paura",
+  "description": "Un cono di 9 m di terrore: le creature devono superare un TS SAG o essere spaventate (scappano via, lontane da te) mentre restano ai tuoi occhi. Concentrazione fino a 1 minuto."
+ },
+ "Feign Death": {
+  "name": "Fingere la Morte",
+  "description": "Tocchi una creatura volenterosa: cade in uno stato simile alla morte per 1 ora: non percepisce nulla e appare morta anche agli esami arcani (solo un tratto falso tre volte o un lancio di più alto livello la smaschera)."
+ },
+ "Fireball": {
+  "name": "Palla di Fuoco",
+  "description": "Un lampo di fuoco esplode entro 36 m: ogni creatura entro 6 m di raggio deve superare un TS DES o subire 8d6 fuoco. +1d6 per slot sopra il 3°."
+ },
+ "Flame Arrows": {
+  "name": "Frecce di Fuoco",
+  "description": "Tocchi fino a 12 frecce o pietre: per 1 ora infliggono 1d6 fuoco extra quando colpiscono (ogni colpo consuma una munizione). Concentrazione."
+ },
+ "Fly": {
+  "name": "Volare",
+  "description": "Tocchi una creatura: ottiene velocità di volo 18 m per 10 minuti (concentrazione). Se cade, l'incantesimo prosegue ma il bersaglio atterra dolcemente. +1 bersaglio per slot sopra il 3°."
+ },
+ "Gaseous Form": {
+  "name": "Forma Gassosa",
+  "description": "Tu (o una creatura toccata) ti trasformi in una nube di gas: non puoi essere toccato, attraversi aperture, immunità ai danni non magici, ma non puoi attaccare o lanciare incantesimi. 1 ora di concentrazione."
+ },
+ "Glyph of Warding": {
+  "name": "Glifo di Protezione",
+  "description": "Incrivi un glifo su una superficie (che si attiva quando superata da una creatura): esplosione runica (danni 5d8 a scelta, TS DES) o incantesimo memorizzato che si attiva sul bersaglio. 1 ora per inciderlo; dura finché non attivato (max 24 ore per l'incantesimo)."
+ },
+ "Haste": {
+  "name": "Velocità",
+  "description": "Una creatura entro 9 m: la sua velocità raddoppia, +2 CA, vantaggio sui TS DES e un'azione extra per attaccare (una sola). Alla fine, la creatura non può muoversi né agire per un round. Concentrazione fino a 1 minuto."
+ },
+ "Hypnotic Pattern": {
+  "name": "Motivo Ipnotico",
+  "description": "Crei un vortice di colori in un cubo di 9 m entro 36 m: le creature devono superare un TS SAG o essere ammaliate e incapaciate (basta un danno o un'azione di un alleato per svegliarle). Concentrazione fino a 1 minuto."
+ },
+ "Lightning Arrow": {
+  "name": "Freccia Fulminante",
+  "description": "Azione bonus: la tua freccia si carica di fulmini. Se colpisce, +4d8 fulmine; in alternativa può esplodere in un'area (2d8 per quelle entro 3 m). Concentrazione fino a 1 minuto."
+ },
+ "Lightning Bolt": {
+  "name": "Fulmine",
+  "description": "Una linea di 30 m per 1,5 m di elettricità: ogni creatura sulla linea deve superare un TS DES o subire 8d6 fulmine. +1d6 per slot sopra il 3°."
+ },
+ "Magic Circle": {
+  "name": "Cerchio Magico",
+  "description": "Un cilindro di 3 m di raggio racchiude (o esclude) una creatura specifica: le creature del tipo scelto non possono attraversare il confine (pericoloso per lanci, proiettili e teletrasporto). 1 ora."
+ },
+ "Major Image": {
+  "name": "Immagine Maggiore",
+  "description": "Un'immagine illusoria perfetta (suono, odore, temperatura) entro 36 m di dimensioni fino a 6 m di lato, che puoi gestire senza concentrazione per 10 minuti (fino a 1 giorno con le azioni bonus, ma i danni rivelano l'illusione)."
+ },
+ "Mass Healing Word": {
+  "name": "Parola Curativa di Massa",
+  "description": "Azione bonus: fino a 6 creature entro 18 m recuperano 1d4 + modificatore di lancio. +1d4 per slot sopra il 3°."
+ },
+ "Meld into Stone": {
+  "name": "Fondersi nella Pietra",
+  "description": "Ti fondi in una pietra naturale per 8 ore: non puoi muoverti, ma rimani in contatto coi sensi e i danni non ti raggiungono. Quando esci, riappaiono dalle crepe. Rituale."
+ },
+ "Nondetection": {
+  "name": "Non Individuazione",
+  "description": "Nascondi una creatura o un oggetto entro 9 m dalla individuazione magica per 8 ore: non può essere bersaglio di divinazioni che hanno lo scopo di localizzarla."
+ },
+ "Phantom Steed": {
+  "name": "Destriero Fantasma",
+  "description": "Un cavallo illusorio compare entro 9 m: cavalca a velocità 30 m (10 m in combattimento), non serve riposo e se scompare puoi ri-crearlo con un'azione. Non può essere bersaglio di attacchi. 1 ora, rituale."
+ },
+ "Plant Growth": {
+  "name": "Crescita Vegetale",
+  "description": "In modalità standard (8 ore) le piante entro 45 m producono il doppio del raccolto e si rafforzano; in modalità combattimento (azione) le piante entro 45 m diventano un labirinto quasi invalicabile (terreno difficile estremo, 4 volte)."
+ },
+ "Protection from Energy": {
+  "name": "Protezione dall'Energia",
+  "description": "Tocchi una creatura: ottiene resistenza a uno di acido, freddo, fuoco, fulmine o tuono per 1 ora (Concentrazione)."
+ },
+ "Remove Curse": {
+  "name": "Rimuovi Maledizione",
+  "description": "Tocchi una creatura o un oggetto: tutte le maledizioni terminano, effetti e oggetti malefici (come le armi maledette) diventano neutrali. Il bersaglio può liberarsi di qualunque oggetto legato alla maledizione."
+ },
+ "Revivify": {
+  "name": "Rianimazione",
+  "description": "Tocchi una creatura morta da meno di 1 minuto: torna alla vita con 1 PF. Non ripara gli organi mancanti né restituisce le parti perdute. 3° livello."
+ },
+ "Sending": {
+  "name": "Inviare",
+  "description": "Invii un messaggio di 25 parole a una creatura che conosci (su qualunque piano): lei lo riceve mentalmente e può rispondere con 25 parole. Se è su un altro piano c'è il 5% di perdersi."
+ },
+ "Sleet Storm": {
+  "name": "Tempesta di Nevischio",
+  "description": "Un'area di 12 m di raggio entro 36 m si copre di ghiaccio: chi la entra deve superare un TS DES o cadere prono, e l'area è pesantemente oscurata e terreno difficile. 10 minuti di concentrazione."
+ },
+ "Slow": {
+  "name": "Rallentare",
+  "description": "Fino a 6 creature entro 12 m devono superare un TS SAG o essere rallentate: velocità dimezzata, -2 CA, svantaggio sui TS DES, e possono fare solo un'azione (non l'azione bonus) per 1 minuto. Concentrazione."
+ },
+ "Speak with Dead": {
+  "name": "Parlare con i Morti",
+  "description": "Un cadavere che possiede ancora una bocca e non è non morto risponde a 5 domande per 10 minuti: risposte brevi, ambigue e limitate a ciò che sapeva in vita. Non può essere ammaliato o ingannato. Rituale."
+ },
+ "Speak with Plants": {
+  "name": "Parlare con le Piante",
+  "description": "Comunichi con le piante entro 9 m: apprendi i segreti dei dintorni, chiedi un passaggio (alberi che si spostano) o ordini di trascinarli i nemici. 10 minuti."
+ },
+ "Spirit Guardians": {
+  "name": "Guardiani Spirituali",
+  "description": "Spiriti protettivi ti circondano per 10 minuti: le creature nemiche entro 4,5 m subiscono 3d8 radiante (o necrotico) quando entrano o iniziano il turno lì, e la loro velocità è dimezzata. TS SAG per dimezzare."
+ },
+ "Stinking Cloud": {
+  "name": "Nube Maleodorante",
+  "description": "Una nube di gas nauseante di 6 m di raggio entro 36 m: chi ci entra o inizia il turno deve superare un TS COS o essere nauseato (non agisce). Vento la disperde. Concentrazione fino a 1 minuto."
+ },
+ "Tidal Wave": {
+  "name": "Onda di Marea",
+  "description": "Un'onda di acqua di 9 m per 3 m si abbatte su un'area entro 36 m: ogni creatura deve superare un TS FOR o subire 4d8 contundente ed essere spinta a terra prono."
+ },
+ "Tiny Hut": {
+  "name": "Cappuccio Ridotto",
+  "description": "Una cupola di forza immobile sopra di te: il clima e i proiettili non entrano, le creature non possono passarci, le creature al suo interno sono protette. 8 ore, rituale, non dispersa dal movimento."
+ },
+ "Tongues": {
+  "name": "Linguaggi",
+  "description": "Una creatura toccata comprende e parla ogni linguaggio per 1 ora (ma non può invertire la comprensione di ciò che non le interessa)."
+ },
+ "Vampiric Touch": {
+  "name": "Tocco del Vampiro",
+  "description": "Tocchi una creatura con un attacco a distanza in mischia: 3d6 necrotico e recuperi PF pari alla metà del danno. Ogni round puoi colpire di nuovo con un'azione. Concentrazione fino a 1 minuto."
+ },
+ "Wall of Sand": {
+  "name": "Muro di Sabbia",
+  "description": "Un muro di sabbia di 9 m di lato e 3 m di altezza entro 27 m: è opaco, le creature che lo attraversano sono accecate per un round e le nubi di fuoco/gas si fermano. Concentrazione fino a 10 minuti."
+ },
+ "Wall of Water": {
+  "name": "Muro d'Acqua",
+  "description": "Un muro d'acqua di 9 m di lato e 3 m di altezza entro 27 m: rallenta i proiettili, dimezza il danno da fuoco/tuono che lo attraversa (tranne se magico), rende difficile la vista. 10 minuti di concentrazione."
+ },
+ "Water Breathing": {
+  "name": "Respirare Sotto l'Acqua",
+  "description": "Fino a 10 creature entro 9 m possono respirare sott'acqua per 24 ore. Rituale."
+ },
+ "Water Walk": {
+  "name": "Camminare sull'Acqua",
+  "description": "Fino a 10 creature entro 9 m possono camminare sulla superficie di liquidi (anche magma innocuo) per 1 ora. Rituale."
+ },
+ "Wind Wall": {
+  "name": "Muro di Vento",
+  "description": "Un muro di vento di 15 m per 4,5 m per 90 cm: i proiettili piccoli sono deviati, gli attacchi a distanza che lo attraversano hanno svantaggio, i gas (nube nauseante, aggato) sono spostati. Le creature grandi (volanti) vengono spazzate via. Concentrazione fino a 1 minuto."
+ }
+}
