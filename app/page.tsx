@@ -135,9 +135,9 @@ export default function Home() {
           <div className="veil-divider my-8" />
           {role === "choose" && (
             <div className="flex flex-col gap-3">
-              <ActionCard title="Dungeon Master" description="Gestisci campagna, scene e party." onClick={() => setRole("dm")} />
-              <ActionCard title="Giocatore" description="Entra nel Velo con il tuo personaggio." onClick={() => setRole("player")} />
-              <ActionCard title="Tavolo" description="Display scenico per iPad o schermo esterno." onClick={() => setRole("table")} />
+              <ActionCard icon="👑" title="Dungeon Master" description="Gestisci campagna, scene e party." onClick={() => setRole("dm")} />
+              <ActionCard icon="🧝" title="Giocatore" description="Entra nel Velo con il tuo personaggio." onClick={() => setRole("player")} />
+              <ActionCard icon="🎲" title="Tavolo" description="Display scenico per iPad o schermo esterno." onClick={() => setRole("table")} />
             </div>
           )}
 
@@ -191,14 +191,18 @@ export default function Home() {
   );
 }
 
-function ActionCard({ title, description, onClick }: { title: string; description: string; onClick: () => void }) {
+function ActionCard({ icon, title, description, onClick }: { icon: string; title: string; description: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="group flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-black/20 px-5 py-4 text-left transition hover:border-veil-gold/25 hover:bg-veil-gold/[0.04]">
-      <div>
-        <p className="text-sm font-semibold text-white group-hover:text-veil-gold/90 transition-colors">{title}</p>
-        <p className="mt-0.5 text-sm text-white/50">{description}</p>
-      </div>
-      <span className="text-base text-veil-gold/40 group-hover:text-veil-gold/80 transition-colors">→</span>
+    <button onClick={onClick} className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-black/20 px-5 py-4 text-left transition hover:border-veil-gold/30 hover:bg-veil-gold/[0.05]">
+      <span className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-veil-gold/40 to-transparent opacity-0 transition group-hover:opacity-100" />
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-veil-gold/15 bg-veil-gold/[0.06] text-lg transition group-hover:scale-110 group-hover:border-veil-gold/30">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-white transition-colors group-hover:text-veil-gold/90">{title}</span>
+        <span className="mt-0.5 block text-sm text-white/50">{description}</span>
+      </span>
+      <span className="text-base text-veil-gold/40 transition-all group-hover:translate-x-1 group-hover:text-veil-gold/80">→</span>
     </button>
   );
 }

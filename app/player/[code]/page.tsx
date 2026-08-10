@@ -8,8 +8,6 @@ import { CharacterWizard, isWizardDone, markWizardDone } from "@/components/play
 import { RulesBrowser } from "@/components/shared/RulesBrowser";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { SaveBadge } from "@/components/player/sheet/ui";
-import { getModifier, getProficiencyBonus } from "@/lib/characterEngine";
-import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
 
 function PlayerView() {
@@ -23,6 +21,23 @@ function PlayerView() {
   const [tab, setTab] = useState<PlayerTab>("sheet");
   const [showWizard, setShowWizard] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [xpAdd, setXpAdd] = useState("");
+  const [xpError, setXpError] = useState("");
+
+  async function addXp() {
+    setXpError("");
+    const add = Number(xpAdd);
+    if (!xpAdd || isNaN(add) || add <= 0) { setXpError("Inserisci un numero valido."); return; }
+    const res = await fetch("/api/players", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: player.id, xp: (player.xp || 0) + add }),
+    });
+    const d = await res.json();
+    if (!res.ok || d.error) { setXpError("Errore di salvataggio."); return; }
+    setPlayer((prev: any) => ({ ...prev, xp: (prev.xp || 0) + add }));
+    setXpAdd("");
+  }
 
   async function loadPlayer() {
     const r = await fetch(`/api/players?token=${token}`);
@@ -69,13 +84,9 @@ function PlayerView() {
 
   const cd = player?.character_data || {};
   const hpPct = player?.hp_max ? (player?.hp_current || 0) / player.hp_max : 0;
-  const clsKey = findClassKey(player?.class || "");
-  const clsData = clsKey ? getClassData(clsKey) : null;
   const raceKey = findRaceKey(player?.race || "");
   const raceData = raceKey ? getRaceData(raceKey) : null;
-  const dexMod = getModifier(Number(cd.dexterity) || 10);
-  const level = Number(player?.level) || 1;
-  const pb = getProficiencyBonus(level);
+  const fmtXp = (n: any) => Number(n || 0).toLocaleString("it-IT");
 
   return (
     <main className="min-h-screen p-4 sm:p-6">
@@ -93,7 +104,7 @@ function PlayerView() {
           <div className="shrink-0 rounded-full bg-gradient-to-br from-veil-gold/70 via-veil-gold/20 to-transparent p-[2px]">
             <PlayerAvatar url={player.avatar_url} name={player.character_name} size="md" />
           </div>
-          <div className={`flex-1 grid gap-1.5 ${clsData ? "grid-cols-3" : "grid-cols-2"} sm:grid-cols-5`}>
+          <div className={`flex-1 grid gap-1.5 grid-cols-3 sm:grid-cols-4`}>
             <div className="flex min-w-0 flex-col items-center rounded-xl border border-emerald-400/15 bg-emerald-900/10 px-1 py-1.5">
               <span className="flex items-center gap-1 text-[11px] leading-none text-emerald-300/70">❤️ <span className="text-[7px] uppercase tracking-wider text-emerald-300/50">PF</span></span>
               <p className={`mt-0.5 text-xs font-bold truncate ${hpPct > 0.5 ? "text-emerald-300" : hpPct > 0.25 ? "text-yellow-300" : "text-red-300"}`}>
@@ -108,15 +119,9 @@ function PlayerView() {
               <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">👢 <span className="text-[7px] uppercase tracking-wider text-white/35">Vel.</span></span>
               <p className="mt-0.5 text-xs font-bold truncate text-white">{cd.speed || raceData?.speed || "—"}</p>
             </div>
-            {clsData && (
-              <div className="flex min-w-0 flex-col items-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-1 py-1.5">
-                <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">⚡ <span className="text-[7px] uppercase tracking-wider text-white/35">Init</span></span>
-                <p className="mt-0.5 text-xs font-bold truncate text-white">{dexMod >= 0 ? `+${dexMod}` : dexMod}</p>
-              </div>
-            )}
-            <div className="flex min-w-0 flex-col items-center rounded-xl border border-white/[0.07] bg-white/[0.04] px-1 py-1.5">
-              <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/70">🎖️ <span className="text-[7px] uppercase tracking-wider text-white/35">PB</span></span>
-              <p className="mt-0.5 text-xs font-bold truncate text-white">+{pb}</p>
+            <div className="flex min-w-0 flex-col items-center rounded-xl border border-veil-gold/20 bg-veil-gold/[0.06] px-1 py-1.5">
+              <span className="flex items-center gap-1 text-[11px] leading-none text-veil-gold/80">⭐ <span className="text-[7px] uppercase tracking-wider text-veil-gold/50">XP</span></span>
+              <p className="mt-0.5 text-xs font-bold truncate text-veil-gold">{fmtXp(player?.xp)}</p>
             </div>
           </div>
           <div className="hidden sm:block"><SaveBadge state={saveState} /></div>
@@ -133,6 +138,27 @@ function PlayerView() {
               style={{ width: `${Math.max(0, Math.min(100, hpPct * 100))}%` }} />
           </div>
         )}
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-veil-gold/15 bg-veil-gold/[0.05] px-3 py-2.5">
+        <span className="text-xl leading-none">⭐</span>
+        <div className="min-w-0">
+          <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Esperienza totale</p>
+          <p className="text-base font-bold text-veil-gold">{fmtXp(player?.xp)} XP</p>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <input type="number" min="1" placeholder="Fight + XP"
+            className="veil-input w-28 text-sm"
+            value={xpAdd}
+            onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
+            onKeyDown={e => e.key === "Enter" && addXp()} />
+          <button onClick={addXp}
+            className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition">
+            + Aggiungi
+          </button>
+        </div>
+        {xpError && <p className="w-full text-xs text-red-300">{xpError}</p>}
+        <p className="w-full text-[10px] text-white/25">Esempio: fine combattimento, inserisci 240, clicca Aggiungi → il totale sopra si somma da solo.</p>
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2">
