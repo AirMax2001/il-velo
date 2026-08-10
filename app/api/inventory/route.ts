@@ -3,6 +3,20 @@ import { supabaseAdmin } from "@/lib/supabaseClient";
 
 const TABLE = "inventory_items";
 
+/* Colonne disponibili nella tabella: lette una volta e cachate.
+   Così l'API funziona anche se non sono state applicate tutte le migrazioni
+   (es. `value` di supabase/inventory_value.sql): i campi mancanti vengono ignorati. */
+let columnsCache: string[] | null = null;
+async function getColumns(): Promise<string[]> {
+  if (columnsCache) return columnsCache;
+  const { data } = await supabaseAdmin()
+    .from("information_schema.columns")
+    .select("column_name")
+    .eq("table_name", TABLE);
+  columnsCache = (data || []).map((c: any) => c.column_name);
+  return columnsCache;
+}
+
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get("sessionId");
   const playerId = req.nextUrl.searchParams.get("playerId");
@@ -37,7 +51,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const db = supabaseAdmin();
-  const { data, error } = await db.from(TABLE).insert({
+  const cols = await getColumns();
+
+  const row: Record<string, any> = {
     session_id: body.session_id,
     player_id: body.player_id || null,
     name: body.name,
@@ -45,12 +61,19 @@ export async function POST(req: NextRequest) {
     rarity: body.rarity || "common",
     category: body.category || "general",
     item_type: body.item_type || body.type || "other",
+    is_relic: body.rarity === "relic" || body.is_relic || false,
+  };
+  const optional: Record<string, any> = {
     weight: body.weight ?? 0,
     value: body.value ?? 0,
     quantity: body.quantity ?? 1,
-    is_relic: body.rarity === "relic" || body.is_relic || false,
     hidden: false,
-  }).select().single();
+  };
+  for (const [k, v] of Object.entries(optional)) {
+    if (cols.includes(k)) row[k] = v;
+  }
+
+  const { data, error } = await db.from(TABLE).insert(row).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ item: data });
 }
