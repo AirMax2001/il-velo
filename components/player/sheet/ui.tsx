@@ -12,6 +12,36 @@ export function SaveBadge({ state }: { state: "idle" | "saving" | "saved" | "err
   return <span className={`rounded-full border px-2 py-0.5 text-[10px] ${cfg[0]}`}>{cfg[1]}</span>;
 }
 
+export function CollapseSection({
+  title, subtitle, badge, defaultOpen = false, right,
+  children,
+}: {
+  title: React.ReactNode; subtitle?: React.ReactNode; badge?: React.ReactNode;
+  defaultOpen?: boolean; right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="veil-panel p-4">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-3 text-left">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm text-veil-gold/80 font-medium">{title}</h3>
+            {badge}
+          </div>
+          {subtitle && <p className="text-[10px] text-white/30 mt-0.5">{subtitle}</p>}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {right}
+          <span className={`text-veil-gold/50 text-xs transition-transform duration-200 ${open ? "rotate-180" : ""}`}>▼</span>
+        </div>
+      </button>
+      {open && <div className="mt-3 border-t border-white/[0.05] pt-3">{children}</div>}
+    </div>
+  );
+}
+
 export function StatBox({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-black/30 p-3 text-center">
@@ -36,7 +66,7 @@ export function NumberBubbles({
       <div className="flex gap-1.5">
         {Array.from({ length: count }, (_, i) => (
           <button key={i} onClick={() => onToggle(i)}
-            className={`h-7 w-7 rounded-full border text-xs transition ${i < filled ? filledCls : "border-white/10 text-white/20 hover:border-white/30"}`}>
+            className={`h-9 w-9 rounded-full border text-sm transition ${i < filled ? filledCls : "border-white/10 text-white/20 hover:border-white/30"}`}>
             {i < filled ? (color === "emerald" ? "✓" : "✕") : "○"}
           </button>
         ))}

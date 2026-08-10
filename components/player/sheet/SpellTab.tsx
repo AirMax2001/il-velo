@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import {
   CONDITIONS_LIST, parseConditions, serializeConditions,
@@ -6,7 +7,7 @@ import {
 } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
 import { CLASS_ABILITIES } from "@/lib/data/classAbilities";
-import { NumberBubbles } from "./ui";
+import { NumberBubbles, CollapseSection } from "./ui";
 import type { SheetCtx } from "./types";
 
 const SKILL_LIST = ALL_SKILLS.map(k => ({ key: k, label: SKILL_LABELS[k], ability: SKILL_ABILITY[k] }));
@@ -18,6 +19,10 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   } = ctx;
 
   const canCast = !!clsData?.spellcasting;
+  const [query, setQuery] = useState("");
+  const [openLevels, setOpenLevels] = useState<Record<number, boolean>>({});
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
   const cantrips = (cd.cantrips || []) as string[];
   const knownSpells = [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(lv =>
     (((cd as any)[`spells${lv}`] || []) as string[]).map(name => ({ name, lv })));
@@ -30,6 +35,14 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
 
   const spellDesc = (name: string) => getSpellsForClass(clsKey || "", 0).find(s => s.name === name)
     || [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(lv => getSpellsForClass(clsKey || "", lv)).find(s => s.name === name);
+
+  const matches = (name: string): boolean => {
+    if (!searching) return true;
+    const sp = spellDesc(name);
+    return name.toLowerCase().includes(q)
+      || (sp?.school || "").toLowerCase().includes(q)
+      || (sp?.description || "").toLowerCase().includes(q);
+  };
 
   return (
     <div className="space-y-4">
@@ -170,56 +183,109 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
         </div>
       </div>
 
+      {/* Ricerca tra trucchetti e incantesimi */}
+      {(canCast || cantrips.length > 0) && (
+        <div className="veil-panel p-3">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">🔍</span>
+            <input type="search" value={query} onChange={e => setQuery(e.target.value)}
+              placeholder="Cerca un incantesimo (nome, scuola, effetto...)"
+              className="veil-input w-full pl-9 text-sm" />
+          </div>
+        </div>
+      )}
+
       {/* Trucchetti */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Trucchetti</h3>
-        <p className="text-[10px] text-white/30 mb-2">A volontà, non consumano slot.</p>
-        {cantrips.length === 0 && <p className="text-xs text-white/30 text-center py-2">Nessun trucchetto selezionato ({clsData?.name || "—"} non ne ha o non ancora).</p>}
-        <div className="space-y-2">
-          {cantrips.map(name => {
-            const sp = spellDesc(name);
-            return (
-              <div key={name} className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-white/80">{name}</p>
-                  <span className="text-[10px] text-white/25">{sp?.school || ""}</span>
+      {cantrips.length > 0 && (
+        <CollapseSection
+          title="Trucchetti"
+          subtitle="A volontà, non consumano slot."
+          badge={<span className="rounded-full bg-veil-gold/10 border border-veil-gold/20 px-2 py-0.5 text-[11px] text-veil-gold/70">{cantrips.filter(name => matches(name)).length}</span>}
+          defaultOpen
+          right={
+            <button onClick={() => setOpenLevels(o => ({ ...o, 0: !o[0] }))}
+              className="text-[11px] text-white/40 hover:text-white/70 border border-white/10 rounded-lg px-2 py-1">
+              {openLevels[0] === false ? "Apri" : "Chiudi"}
+            </button>
+          }>
+          <div className="space-y-2">
+            {cantrips.map(name => {
+              const sp = spellDesc(name);
+              if (searching && !matches(name)) return null;
+              return (
+                <div key={name} className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-white/80">{name}</p>
+                    <span className="text-[11px] text-white/25">{sp?.school || ""}</span>
+                  </div>
+                  {sp && <p className="text-xs text-white/40 mt-1">{sp.description}</p>}
                 </div>
-                {sp && <p className="text-[11px] text-white/40 mt-1">{sp.description}</p>}
+              );
+            })}
+            {searching && cantrips.filter(name => matches(name)).length === 0 && (
+              <p className="text-xs text-white/30 text-center py-2">Nessun trucchetto corrisponde alla ricerca.</p>
+            )}
+          </div>
+        </CollapseSection>
+      )}
+
+      {/* Incantesimi per livello (collassabili) */}
+      {knownSpells.length > 0 && (
+        <CollapseSection
+          title="Incantesimi"
+          subtitle="Consumano slot del livello corrispondente."
+          badge={<span className="rounded-full bg-veil-gold/10 border border-veil-gold/20 px-2 py-0.5 text-[11px] text-veil-gold/70">{knownSpells.map(s => s.name).filter(name => matches(name)).length}</span>}
+          defaultOpen
+          right={
+            <button onClick={() => setOpenLevels(o => {
+              const allClosed = [1,2,3,4,5,6,7,8,9].every(lv => o[lv] === false);
+              const n: Record<number, boolean> = {};
+              [1,2,3,4,5,6,7,8,9].forEach(lv => { n[lv] = !allClosed ? false : true; });
+              return n;
+            })}
+              className="text-[11px] text-white/40 hover:text-white/70 border border-white/10 rounded-lg px-2 py-1">
+              Comprimi/Espandi livelli
+            </button>
+          }>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
+            const list = knownSpells.filter(s => s.lv === lv);
+            if (list.length === 0) return null;
+            const open = searching ? true : openLevels[lv] !== false;
+            return (
+              <div key={lv} className="mb-2">
+                <button type="button" onClick={() => setOpenLevels(o => ({ ...o, [lv]: !open }))}
+                  className="w-full flex items-center justify-between gap-2 text-left mb-1 py-1 group">
+                  <p className="text-xs text-white/40">🗝 {lv}° Livello</p>
+                  <span className="flex items-center gap-2">
+                    <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] text-white/40">{list.length}</span>
+                    <span className={`text-white/30 text-[10px] transition-transform duration-200 group-hover:text-white/60 ${open ? "" : "-rotate-90"}`}>▼</span>
+                  </span>
+                </button>
+                {open && (
+                  <div className="space-y-2">
+                    {list.map(({ name }) => {
+                      const sp = spellDesc(name);
+                      if (searching && !matches(name)) return null;
+                      return (
+                        <div key={name} className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm text-white/80">{name}</p>
+                            <span className="text-[11px] text-white/25">{sp?.school || ""}</span>
+                          </div>
+                          {sp && <p className="text-xs text-white/40 mt-1">{sp.description}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Incantesimi */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Incantesimi</h3>
-        <p className="text-[10px] text-white/30 mb-2">Consumano slot del livello corrispondente.</p>
-        {knownSpells.length === 0 && <p className="text-xs text-white/30 text-center py-2">Nessun incantesimo selezionato.</p>}
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
-          const list = knownSpells.filter(s => s.lv === lv);
-          if (list.length === 0) return null;
-          return (
-            <div key={lv} className="mb-2">
-              <p className="text-xs text-white/30 mb-1">{lv}° Livello</p>
-              <div className="space-y-2">
-                {list.map(({ name }) => {
-                  const sp = spellDesc(name);
-                  return (
-                    <div key={name} className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm text-white/80">{name}</p>
-                        <span className="text-[10px] text-white/25">{sp?.school || ""}</span>
-                      </div>
-                      {sp && <p className="text-[11px] text-white/40 mt-1">{sp.description}</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+          {searching && knownSpells.filter(s => matches(s.name)).length === 0 && (
+            <p className="text-xs text-white/30 text-center py-2">Nessun incantesimo corrisponde alla ricerca.</p>
+          )}
+        </CollapseSection>
+      )}
 
       {/* Dadi vita tracciamento */}
       <div className="veil-panel p-4">

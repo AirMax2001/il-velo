@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import type { CharacterData } from "@/lib/types";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
@@ -12,7 +13,7 @@ import backgrounds from "@/lib/data/backgrounds";
 import { getBackgroundData } from "@/lib/data/backgrounds";
 import { getModifier, ALL_ABILITIES, ALL_SKILLS, ALL_SAVES, SKILL_ABILITY, SAVE_ABILITY, ABILITY_SHORT, SKILL_LABELS, SAVE_LABELS } from "@/lib/characterEngine";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
-import { StatBox } from "./ui";
+import { StatBox, CollapseSection } from "./ui";
 import type { SheetCtx } from "./types";
 
 const ABILITY_KEYS = ALL_ABILITIES;
@@ -37,6 +38,15 @@ function resizeImage(file: File, maxDim: number, quality: number, cb: (dataUrl: 
 
 export function CoreTab({ ctx }: { ctx: SheetCtx }) {
   const { form, cd, clsKey, clsData, raceData, bgData, level, pb, expectedHP, hitDie, conMod, dexMod, raceSpeed, upd, updCd, updCdAll, save, onLevelUp } = ctx;
+
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    setIsDesktop(mq.matches);
+    const fn = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
 
   const subRaceKey = cd.subRaceKey || "";
   const subRace = subRaceKey && raceData?.subRaces
@@ -174,12 +184,13 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
 
       {/* Razza e Tratti */}
       {raceData && (
-        <div className="veil-panel p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-veil-gold/80 font-medium">Razza e Tratti</h3>
-            <span className="text-[10px] text-white/30">{raceData.speed}m · {raceData.size}</span>
-          </div>
-
+        <CollapseSection
+          title="Razza e Tratti"
+          subtitle={<>Velocità {raceData.speed}m · {raceData.size} · {raceData.traits.length + (subRace?.traits?.length || 0)} tratti</>}
+          defaultOpen={isDesktop}
+          right={
+            <span className="text-[10px] text-white/35">{raceData.name}{subRace ? ` — ${subRace.name}` : ""}</span>
+          }>
           {raceData.subRaces && raceData.subRaces.length > 0 && (
             <div className="mb-3">
               <label className="text-[10px] text-white/35 block mb-1">Sottorazza</label>
@@ -239,7 +250,7 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapseSection>
       )}
 
       {/* Caratteristiche */}
@@ -436,11 +447,11 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
 
       {/* Caratteristiche di Classe per livello */}
       {clsKey && (
-        <div className="veil-panel p-4">
-          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche di Classe</h3>
-          <p className="text-[10px] text-white/30 mb-2">
-            Capacità guadagnate salendo di livello ({clsData?.name}, attuale liv. {level}).
-          </p>
+        <CollapseSection
+          title="Caratteristiche di Classe"
+          subtitle={`Capacità guadagnate salendo di livello (${clsData?.name}, attuale liv. ${level}).`}
+          defaultOpen={isDesktop}
+          right={<span className="text-[10px] text-white/35">{level} livelli</span>}>
 
           {(() => {
             const arch = getArchetypeForClass(clsKey);
@@ -498,7 +509,7 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
               );
             })}
           </div>
-        </div>
+        </CollapseSection>
       )}
 
       {/* Ispirazione */}
