@@ -13,7 +13,7 @@ export type DmSection =
   | "assets"
   | "settings";
 
-export type PlayerTab = "inventory" | "home" | "sheet" | "diary" | "rules" | "notifications";
+export type PlayerTab = "sheet" | "diary" | "rules";
 
 export type QuestStatus = "todo" | "active" | "completed" | "failed";
 

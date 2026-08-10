@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense, useCallback } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { subscribeToTable } from "@/lib/supabaseClient";
 import type { PlayerTab } from "@/types/campaign";
@@ -7,11 +7,6 @@ import { CharacterSheet } from "@/components/player/CharacterSheet";
 import { CharacterWizard, isWizardDone, markWizardDone } from "@/components/player/CharacterWizard";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { RulesBrowser } from "@/components/shared/RulesBrowser";
-
-type NotificationItem = {
-  id: string; title: string; content: string; type: string;
-  should_vibrate: boolean; is_read: boolean; created_at: string;
-};
 
 function PlayerView() {
   const router = useRouter();
@@ -21,9 +16,7 @@ function PlayerView() {
   const token = params.code as string;
 
   const [player, setPlayer] = useState<any>(null);
-  const [tab, setTab] = useState<PlayerTab>("inventory");
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [tab, setTab] = useState<PlayerTab>("sheet");
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
@@ -47,35 +40,6 @@ function PlayerView() {
   }, [token, router]);
 
   useEffect(() => {
-    if (!sessionId || !player?.id) return;
-    const interval = setInterval(() => {
-      setRefreshKey(k => k + 1);
-      fetch(`/api/notifications?sessionId=${sessionId}&playerId=${player.id}`)
-        .then(r => r.json())
-        .then(d => {
-          setUnreadCount((d.items || []).filter((n: NotificationItem) => !n.is_read).length);
-        });
-    }, 10000);
-    const onVisible = () => { if (!document.hidden) setRefreshKey(k => k + 1); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
-  }, [sessionId, player?.id]);
-
-  useEffect(() => {
-    fetch(`/api/players?token=${token}`).then(async r => {
-      const d = await r.json();
-      if (!d.player) {
-        localStorage.removeItem("veil_player");
-        localStorage.removeItem("veil_player_code");
-        localStorage.removeItem("veil_player_email");
-        router.push("/");
-        return;
-      }
-      setPlayer(d.player);
-    });
-  }, [token, router]);
-
-  useEffect(() => {
     const saved = localStorage.getItem("veil_theme");
     if (saved) document.documentElement.setAttribute("data-theme", saved);
   }, []);
@@ -83,12 +47,9 @@ function PlayerView() {
   if (!player) return <main className="min-h-screen p-6">Caricamento...</main>;
 
   const tabs = [
-    { id: "inventory" as const, label: "Inventario" },
-    { id: "home" as const, label: "Home" },
     { id: "sheet" as const, label: "Scheda" },
     { id: "diary" as const, label: "Diario" },
     { id: "rules" as const, label: "Regole" },
-    { id: "notifications" as const, label: `Notifiche${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
   ];
 
   return (
@@ -149,8 +110,6 @@ function PlayerView() {
         ))}
       </div>
 
-      {tab === "inventory" && <InventoryView sessionId={sessionId} playerId={player.id} refreshKey={refreshKey} />}
-      {tab === "home" && <PlayerHome sessionId={sessionId} player={player} />}
       {tab === "sheet" && <CharacterSheet player={player} onUpdate={setPlayer} />}
       {tab === "diary" && <DiaryHub sessionId={sessionId} player={player} />}
       {tab === "rules" && (
@@ -161,91 +120,7 @@ function PlayerView() {
           </div>
         </div>
       )}
-      {tab === "notifications" && <NotificationsView sessionId={sessionId} playerId={player.id} />}
     </main>
-  );
-}
-
-// ---------- HOME (flexible) ----------
-function PlayerHome({ sessionId, player }: { sessionId: string; player: any }) {
-  return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      <div className="veil-premium-card p-4">
-        <h2 className="text-sm text-veil-gold">Personaggio</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="veil-surface rounded-lg p-3">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">Obiettivo</p>
-            <p className="mt-1 text-sm text-white/70">{player.goals || "non definito"}</p>
-          </div>
-          <div className="veil-surface rounded-lg p-3">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">Paura</p>
-            <p className="mt-1 text-sm text-white/70">{player.fear || "non definita"}</p>
-          </div>
-          <div className="veil-surface rounded-lg p-3">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">Monete</p>
-            <p className="mt-1 text-sm text-veil-gold">{player.coins ?? 0}</p>
-          </div>
-          <div className="veil-surface rounded-lg p-3">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">Condizioni</p>
-            <p className="mt-1 text-sm text-white/70">{(parseConditions(player.conditions) || []).join(", ") || "nessuna"}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function parseConditions(raw: any): string[] {
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === "string") try { return JSON.parse(raw); } catch { return []; }
-  return [];
-}
-
-// ---------- INVENTORY (DM-assigned only) ----------
-function InventoryView({ sessionId, playerId, refreshKey }: { sessionId: string; playerId: string; refreshKey: number }) {
-  const [items, setItems] = useState<any[]>([]);
-  const [filter, setFilter] = useState("all");
-
-  async function load() {
-    const d = await fetch(`/api/inventory?sessionId=${sessionId}&playerId=${playerId}`).then(r => r.json());
-    setItems(d.items || []);
-  }
-  useEffect(() => { if (sessionId && playerId) load(); }, [sessionId, playerId, refreshKey]);
-
-  const categoryIcons: Record<string, string> = { general: "📦", weapon: "⚔", armor: "🛡", potion: "🧪", tool: "🔧", quest: "📜", relic: "💎" };
-
-  const rarityColors: Record<string, string> = {
-    common: "text-gray-400", rare: "text-emerald-400", epic: "text-purple-400",
-    legendary: "text-yellow-400", artifact: "text-red-400", relic: "text-blue-400"
-  };
-
-  const filtered = filter === "all" ? items : items.filter(i => i.category === filter || (filter === "relics" && i.is_relic));
-
-  return (
-    <div className="veil-premium-card p-4 max-w-3xl">
-      <div className="flex items-center gap-2 mb-4">
-        <select className="veil-input text-sm" value={filter} onChange={e => setFilter(e.target.value)}>
-          <option value="all">Tutti</option>
-          <option value="weapon">Armi</option>
-          <option value="armor">Armature</option>
-          <option value="potion">Pozioni</option>
-          <option value="tool">Attrezzi</option>
-          <option value="relics">Reliquie</option>
-          <option value="general">Generale</option>
-        </select>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {filtered.map(i => (
-          <div key={i.id} className="relative rounded-lg border border-white/10 bg-black/20 p-3 text-center hover:border-veil-gold/30 transition group">
-            <span className="text-3xl">{categoryIcons[i.category] || "📦"}</span>
-            <p className={`mt-2 text-sm truncate ${rarityColors[i.rarity] || "text-white"}`}>{i.name}</p>
-            {i.quantity > 1 && <span className="text-xs text-white/50">×{i.quantity}</span>}
-            {i.rarity && <p className="text-[10px] text-white/30 capitalize">{i.rarity}</p>}
-          </div>
-        ))}
-      </div>
-      {items.length === 0 && <p className="text-sm text-white/40 text-center py-8">Nessun oggetto assegnato dal DM.</p>}
-    </div>
   );
 }
 
@@ -393,58 +268,6 @@ function Roleplay({ sessionId, playerId, characterName }: { sessionId: string; p
 }
 
 // ---------- NOTIFICATIONS VIEW ----------
-function NotificationsView({ sessionId, playerId }: { sessionId: string; playerId: string }) {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-
-  const load = useCallback(() => {
-    if (!sessionId || !playerId) return;
-    fetch(`/api/notifications?sessionId=${sessionId}&playerId=${playerId}`)
-      .then(r => r.json())
-      .then(d => setNotifications(d.items || []));
-  }, [sessionId, playerId]);
-
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 10000);
-    return () => clearInterval(interval);
-  }, [load]);
-
-  async function markRead(id: string) {
-    await fetch(`/api/notifications?id=${id}`, { method: "PATCH" });
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-  }
-
-  const typeIcons: Record<string, string> = {
-    message: "💬", whisper: "🤫", vision: "🔮", memory: "🧠",
-    combat: "⚔", quest: "📜", system: "⚙"
-  };
-
-  return (
-    <div className="max-w-2xl">
-      <div className="veil-premium-card p-5">
-        <h2 className="text-lg text-veil-gold">Notifiche</h2>
-        <div className="mt-4 space-y-2">
-          {notifications.length === 0 && <p className="text-sm text-white/40">Nessuna notifica.</p>}
-          {notifications.map(n => (
-            <div key={n.id} className={`rounded-lg border p-4 transition ${n.is_read ? "border-white/5 bg-black/10 opacity-60" : "border-veil-gold/30 bg-veil-gold/5"}`}
-              onClick={() => !n.is_read && markRead(n.id)}>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">{typeIcons[n.type] || "💬"}</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-white">{n.title}</p>
-                  <p className="mt-1 text-sm text-white/70">{n.content}</p>
-                  <p className="mt-1 text-[10px] text-white/30">{new Date(n.created_at).toLocaleString("it-IT")}</p>
-                </div>
-                {!n.is_read && <span className="h-2 w-2 rounded-full bg-veil-gold" />}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function PlayerPage() {
   return (
     <Suspense>
