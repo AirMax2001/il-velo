@@ -9,7 +9,7 @@ import { getModifier, getProficiencyBonus, getSpellDC, getSpellAttack, parseCond
 import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit } from "@/lib/data/leveling";
 import { SaveBadge } from "./sheet/ui";
 import { CoreTab } from "./sheet/CoreTab";
-import { CombatTab } from "./sheet/CombatTab";
+import { SpellTab } from "./sheet/SpellTab";
 import { MagicTab } from "./sheet/MagicTab";
 import { GearTab } from "./sheet/GearTab";
 import { PersonalityTab } from "./sheet/PersonalityTab";
@@ -22,7 +22,7 @@ type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra" |
 
 const TABS: { id: SheetTab; label: string; icon: string }[] = [
   { id: "core", label: "Nucleo", icon: "⚡" },
-  { id: "combat", label: "Combattimento", icon: "⚔️" },
+  { id: "combat", label: "Spell", icon: "🧙" },
   { id: "magic", label: "Magia", icon: "✨" },
   { id: "gear", label: "Equipaggiamento", icon: "🎒" },
   { id: "personality", label: "Personalità", icon: "📖" },
@@ -190,7 +190,7 @@ export function CharacterSheet({ player, onUpdate }: Props) {
 
   const tabRenderers: Record<SheetTab, () => React.ReactNode> = {
     core: () => <CoreTab ctx={ctx} />,
-    combat: () => <CombatTab ctx={ctx} />,
+    combat: () => <SpellTab ctx={ctx} />,
     magic: () => <MagicTab ctx={ctx} />,
     gear: () => <GearTab ctx={ctx} />,
     personality: () => <PersonalityTab ctx={ctx} />,

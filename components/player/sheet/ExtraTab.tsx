@@ -1,9 +1,8 @@
 "use client";
-import { getFeaturesAtLevel } from "@/lib/data/leveling";
 import type { SheetCtx } from "./types";
 
 export function ExtraTab({ ctx }: { ctx: SheetCtx }) {
-  const { cd, clsKey, clsData, raceData, bgData, level, updCd, save } = ctx;
+  const { cd, clsData, raceData, bgData, updCd, save } = ctx;
 
   return (
     <div className="space-y-4">
@@ -38,34 +37,14 @@ export function ExtraTab({ ctx }: { ctx: SheetCtx }) {
       </div>
 
       <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche di Classe</h3>
-        {Array.from({ length: level }, (_, i) => i + 1).map(lv => {
-          const feats = getFeaturesAtLevel(clsKey || "", lv);
-          if (feats.length === 0) return null;
-          return (
-            <div key={lv} className="mb-3">
-              <p className="text-xs text-white/30 mb-1">Livello {lv}</p>
-              {feats.map(f => (
-                <div key={f.name} className="mb-2">
-                  <p className="text-xs text-veil-gold/70 font-medium">✦ {f.name}</p>
-                  <p className="text-[11px] text-white/40 mt-0.5">{f.description}</p>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-        {raceData?.traits.map(t => (
-          <div key={t.name} className="mb-3">
-            <p className="text-xs text-emerald-400/70 font-medium">{t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
-            <p className="text-[11px] text-white/40 mt-0.5">{t.description}</p>
-          </div>
-        ))}
+        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche dal Background</h3>
         {bgData && (
           <div className="mb-3">
-            <p className="text-xs text-blue-400/70 font-medium">{bgData.feature.name} <span className="text-[9px] text-white/20">(background)</span></p>
+            <p className="text-xs text-blue-400/70 font-medium">{bgData.feature.name}</p>
             <p className="text-[11px] text-white/40 mt-0.5">{bgData.feature.description}</p>
           </div>
         )}
+        {!bgData && <p className="text-[11px] text-white/30">Nessun background selezionato.</p>}
       </div>
 
       <div className="veil-panel p-4">

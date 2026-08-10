@@ -19,25 +19,35 @@ function PlayerView() {
   const [tab, setTab] = useState<PlayerTab>("sheet");
   const [showWizard, setShowWizard] = useState(false);
 
+  async function loadPlayer() {
+    const r = await fetch(`/api/players?token=${token}`);
+    const d = await r.json();
+    if (!d.player) {
+      localStorage.removeItem("veil_player");
+      localStorage.removeItem("veil_player_code");
+      localStorage.removeItem("veil_player_email");
+      router.push("/");
+      return;
+    }
+    setPlayer(d.player);
+    const hasData = d.player.character_data && Object.keys(d.player.character_data).length > 0;
+    if (hasData) markWizardDone(d.player.id);
+    if (!hasData && !isWizardDone(d.player.id)) {
+      setTab("sheet");
+      setShowWizard(true);
+    }
+  }
+
   useEffect(() => {
-    fetch(`/api/players?token=${token}`).then(async r => {
-      const d = await r.json();
-      if (!d.player) {
-        localStorage.removeItem("veil_player");
-        localStorage.removeItem("veil_player_code");
-        localStorage.removeItem("veil_player_email");
-        router.push("/");
-        return;
-      }
-      setPlayer(d.player);
-      const hasData = d.player.character_data && Object.keys(d.player.character_data).length > 0;
-      if (hasData) markWizardDone(d.player.id);
-      if (!hasData && !isWizardDone(d.player.id)) {
-        setTab("sheet");
-        setShowWizard(true);
-      }
-    });
+    loadPlayer();
   }, [token, router]);
+
+  // Sync live: mentre la pagina è aperta, ricarica il personaggio ogni 5s
+  // così le modifiche del DM (tiri morte, condizioni, HP) arrivano in diretta.
+  useEffect(() => {
+    const t = setInterval(loadPlayer, 5000);
+    return () => clearInterval(t);
+  }, [token]);
 
   useEffect(() => {
     const saved = localStorage.getItem("veil_theme");

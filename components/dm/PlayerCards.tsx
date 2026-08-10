@@ -6,7 +6,7 @@ import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getRaceData, findRaceKey } from "@/lib/data/races";
 import backgrounds, { getBackgroundData } from "@/lib/data/backgrounds";
-import { getModifier, formatMod, getProficiencyBonus, ABILITY_SHORT, parseConditions, serializeConditions } from "@/lib/characterEngine";
+import { getModifier, formatMod, getProficiencyBonus, ABILITY_SHORT, parseConditions, serializeConditions, CONDITIONS_LIST } from "@/lib/characterEngine";
 import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
 import {
@@ -315,6 +315,55 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
 
   return (
     <div className="space-y-5">
+      {/* Comando Live: DM aggiorna, il player vede in diretta */}
+      <Section title="⚡ Comando Live (il giocatore vede in tempo reale)">
+        <div className="space-y-4">
+          <div className="flex items-end gap-4">
+            <DMField label="PF Correnti" value={player.hp_current} type="number" onSave={v => onSave({ hp_current: v })} />
+            <DMField label="PF Max" value={player.hp_max} type="number" onSave={v => onSave({ hp_max: v })} />
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Tiri Morte ✓</label>
+              <div className="flex gap-1 mt-1.5">
+                {[0,1,2].map(i => (
+                  <button key={i} onClick={() => onSave({ deathSaveSuccesses: Math.min(cd.deathSaveSuccesses > i ? i : i + 1, 3) })}
+                    className={`h-7 w-7 rounded-full border text-xs ${(cd.deathSaveSuccesses || 0) > i ? "bg-emerald-500/30 border-emerald-400/50 text-emerald-200" : "border-white/10 text-white/30 hover:border-emerald-400/30"}`}>✓</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Tiri Morte ✕</label>
+              <div className="flex gap-1 mt-1.5">
+                {[0,1,2].map(i => (
+                  <button key={i} onClick={() => onSave({ deathSaveFailures: Math.min(cd.deathSaveFailures > i ? i : i + 1, 3) })}
+                    className={`h-7 w-7 rounded-full border text-xs ${(cd.deathSaveFailures || 0) > i ? "bg-red-500/30 border-red-400/50 text-red-200" : "border-white/10 text-white/30 hover:border-red-400/30"}`}>✕</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.1em] text-white/30 mb-2 block">Condizioni attive</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {parseConditions(player.conditions).map((c: string) => (
+                <span key={c} className="rounded-full border border-red-500/30 bg-red-900/20 px-2.5 py-1 text-xs text-red-300/80 flex items-center gap-1">
+                  {c}
+                  <button onClick={() => onSave({ conditions: serializeConditions(parseConditions(player.conditions).filter((x: string) => x !== c)) })}
+                    className="text-red-300/40 hover:text-red-300">×</button>
+                </span>
+              ))}
+              {parseConditions(player.conditions).length === 0 && <span className="text-xs text-white/25">Nessuna condizione attiva</span>}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {CONDITIONS_LIST.filter(c => !parseConditions(player.conditions).includes(c)).map(c => (
+                <button key={c} onClick={() => onSave({ conditions: serializeConditions([...parseConditions(player.conditions), c]) })}
+                  className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/35 hover:border-red-400/30 hover:text-red-300/70 transition">
+                  + {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Section>
+
       {/* Info Base */}
       <Section title="Info Base">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

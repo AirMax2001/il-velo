@@ -6,6 +6,8 @@ export type CharacterData = {
   wisdom?: number;
   charisma?: number;
   subRaceKey?: string;
+  classAbilities?: string[];
+  archetype?: string;
   sex?: string;
   deity?: string;
   appearance?: string;

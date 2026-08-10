@@ -3,7 +3,9 @@ import type { CharacterData } from "@/lib/types";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import races from "@/lib/data/races";
-import { getRaceData, findRaceKey } from "@/lib/data/races";
+import { getRaceData, findRaceKey, getSubRaceData } from "@/lib/data/races";
+import { getFeaturesAtLevel } from "@/lib/data/leveling";
+import { CLASS_ABILITIES, getArchetypeForClass } from "@/lib/data/classAbilities";
 import classes from "@/lib/data/classes";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import backgrounds from "@/lib/data/backgrounds";
@@ -34,7 +36,12 @@ function resizeImage(file: File, maxDim: number, quality: number, cb: (dataUrl: 
 }
 
 export function CoreTab({ ctx }: { ctx: SheetCtx }) {
-  const { form, cd, clsData, raceData, bgData, level, pb, expectedHP, hitDie, conMod, dexMod, raceSpeed, upd, updCd, updCdAll, save, onLevelUp } = ctx;
+  const { form, cd, clsKey, clsData, raceData, bgData, level, pb, expectedHP, hitDie, conMod, dexMod, raceSpeed, upd, updCd, updCdAll, save, onLevelUp } = ctx;
+
+  const subRaceKey = cd.subRaceKey || "";
+  const subRace = subRaceKey && raceData?.subRaces
+    ? raceData.subRaces.find(sr => sr.key === subRaceKey)
+    : undefined;
 
   return (
     <div className="space-y-4">
@@ -165,21 +172,71 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
         </div>
       </div>
 
-      {/* Info razza */}
+      {/* Razza e Tratti */}
       {raceData && (
-        <div className="veil-panel p-3">
+        <div className="veil-panel p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-veil-gold/80 font-medium">{raceData.name}</span>
+            <h3 className="text-sm text-veil-gold/80 font-medium">Razza e Tratti</h3>
             <span className="text-[10px] text-white/30">{raceData.speed}m · {raceData.size}</span>
           </div>
-          <div className="flex flex-wrap gap-1">
+
+          {raceData.subRaces && raceData.subRaces.length > 0 && (
+            <div className="mb-3">
+              <label className="text-[10px] text-white/35 block mb-1">Sottorazza</label>
+              <select className="veil-input w-full"
+                value={subRaceKey}
+                onChange={e => {
+                  const srKey = e.target.value;
+                  const sr = raceData.subRaces?.find(s => s.key === srKey);
+                  updCdAll({ subRaceKey: srKey, subRaceName: sr?.name || "" });
+                  save({ subRaceKey: srKey, subRaceName: sr?.name || "" });
+                }}>
+                <option value="">— Seleziona sottorazza —</option>
+                {raceData.subRaces.map(sr => (
+                  <option key={sr.key} value={sr.key}>{sr.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1 mb-2">
             {Object.entries(raceData.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
               <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
                 {ABILITY_SHORT[k] || k}+{v}
               </span>
             ))}
-            {raceData.traits.slice(0, 4).map(t => (
-              <span key={t.name} className="rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/40" title={t.description}>{t.name}</span>
+            {subRace?.abilityBonuses && Object.entries(subRace.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
+              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
+                {ABILITY_SHORT[k] || k}+{v} (sottorazza)
+              </span>
+            ))}
+            {raceData.darkvision && (
+              <span className="rounded bg-indigo-900/20 border border-indigo-500/20 px-1.5 py-0.5 text-[10px] text-indigo-300/70">
+                👁️ Scurovisione {raceData.darkvision}m
+              </span>
+            )}
+            {(raceData.resistances || []).length > 0 && (
+              <span className="rounded bg-red-900/20 border border-red-500/20 px-1.5 py-0.5 text-[10px] text-red-300/70">
+                🛡️ Resistenza: {(raceData.resistances || []).join(", ")}
+              </span>
+            )}
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/40">
+              🗣️ {raceData.languages.join(", ")}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {raceData.traits.map(t => (
+              <div key={t.name} className="rounded-lg bg-black/20 p-2">
+                <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
+                <p className="text-[11px] text-white/40 mt-0.5">{t.description}</p>
+              </div>
+            ))}
+            {(subRace?.traits || []).map(t => (
+              <div key={t.name} className="rounded-lg bg-black/20 p-2">
+                <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(sottorazza)</span></p>
+                <p className="text-[11px] text-white/40 mt-0.5">{t.description}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -376,6 +433,86 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
           })}
         </div>
       </div>
+
+      {/* Caratteristiche di Classe per livello */}
+      {clsKey && (
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche di Classe</h3>
+          <p className="text-[10px] text-white/30 mb-2">
+            Capacità guadagnate salendo di livello ({clsData?.name}, attuale liv. {level}).
+          </p>
+
+          {(() => {
+            const arch = getArchetypeForClass(clsKey);
+            if (!arch || level < arch.level) return null;
+            const picked = cd.archetype || "";
+            return (
+              <div className="rounded-lg bg-black/20 p-2 mb-3">
+                <p className="text-xs text-veil-gold/70 font-medium mb-1">🎭 {arch.label} (liv. {arch.level})</p>
+                {picked ? (
+                  <p className="text-[11px] text-white/50">
+                    Scelto: <strong className="text-emerald-300/80">{arch.options.find(o => o.key === picked)?.name}</strong>
+                    <button onClick={() => { updCd("archetype", ""); save({ archetype: "" }); }}
+                      className="ml-2 text-[10px] text-red-300/50 hover:text-red-300">cambia</button>
+                  </p>
+                ) : (
+                  <select className="veil-input w-full text-xs mt-1"
+                    value=""
+                    onChange={e => { updCd("archetype", e.target.value); save({ archetype: e.target.value }); }}>
+                    <option value="">— Scegli il tuo {arch.label.toLowerCase()} —</option>
+                    {arch.options.map(o => (
+                      <option key={o.key} value={o.key}>{o.name} — {o.description}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            );
+          })()}
+
+          <div className="space-y-3">
+            {Array.from({ length: level }, (_, i) => i + 1).map(lv => {
+              const feats = getFeaturesAtLevel(clsKey, lv);
+              const actives = (CLASS_ABILITIES[clsKey] || []).filter(a => a.level === lv);
+              if (feats.length === 0 && actives.length === 0) return null;
+              return (
+                <div key={lv} className="mb-1">
+                  <p className="text-xs text-white/30 mb-1">Livello {lv}</p>
+                  {feats.map(f => (
+                    <div key={f.name} className="rounded-lg bg-black/20 p-2 mb-1.5">
+                      <p className="text-xs text-veil-gold/70 font-medium">✦ {f.name}</p>
+                      <p className="text-[11px] text-white/40 mt-0.5">{f.description}</p>
+                    </div>
+                  ))}
+                  {actives.length > 0 && (
+                    <div className="rounded-lg bg-indigo-950/20 border border-indigo-500/15 p-2 mb-1.5">
+                      <p className="text-[10px] text-indigo-300/60 mb-1">Attivabili in gioco — sposta in "Spell":</p>
+                      {actives.map(a => {
+                        const isOn = (cd.classAbilities || []).includes(a.key);
+                        return (
+                          <label key={a.key} className="flex items-center gap-2 py-1 cursor-pointer">
+                            <input type="checkbox" className="accent-indigo-400 w-4 h-4"
+                              checked={isOn}
+                              onChange={e => {
+                                const cur = cd.classAbilities || [];
+                                const next = e.target.checked ? [...cur, a.key] : cur.filter(k => k !== a.key);
+                                updCd("classAbilities", next);
+                                save({ classAbilities: next });
+                              }} />
+                            <span className={`text-xs ${isOn ? "text-indigo-200" : "text-white/50"}`}>
+                              {a.name} {a.die ? `(${a.die})` : ""}
+                              <span className="text-[10px] text-white/30"> · {a.action} · {a.uses}</span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Ispirazione */}
       <div className="veil-panel p-3 flex items-center gap-3">
