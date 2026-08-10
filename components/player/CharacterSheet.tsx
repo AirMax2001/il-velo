@@ -174,7 +174,10 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange }: 
   const raceSkillSet = new Set<string>((raceData?.proficiencies?.skills || []).filter(Boolean));
 
   const handleAddAttack = useCallback((atk: { name: string; bonus: string; damage: string; type: string }) => {
-    const na = [...attacks, atk];
+    const lower = atk.name.toLowerCase();
+    const na = attacks.some(a => a.name.toLowerCase() === lower)
+      ? attacks.map(a => a.name.toLowerCase() === lower ? { ...a, ...atk } : a)
+      : [...attacks, atk];
     updCd("attacks", na);
     save({ attacks: na });
   }, [attacks, updCd, save]);

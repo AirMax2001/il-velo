@@ -223,6 +223,19 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
       } finally {
         seedingRef.current = false;
       }
+      // Pulizia una-tantum: rimuove gli attacchi duplicati rimasti salvati (vecchi wizard/bottoni)
+      const seen = new Set<string>();
+      const na = (cd.attacks || []).filter(a => {
+        const k = ((a.name || "").trim().toLowerCase());
+        if (!k) return true;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      if (na.length !== (cd.attacks || []).length) {
+        updCd("attacks", na);
+        save({ attacks: na });
+      }
       if (!cancelled) loadItems();
     });
     return () => { cancelled = true; };
@@ -280,15 +293,19 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
         }
       }
       await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: it.id, equipped: true }) });
-      if (atk && !(cd.attacks || []).some(a => a.name === atk.name)) {
-        const na = [...(cd.attacks || []), atk];
+      if (atk) {
+        const lower = atk.name.toLowerCase();
+        const na = (cd.attacks || []).some(a => a.name.toLowerCase() === lower)
+          ? (cd.attacks || []).map(a => a.name.toLowerCase() === lower ? { ...a, ...atk } : a)
+          : [...(cd.attacks || []), atk];
         updCd("attacks", na);
         save({ attacks: na });
       }
     } else {
       await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: it.id, equipped: false }) });
       if (atk) {
-        const na = (cd.attacks || []).filter(a => a.name !== atk.name);
+        const lower = atk.name.toLowerCase();
+        const na = (cd.attacks || []).filter(a => a.name.toLowerCase() !== lower);
         updCd("attacks", na);
         save({ attacks: na });
       }
