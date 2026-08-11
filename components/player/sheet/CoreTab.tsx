@@ -151,26 +151,21 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
           </div>
 
           {/* Esperienza */}
-          <div className="mt-4 rounded-xl border border-veil-gold/15 bg-veil-gold/[0.05] p-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-lg leading-none">⭐</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Esperienza</p>
-                <p className="text-lg font-bold text-veil-gold">{Number(form?.xp || 0).toLocaleString("it-IT")} XP</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="number" min="1" placeholder="Fight +XP"
-                  className="veil-input w-24 text-sm"
-                  value={xpAdd}
-                  onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
-                  onKeyDown={e => e.key === "Enter" && addXp()} />
-                <button onClick={addXp}
-                  className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition">
-                  + Aggiungi
-                </button>
-              </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Esperienza</p>
+            <p className="text-sm font-bold text-veil-gold">{Number(form?.xp || 0).toLocaleString("it-IT")} XP</p>
+            <div className="flex items-center gap-2">
+              <input type="number" min="1" placeholder="Fight +XP"
+                className="veil-input w-20 text-xs !py-1.5"
+                value={xpAdd}
+                onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
+                onKeyDown={e => e.key === "Enter" && addXp()} />
+              <button onClick={addXp}
+                className="rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-2.5 py-1.5 text-[11px] text-veil-gold hover:bg-veil-gold/20 transition">
+                + Aggiungi
+              </button>
             </div>
-            {xpError && <p className="mt-2 text-xs text-red-300">{xpError}</p>}
+            {xpError && <p className="w-full text-[11px] text-red-300">{xpError}</p>}
           </div>
         </div>
       </div>
