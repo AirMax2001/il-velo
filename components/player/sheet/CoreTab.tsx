@@ -9,8 +9,6 @@ import { getFeaturesAtLevel } from "@/lib/data/leveling";
 import { CLASS_ABILITIES, getArchetypeForClass } from "@/lib/data/classAbilities";
 import classes from "@/lib/data/classes";
 import { getClassData, findClassKey } from "@/lib/data/classes";
-import backgrounds from "@/lib/data/backgrounds";
-import { getBackgroundData } from "@/lib/data/backgrounds";
 import { getModifier, ALL_ABILITIES, ALL_SKILLS, ALL_SAVES, SKILL_ABILITY, SAVE_ABILITY, ABILITY_SHORT, SKILL_LABELS, SAVE_LABELS } from "@/lib/characterEngine";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
 import { StatBox, CollapseSection } from "./ui";
@@ -40,6 +38,8 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
   const { form, cd, clsKey, clsData, raceData, bgData, level, pb, expectedHP, hitDie, conMod, dexMod, raceSpeed, upd, updCd, updCdAll, save, onLevelUp } = ctx;
 
   const [isDesktop, setIsDesktop] = useState(false);
+  const [xpAdd, setXpAdd] = useState("");
+  const [xpError, setXpError] = useState("");
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
     setIsDesktop(mq.matches);
@@ -47,6 +47,16 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
+
+  function addXp() {
+    setXpError("");
+    const add = Number(xpAdd);
+    if (!xpAdd || isNaN(add) || add <= 0) { setXpError("Inserisci un numero valido."); return; }
+    const total = (Number(form?.xp) || 0) + add;
+    upd("xp", total);
+    save({ xp: total });
+    setXpAdd("");
+  }
 
   const subRaceKey = cd.subRaceKey || "";
   const subRace = subRaceKey && raceData?.subRaces
@@ -77,7 +87,7 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
             )}
           </div>
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="col-span-full sm:col-span-2">
+            <div className="col-span-full">
               <LabelWithGuide fieldKey="character_name" label="Nome Personaggio" />
               <input type="text" className="veil-input mt-1 w-full"
                 value={form?.character_name || ""}
@@ -113,7 +123,7 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="col-span-full sm:col-span-1">
               <LabelWithGuide fieldKey="class_label" label="Classe" />
               <select className="veil-input mt-1 w-full"
                 value={findClassKey(form?.class || "") || ""}
@@ -138,46 +148,29 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
                 ))}
               </select>
             </div>
-            <div>
-              <LabelWithGuide fieldKey="background" label="Background" />
-              <select className="veil-input mt-1 w-full"
-                value={Object.keys(backgrounds).find(k => (backgrounds as any)[k].name === form?.background) || form?.background || ""}
-                onChange={e => {
-                  const bk = e.target.value;
-                  const bd = getBackgroundData(bk);
-                  upd("background", bd?.name || bk);
-                  if (bd?.skillProficiencies) {
-                    const skillUpdates: Record<string, boolean> = {};
-                    bd.skillProficiencies.forEach(s => { skillUpdates[s] = true; });
-                    updCdAll(skillUpdates);
-                  }
-                }}
-                onBlur={() => save({ background: ctx.formRef.current?.background })}>
-                <option value="">— Seleziona background —</option>
-                {Object.values(backgrounds).map(b => (
-                  <option key={b.key} value={b.key}>{b.name}</option>
-                ))}
-              </select>
+          </div>
+
+          {/* Esperienza */}
+          <div className="mt-4 rounded-xl border border-veil-gold/15 bg-veil-gold/[0.05] p-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-lg leading-none">⭐</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Esperienza</p>
+                <p className="text-lg font-bold text-veil-gold">{Number(form?.xp || 0).toLocaleString("it-IT")} XP</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="number" min="1" placeholder="Fight +XP"
+                  className="veil-input w-24 text-sm"
+                  value={xpAdd}
+                  onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
+                  onKeyDown={e => e.key === "Enter" && addXp()} />
+                <button onClick={addXp}
+                  className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition">
+                  + Aggiungi
+                </button>
+              </div>
             </div>
-            <div>
-              <LabelWithGuide fieldKey="alignment" label="Allineamento" />
-              <select className="veil-input mt-1 w-full"
-                value={cd.alignment || ""}
-                onChange={e => updCd("alignment", e.target.value)}
-                onBlur={() => save({ alignment: form?.character_data?.alignment })}>
-                <option value="">— Seleziona —</option>
-                {["Legale Buono", "Neutrale Buono", "Caotico Buono", "Legale Neutrale", "Neutrale", "Caotico Neutrale", "Legale Malvagio", "Neutrale Malvagio", "Caotico Malvagio"].map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <LabelWithGuide fieldKey="xp" label="XP" />
-              <input type="number" className="veil-input mt-1 w-full" min={0}
-                value={form?.xp || 0}
-                onChange={e => upd("xp", Number(e.target.value))}
-                onBlur={() => save({ xp: ctx.formRef.current?.xp })} />
-            </div>
+            {xpError && <p className="mt-2 text-xs text-red-300">{xpError}</p>}
           </div>
         </div>
       </div>

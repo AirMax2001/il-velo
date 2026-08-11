@@ -21,23 +21,6 @@ function PlayerView() {
   const [tab, setTab] = useState<PlayerTab>("sheet");
   const [showWizard, setShowWizard] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [xpAdd, setXpAdd] = useState("");
-  const [xpError, setXpError] = useState("");
-
-  async function addXp() {
-    setXpError("");
-    const add = Number(xpAdd);
-    if (!xpAdd || isNaN(add) || add <= 0) { setXpError("Inserisci un numero valido."); return; }
-    const res = await fetch("/api/players", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: player.id, xp: (player.xp || 0) + add }),
-    });
-    const d = await res.json();
-    if (!res.ok || d.error) { setXpError("Errore di salvataggio."); return; }
-    setPlayer((prev: any) => ({ ...prev, xp: (prev.xp || 0) + add }));
-    setXpAdd("");
-  }
 
   async function loadPlayer() {
     const r = await fetch(`/api/players?token=${token}`);
@@ -138,27 +121,6 @@ function PlayerView() {
               style={{ width: `${Math.max(0, Math.min(100, hpPct * 100))}%` }} />
           </div>
         )}
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-veil-gold/15 bg-veil-gold/[0.05] px-3 py-2.5">
-        <span className="text-xl leading-none">⭐</span>
-        <div className="min-w-0">
-          <p className="text-[9px] uppercase tracking-[0.2em] text-white/35">Esperienza totale</p>
-          <p className="text-base font-bold text-veil-gold">{fmtXp(player?.xp)} XP</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <input type="number" min="1" placeholder="Fight + XP"
-            className="veil-input w-28 text-sm"
-            value={xpAdd}
-            onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
-            onKeyDown={e => e.key === "Enter" && addXp()} />
-          <button onClick={addXp}
-            className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition">
-            + Aggiungi
-          </button>
-        </div>
-        {xpError && <p className="w-full text-xs text-red-300">{xpError}</p>}
-        <p className="w-full text-[10px] text-white/25">Esempio: fine combattimento, inserisci 240, clicca Aggiungi → il totale sopra si somma da solo.</p>
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2">
