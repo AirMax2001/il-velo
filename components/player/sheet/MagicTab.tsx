@@ -1,19 +1,13 @@
 "use client";
-import { getModifier, ABILITY_SHORT } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
-import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, getFeaturesAtLevel, WARLOCK_SLOT_LEVEL } from "@/lib/data/leveling";
-import { getSpellDC, getSpellAttack, preparedSpellLimit } from "@/lib/characterEngine";
+import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL } from "@/lib/data/leveling";
+import { preparedSpellLimit } from "@/lib/characterEngine";
 import { getClassResources } from "@/lib/data/classAbilities";
-import type { CharacterData } from "@/lib/types";
 import type { SheetCtx } from "./types";
 
 export function MagicTab({ ctx }: { ctx: SheetCtx }) {
-  const { cd, clsKey, clsData, level, pb, spellAbility, spellDC, spellAtk, updCd, updCdAll, save } = ctx;
+  const { cd, clsKey, clsData, level, pb, spellAbility, spellAbilityMod, updCd, updCdAll, save } = ctx;
   const hasSpellcasting = !!clsData?.spellcasting || !!spellAbility;
-  const spellAbilityLabel = spellAbility ? (ABILITY_SHORT[spellAbility] || spellAbility) : null;
-
-  const spellAbilityScore = spellAbility ? Number(cd[spellAbility as keyof CharacterData]) || 10 : 10;
-  const spellAbilityMod = getModifier(spellAbilityScore);
 
   const autoSlotTotals = clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
   const cantripLimit = clsKey ? getCantripsKnown(clsKey, level) : 0;
@@ -23,8 +17,6 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
     acc + ((((cd as any)[`spells${lvl}`]) || []) as string[]).length, 0);
 
   const spellSlots = (cd.spellSlots || {}) as Record<number, { total?: number; expended?: number }>;
-  const dcd = spellAbility && clsKey ? getSpellDC(spellAbility as any, { [spellAbility]: spellAbilityScore } as any, pb) : 0;
-  const datk = spellAbility && clsKey ? getSpellAttack(spellAbility as any, { [spellAbility]: spellAbilityScore } as any, pb) : 0;
 
   const resources = clsKey ? getClassResources(clsKey) : [];
   const spent = (cd.resources || {}) as Record<string, { total?: number; expended?: number }>;
@@ -99,28 +91,6 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
 
       {hasSpellcasting && (
         <>
-          {/* Stats incantatore */}
-          <div className="veil-panel p-4">
-            <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Statistiche Incantatore</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
-                <p className="text-[10px] text-blue-300/50 mb-1">Caratteristica</p>
-                <p className="text-sm text-blue-200 font-medium">{spellAbilityLabel || "—"}</p>
-                <p className="text-[10px] text-white/25 mt-0.5">{spellAbility || ""}</p>
-              </div>
-              <div className="text-center rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
-                <p className="text-[10px] text-blue-300/50 mb-1">CD Inc.</p>
-                <p className="text-xl font-bold text-blue-200">{dcd}</p>
-                <p className="text-[10px] text-white/25 mt-0.5">8+{spellAbilityMod >= 0 ? "+" : ""}{spellAbilityMod}+{pb}</p>
-              </div>
-              <div className="text-center rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
-                <p className="text-[10px] text-blue-300/50 mb-1">Attacco</p>
-                <p className="text-xl font-bold text-blue-200">{datk >= 0 ? `+${datk}` : `${datk}`}</p>
-                <p className="text-[10px] text-white/25 mt-0.5">{spellAbilityMod >= 0 ? "+" : ""}{spellAbilityMod}+{pb}</p>
-              </div>
-            </div>
-          </div>
-
           {/* Trucchetti */}
           <div className="veil-panel p-4">
             <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Trucchetti</h3>

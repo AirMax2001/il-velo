@@ -7,6 +7,7 @@ import {
 } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
 import { CLASS_ABILITIES, getArchetypeAbilities, getArchetypeForClass } from "@/lib/data/classAbilities";
+import { SKILL_DESCRIPTIONS } from "@/components/shared/AbilityReferenceTables";
 import { NumberBubbles, CollapseSection } from "./ui";
 import type { SheetCtx } from "./types";
 
@@ -16,9 +17,11 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const {
     form, cd, clsKey, clsData, level, pb, attacks, conditions,
     hitDie, autoSlotTotals, spellSlots, upd, updCd, updCdAll, save,
+    spellAbility, spellAbilityMod, spellDC, spellAtk,
   } = ctx;
 
-  const canCast = !!clsData?.spellcasting;
+  const canCast = !!clsData?.spellcasting || !!spellAbility;
+  const spellAbilityLabel = spellAbility ? (ABILITY_SHORT[spellAbility] || spellAbility) : null;
   const [query, setQuery] = useState("");
   const [openLevels, setOpenLevels] = useState<Record<number, boolean>>({});
   const q = query.trim().toLowerCase();
@@ -53,6 +56,49 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
 
   return (
     <div className="space-y-4">
+      {/* Statistiche incantatore */}
+      {canCast && (
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-1">Statistiche Incantatore</h3>
+          <p className="text-[10px] text-white/30 mb-3">I numeri che usi quando lanci un incantesimo.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
+              <p className="text-[10px] text-blue-300/50 mb-1">Caratteristica</p>
+              <p className="text-sm text-blue-200 font-medium">{spellAbilityLabel || "—"}</p>
+              <p className="text-[10px] text-white/25 mt-0.5">{spellAbility || ""}</p>
+              <p className="text-[10px] text-white/40 mt-2 leading-snug">
+                <strong className="text-white/60">Cosa è:</strong> la caratteristica di lancio della tua classe
+                (es. Mago = INT, Chierico = SAG, Bardo = CAR).<br />
+                <strong className="text-white/60">A cosa serve:</strong> dal suo modificatore dipendono CD Inc. e Attacco.<br />
+                <strong className="text-white/60">Quando usarla:</strong> ogni volta che lanci un incantesimo.
+              </p>
+            </div>
+            <div className="rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
+              <p className="text-[10px] text-blue-300/50 mb-1">CD Inc.</p>
+              <p className="text-xl font-bold text-blue-200">{spellDC}</p>
+              <p className="text-[10px] text-white/25 mt-0.5">8+{spellAbilityMod >= 0 ? "+" : ""}{spellAbilityMod}+{pb}</p>
+              <p className="text-[10px] text-white/40 mt-2 leading-snug">
+                <strong className="text-white/60">Cosa è:</strong> Classe Difficoltà Incantatore, la soglia da superare.<br />
+                <strong className="text-white/60">A cosa serve:</strong> il nemico deve fare un tiro salvezza ≥ a questo numero.<br />
+                <strong className="text-white/60">Quando usarla:</strong> con incantesimi che impongono un tiro salvezza
+                (es. Sonno, Fiamma Sacra): tira 1d20 + il suo mod. e deve superare la CD.
+              </p>
+            </div>
+            <div className="rounded-xl border border-blue-500/20 bg-blue-900/10 p-3">
+              <p className="text-[10px] text-blue-300/50 mb-1">Attacco</p>
+              <p className="text-xl font-bold text-blue-200">{spellAtk >= 0 ? `+${spellAtk}` : `${spellAtk}`}</p>
+              <p className="text-[10px] text-white/25 mt-0.5">{spellAbilityMod >= 0 ? "+" : ""}{spellAbilityMod}+{pb}</p>
+              <p className="text-[10px] text-white/40 mt-2 leading-snug">
+                <strong className="text-white/60">Cosa è:</strong> il bonus al tuo tiro per colpire magico.<br />
+                <strong className="text-white/60">A cosa serve:</strong> lo sommi a 1d20 per superare la CA del bersaglio.<br />
+                <strong className="text-white/60">Quando usarla:</strong> con incantesimi con tiro per colpire
+                (es. Dardo di Fuoco, Raggio di Gelo): se il totale è ≥ CA, colpisci.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Slot incantesimi disponibili */}
       {canCast && (
         <div className="veil-panel p-4">
@@ -152,10 +198,13 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
             const mod = getModifier(score);
             const total = mod + pb;
             return (
-              <div key={sk.key} className="flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-900/[0.05] px-2.5 py-1.5">
-                <span className="flex-1 text-xs text-white/70">{sk.label}</span>
-                <span className="text-[10px] text-white/25">{ABILITY_SHORT[sk.ability]}</span>
-                <span className="text-xs font-medium text-emerald-300">{total >= 0 ? `+${total}` : `${total}`}</span>
+              <div key={sk.key} className="flex flex-col rounded-lg border border-emerald-500/15 bg-emerald-900/[0.05] px-2.5 py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-xs text-white/70">{sk.label}</span>
+                  <span className="text-[10px] text-white/25">{ABILITY_SHORT[sk.ability]}</span>
+                  <span className="text-xs font-medium text-emerald-300">{total >= 0 ? `+${total}` : `${total}`}</span>
+                </div>
+                <p className="text-[10px] text-white/30 pl-0 pt-1 leading-snug">{SKILL_DESCRIPTIONS[sk.label]}</p>
               </div>
             );
           })}
