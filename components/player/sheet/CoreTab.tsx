@@ -36,7 +36,7 @@ function resizeImage(file: File, maxDim: number, quality: number, cb: (dataUrl: 
 }
 
 export function CoreTab({ ctx }: { ctx: SheetCtx }) {
-  const { form, cd, clsKey, clsData, raceData, bgData, level, pb, expectedHP, hitDie, conMod, dexMod, raceSpeed, upd, updCd, updCdAll, save, onLevelUp } = ctx;
+  const { form, cd, clsKey, clsData, raceData, bgData, level, pb, expectedHP, hitDie, conMod, dexMod, raceSpeed, upd, updCd, updCdAll, save, onLevelUp, dmMode } = ctx;
 
   const [isDesktop, setIsDesktop] = useState(false);
   const [xpAdd, setXpAdd] = useState("");
@@ -49,11 +49,11 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
     return () => mq.removeEventListener("change", fn);
   }, []);
 
-  function addXp() {
+  function applyXp(sign: 1 | -1) {
     setXpError("");
     const add = Number(xpAdd);
     if (!xpAdd || isNaN(add) || add <= 0) { setXpError("Inserisci un numero valido."); return; }
-    const total = (Number(form?.xp) || 0) + add;
+    const total = Math.max(0, (Number(form?.xp) || 0) + sign * add);
     upd("xp", total);
     save({ xp: total });
     setXpAdd("");
@@ -158,8 +158,15 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
                     className="veil-input w-24 min-w-0 text-xs !py-1.5"
                     value={xpAdd}
                     onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
-                    onKeyDown={e => e.key === "Enter" && addXp()} />
-                  <button onClick={addXp}
+                    onKeyDown={e => e.key === "Enter" && applyXp(1)} />
+                  {dmMode && (
+                    <button onClick={() => applyXp(-1)}
+                      className="shrink-0 rounded-lg border border-red-400/30 bg-red-900/10 px-2.5 py-1.5 text-[11px] text-red-300/80 hover:bg-red-900/20 transition"
+                      title="Solo DM: togli XP al giocatore">
+                      − Togli
+                    </button>
+                  )}
+                  <button onClick={() => applyXp(1)}
                     className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-2.5 py-1.5 text-[11px] text-veil-gold hover:bg-veil-gold/20 transition">
                     + Aggiungi
                   </button>

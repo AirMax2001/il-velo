@@ -212,15 +212,9 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
 
       {/* Attacchi */}
       <div className="veil-panel p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm text-veil-gold/80 font-medium">Attacchi</h3>
-          <button onClick={() => updCdAll({ attacks: [...attacks, { name: "", bonus: "", damage: "", type: "" }] })}
-            className="text-xs text-veil-gold/60 hover:text-veil-gold border border-veil-gold/20 rounded-lg px-2 py-1 transition">
-            + Aggiungi
-          </button>
-        </div>
+        <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Attacchi</h3>
         {attacks.length === 0 && (
-          <p className="text-xs text-white/30 text-center py-3">Nessun attacco. Clicca "+ Aggiungi" per inserirne uno.</p>
+          <p className="text-xs text-white/30 text-center py-3">Nessun attacco. Le armi si aggiungono dall&apos;inventario (Equip.).</p>
         )}
         <div className="space-y-2">
           {attacks.map((a: any, i: number) => (

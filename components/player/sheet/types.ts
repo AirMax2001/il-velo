@@ -44,4 +44,5 @@ export type SheetCtx = {
   save: (fields: Record<string, any>) => void;
   onLevelUp: (updates: Record<string, any>) => void;
   onAddAttack: (attack: { name: string; bonus: string; damage: string; type: string }) => void;
+  dmMode?: boolean;
 };

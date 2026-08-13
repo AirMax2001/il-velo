@@ -431,12 +431,13 @@ function PlayerSheetOverlay({ player, sessionId, onClose }: { player: any; sessi
           </p>
         </div>
       </div>
-      <div className="mx-auto max-w-3xl px-2 pb-24 pt-1">
+      <div className="px-4 sm:px-8 pb-24 pt-1">
         <CharacterSheet
           player={live || player}
           onUpdate={setLive}
           sessionId={sessionId}
           onExit={onClose}
+          dmMode
         />
       </div>
     </div>

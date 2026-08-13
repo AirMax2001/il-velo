@@ -17,7 +17,7 @@ import { ExtraTab } from "./sheet/ExtraTab";
 import { PartyTab } from "./sheet/PartyTab";
 import type { SheetCtx } from "./sheet/types";
 
-type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void; sessionId?: string };
+type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void; sessionId?: string; dmMode?: boolean };
 type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "party";
 
 const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
@@ -29,7 +29,7 @@ const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
   { id: "party", label: "Party", short: "Party", icon: "👥" },
 ];
 
-export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, sessionId }: Props) {
+export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, sessionId, dmMode }: Props) {
   const [form, setForm] = useState(player);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [activeTab, setActiveTab] = useState<SheetTab>("core");
@@ -199,6 +199,7 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
     classSkillSet, bgSkillSet, raceSkillSet,
     upd, updCd, updCdAll, updAll, save,
     onLevelUp: handleLevelUp, onAddAttack: handleAddAttack,
+    dmMode,
   };
 
   const tabRenderers: Record<SheetTab, () => React.ReactNode> = {
