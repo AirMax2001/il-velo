@@ -76,11 +76,11 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="w-full">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Giocatori</h2>
 
       {/* Riferimento regole: rettangoli cliccabili */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 mb-8">
         <button onClick={() => setOpenRef(openRef === "ability" ? null : "ability")}
           className={`rounded-2xl border p-5 text-left transition ${
             openRef === "ability" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
@@ -147,8 +147,8 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
         <p className="text-sm text-white/40">Nessun giocatore in questa campagna.</p>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {players.map(p => (
           <div
             key={p.id}

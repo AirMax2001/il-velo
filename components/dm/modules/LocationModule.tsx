@@ -111,7 +111,7 @@ export function LocationModule({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Luoghi</h2>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">

@@ -40,7 +40,7 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
   const filtered = filter === "all" ? npcs : npcs.filter(n => filter === "dead" ? n.is_dead : !n.is_dead);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">NPC</h2>
         <div className="flex gap-2">

@@ -217,7 +217,7 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
   };
 
   return (
-    <div className="mx-auto max-w-3xl pb-24">
+    <div className="w-full px-2 pb-24 sm:px-4 lg:px-8">
       {/* Tab content */}
       <div>
         {tabRenderers[activeTab]?.()}

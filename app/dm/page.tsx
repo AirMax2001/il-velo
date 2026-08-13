@@ -209,7 +209,7 @@ function CampaignWorkspace({ session, campaigns, onSelect }: { session: any; cam
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Campagne</h2>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -303,7 +303,7 @@ function ExportPanel({ sessionId, noteContent }: { sessionId: string; noteConten
   if (!sessionId) return <p className="text-sm text-white/40">Seleziona una campagna per esportare i dati.</p>;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Export Center</h2>
       <p className="text-sm text-white/40">Esporta i dati della campagna come JSON pronti per ChatGPT.</p>
       <div className="grid grid-cols-2 gap-3">
@@ -364,7 +364,7 @@ function SettingsPlaceholder() {
   if (!mounted) return null;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Impostazioni</h2>
       <p className="text-sm text-white/40 mb-6">Scegli il tema dell&apos;applicazione.</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
