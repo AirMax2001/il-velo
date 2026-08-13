@@ -135,7 +135,7 @@ function DMPanelInner() {
           />
         </div>
         <div className={tab === "campaign" ? "" : "hidden"}><CampaignWorkspace session={session} campaigns={campaigns} onSelect={(s: any) => { localStorage.setItem("veil_session", JSON.stringify(s)); setSession(s); }} /></div>
-        <div className={tab === "session" ? "" : "hidden"}><SessionWorkspace sessionId={sessionId} /></div>
+        <div className={tab === "session" ? "" : "hidden"}><SessionWorkspace sessionId={sessionId} onNavigate={setTab} /></div>
         <div className={tab === "players" ? "" : "hidden"}><PlayerCards sessionId={sessionId} /></div>
         <div className={tab === "npcs" ? "" : "hidden"}><NpcModule sessionId={sessionId} /></div>
         <div className={tab === "locations" ? "" : "hidden"}><LocationModule sessionId={sessionId} /></div>
