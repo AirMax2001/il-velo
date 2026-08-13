@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 
 type Role = "choose" | "dm" | "player" | "table";
 
@@ -16,7 +17,7 @@ export default function Home() {
   const [playerStep, setPlayerStep] = useState<"code" | "character">("code");
   const [charName, setCharName] = useState("");
   const [charPassword, setCharPassword] = useState("");
-  const [savedPlayer, setSavedPlayer] = useState<{ name: string; access_token: string; session_id?: string } | null>(null);
+  const [savedPlayer, setSavedPlayer] = useState<{ name?: string; character_name?: string; avatar_url?: string; access_token: string; session_id?: string } | null>(null);
 
   useEffect(() => {
     const storedCode = localStorage.getItem("veil_player_code");
@@ -179,8 +180,8 @@ export default function Home() {
                     className="group relative overflow-hidden rounded-2xl border border-veil-gold/30 bg-veil-gold/[0.08] px-4 py-3 text-left transition hover:border-veil-gold/50 hover:bg-veil-gold/[0.12]">
                     <span className="text-[9px] uppercase tracking-[0.24em] text-white/30">Ultimo giocatore su questo dispositivo</span>
                     <span className="mt-1 flex items-center gap-2">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-veil-gold/25 bg-veil-gold/[0.06] text-base">🧝</span>
-                      <span className="flex-1 text-sm font-semibold text-veil-gold">{savedPlayer.name}</span>
+                      <PlayerAvatar url={savedPlayer.avatar_url} name={savedPlayer.character_name || savedPlayer.name} size="md" />
+                      <span className="flex-1 text-sm font-semibold text-veil-gold">{savedPlayer.character_name || savedPlayer.name}</span>
                       <span className="text-lg text-veil-gold/60">→</span>
                     </span>
                   </button>

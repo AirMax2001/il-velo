@@ -43,7 +43,7 @@ function SpellRow({ spell }: { spell: (typeof spells)[number] }) {
       </button>
       {open && (
         <div className="px-3 pb-3">
-          <p className="text-[11px] text-white/55 leading-relaxed">{spell.description}</p>
+          <p className="text-[11px] text-white/55 leading-relaxed whitespace-pre-line">{spell.description}</p>
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">Componenti: {spell.components}</span>
             {spell.classes.map(c => (

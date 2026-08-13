@@ -89,7 +89,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
                       <span className="flex-1 text-white/70">{sp.name}</span>
                       <span className="text-[9px] text-white/25">{sp.school}</span>
                     </div>
-                    <p className="text-[10px] text-white/30 pl-6 leading-snug">{sp.description}</p>
+                    <p className="text-[10px] text-white/30 pl-6 leading-snug whitespace-pre-line">{sp.description}</p>
                   </label>
                 );
               })}
@@ -181,7 +181,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
                         <span className="flex-1 text-white/70">{sp.name}</span>
                         <span className="text-[9px] text-white/25">{sp.school}</span>
                       </div>
-                      <p className="text-[10px] text-white/30 pl-6 leading-snug">{sp.description}</p>
+                      <p className="text-[10px] text-white/30 pl-6 leading-snug whitespace-pre-line">{sp.description}</p>
                     </label>
                   );
                 })}
@@ -224,7 +224,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
                             <span className="flex-1 text-white/70">{sp.name}</span>
                             <span className="text-[9px] text-white/25">{sp.school}</span>
                           </div>
-                          <p className="text-[10px] text-white/30 pl-6 leading-snug">{sp.description}</p>
+                          <p className="text-[10px] text-white/30 pl-6 leading-snug whitespace-pre-line">{sp.description}</p>
                         </label>
                       );
                     })}
