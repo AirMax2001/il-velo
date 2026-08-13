@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DmSidebar } from "@/components/dm/DmSidebar";
-import { LiveAssistant } from "@/components/dm/LiveAssistant";
 import { ControlCenter } from "@/components/dm/ControlCenter";
 import { SessionWorkspace } from "@/components/dm/SessionWorkspace";
 import { PlayerCards } from "@/components/dm/PlayerCards";
@@ -145,8 +144,6 @@ function DMPanelInner() {
         <div className={tab === "assets" ? "" : "hidden"}><ObjectsModule sessionId={sessionId} /></div>
         <div className={tab === "settings" ? "" : "hidden"}><SettingsPlaceholder /></div>
       </section>
-
-      <LiveAssistant />
 
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-12 backdrop-blur-sm" onClick={() => setShowImportModal(false)}>
