@@ -7,7 +7,7 @@ import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import races from "@/lib/data/races";
 import { getRaceData, findRaceKey, getSubRaceData } from "@/lib/data/races";
 import { getFeaturesAtLevel } from "@/lib/data/leveling";
-import { CLASS_ABILITIES, getArchetypeForClass } from "@/lib/data/classAbilities";
+import { CLASS_ABILITIES, getArchetypeForClass, getArchetypeAbilities, getArchetypeCasting } from "@/lib/data/classAbilities";
 import classes from "@/lib/data/classes";
 import { getClassData, findClassKey } from "@/lib/data/classes";
 import { getModifier, ALL_ABILITIES, ALL_SKILLS, ALL_SAVES, SKILL_ABILITY, SAVE_ABILITY, ABILITY_SHORT, SKILL_LABELS, SAVE_LABELS } from "@/lib/characterEngine";
@@ -456,24 +456,65 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
             const arch = getArchetypeForClass(clsKey);
             if (!arch || level < arch.level) return null;
             const picked = cd.archetype || "";
+            const pickedOpt = arch.options.find(o => o.key === picked);
             return (
-              <div className="rounded-lg bg-black/20 p-2 mb-3">
-                <p className="text-xs text-veil-gold/70 font-medium mb-1">🎭 {arch.label} (liv. {arch.level})</p>
+              <div className="rounded-lg bg-black/20 p-3 mb-3 border border-white/[0.06]">
+                <p className="text-xs text-veil-gold/70 font-medium mb-1">🎭 {arch.label} <span className="text-[10px] text-white/30">(sceglila al {arch.level}° livello)</span></p>
                 {picked ? (
-                  <p className="text-[11px] text-white/50">
-                    Scelto: <strong className="text-emerald-300/80">{arch.options.find(o => o.key === picked)?.name}</strong>
-                    <button onClick={() => { updCd("archetype", ""); save({ archetype: "" }); }}
-                      className="ml-2 text-[10px] text-red-300/50 hover:text-red-300">cambia</button>
-                  </p>
+                  <div className="rounded-xl border border-emerald-400/20 bg-emerald-900/[0.08] p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm text-emerald-300/90 font-medium">{pickedOpt?.name}</p>
+                        <p className="text-[11px] text-white/50 mt-1">{pickedOpt?.description}</p>
+                        {(() => {
+                          const acts = getArchetypeAbilities(picked);
+                          const cast = getArchetypeCasting(picked);
+                          const changes: string[] = [
+                            ...(cast ? [cast.label] : []),
+                            ...acts.map(a => `${a.name} (${a.effect})`),
+                          ];
+                          if (changes.length === 0) return null;
+                          return (
+                            <div className="mt-2 space-y-1">
+                              {changes.map(c => (
+                                <p key={c} className="text-[10px] text-indigo-300/60 leading-snug">✨ {c}</p>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                      <button onClick={() => { updCd("archetype", ""); save({ archetype: "" }); }}
+                        className="flex-shrink-0 text-[10px] text-red-300/50 hover:text-red-300">cambia</button>
+                    </div>
+                  </div>
                 ) : (
-                  <select className="veil-input w-full text-xs mt-1"
-                    value=""
-                    onChange={e => { updCd("archetype", e.target.value); save({ archetype: e.target.value }); }}>
-                    <option value="">— Scegli il tuo {arch.label.toLowerCase()} —</option>
-                    {arch.options.map(o => (
-                      <option key={o.key} value={o.key}>{o.name} — {o.description}</option>
-                    ))}
-                  </select>
+                  <div className="space-y-2 mt-2">
+                    {arch.options.map(o => {
+                      const acts = getArchetypeAbilities(o.key);
+                      const cast = getArchetypeCasting(o.key);
+                      return (
+                        <button key={o.key} type="button"
+                          onClick={() => { updCd("archetype", o.key); save({ archetype: o.key }); }}
+                          className="w-full text-left rounded-xl border border-white/[0.06] bg-black/30 hover:border-veil-gold/30 hover:bg-white/[0.02] p-3 transition">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-white/80 font-medium">{o.name}</p>
+                            {cast && (
+                              <span className="flex-shrink-0 rounded-full border px-2 py-0.5 text-[9px] text-violet-300/80 border-violet-400/25 bg-violet-500/10">
+                                {cast.ki ? "✨ magie in Ki" : "✨ sblocca la magia"}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-white/45 mt-1 leading-snug">{o.description}</p>
+                          {acts.length > 0 && (
+                            <p className="text-[10px] text-indigo-300/50 mt-1.5">
+                              Cosa cambia: {acts.map(a => a.name).join(" · ")}
+                              {cast ? ` · ${cast.label}` : ""}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             );

@@ -86,6 +86,8 @@ export function CombatOverlay({ ctx, onClose }: { ctx: SheetCtx; onClose: () => 
     for (let lv = 0; lv <= 9; lv++) {
       const found = getSpellsForClass(clsKey || "", lv).find(s => s.name === name);
       if (found) return found;
+      const archFound = ctx.archCasting?.list ? getSpellsForClass(ctx.archCasting.list, lv).find(s => s.name === name) : undefined;
+      if (archFound) return archFound;
     }
     return undefined;
   };

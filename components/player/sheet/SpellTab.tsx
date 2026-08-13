@@ -18,10 +18,11 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const {
     form, cd, clsKey, clsData, level, pb, attacks, conditions,
     hitDie, autoSlotTotals, spellSlots, upd, updCd, updCdAll, save,
-    spellAbility, spellAbilityMod, spellDC, spellAtk,
+    spellAbility, spellAbilityMod, spellDC, spellAtk, archCasting,
   } = ctx;
 
-  const canCast = !!clsData?.spellcasting || !!spellAbility;
+  const canCast = !!clsData?.spellcasting || !!spellAbility || !!archCasting;
+  const spellListKey = clsData?.spellcasting ? (clsKey || "") : (archCasting?.list || clsKey || "");
   const spellAbilityLabel = spellAbility ? (ABILITY_SHORT[spellAbility] || spellAbility) : null;
   const [query, setQuery] = useState("");
   const [showCombat, setShowCombat] = useState(false);
@@ -56,14 +57,22 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
     save({ resources: next });
   }
 
+  function adjustResource(key: string, total: number, delta: number) {
+    const cur = spent[key]?.expended ?? 0;
+    const newVal = Math.max(0, Math.min(total, cur + delta));
+    const next = { ...spent, [key]: { total, expended: newVal } };
+    updCdAll({ resources: next });
+    save({ resources: next });
+  }
+
   function restResource(key: string, total: number) {
     const next = { ...spent, [key]: { total, expended: 0 } };
     updCdAll({ resources: next });
     save({ resources: next });
   }
 
-  const spellDesc = (name: string) => getSpellsForClass(clsKey || "", 0).find(s => s.name === name)
-    || [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(lv => getSpellsForClass(clsKey || "", lv)).find(s => s.name === name);
+  const spellDesc = (name: string) => getSpellsForClass(spellListKey, 0).find(s => s.name === name)
+    || [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(lv => getSpellsForClass(spellListKey, lv)).find(s => s.name === name);
 
   const matches = (name: string): boolean => {
     if (!searching) return true;
@@ -149,7 +158,15 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
                     {total > 20 && <span className="text-[9px] text-white/30 ml-1">+{total - 20}</span>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-white/40">{available}/{total} disponibili</span>
+                    <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
+                      <button type="button" onClick={() => adjustResource(r.key, total, -1)} disabled={used <= 0}
+                        className="px-2 py-1 text-sm text-white/60 hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent transition"
+                        title={used > 0 ? "Ripristina un punto" : "Nessun punto speso"}>−</button>
+                      <span className="px-2 py-1 text-[10px] text-white/40 border-x border-white/10">{available}/{total} disponibili</span>
+                      <button type="button" onClick={() => adjustResource(r.key, total, +1)} disabled={used >= total}
+                        className="px-2 py-1 text-sm text-white/60 hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent transition"
+                        title={used < total ? "Spendi un punto" : "Tutti i punti usati"}>+</button>
+                    </div>
                     <button onClick={() => restResource(r.key, total)}
                       className="rounded-lg border border-emerald-400/20 px-2 py-1 text-[10px] text-emerald-300/70 hover:bg-emerald-400/10 transition">
                       🔄 Riposo

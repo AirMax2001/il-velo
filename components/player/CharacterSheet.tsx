@@ -7,6 +7,7 @@ import { getBackgroundData } from "@/lib/data/backgrounds";
 import backgrounds from "@/lib/data/backgrounds";
 import { getModifier, getProficiencyBonus, getSpellDC, getSpellAttack, parseConditions, preparedSpellLimit } from "@/lib/characterEngine";
 import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit } from "@/lib/data/leveling";
+import { getArchetypeCasting, getArchetypeSlotsAtLevel } from "@/lib/data/classAbilities";
 import { CoreTab } from "./sheet/CoreTab";
 import { SpellTab } from "./sheet/SpellTab";
 import { MagicTab } from "./sheet/MagicTab";
@@ -152,18 +153,24 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
   const raceSpeed = raceData?.speed;
   const expectedHP = hitDie ? hitDie + conMod + (level - 1) * (Math.ceil(hitDie / 2) + 1 + conMod) : null;
 
-  /* Incantesimi: caratteristica auto da classe */
-  const spellAbility = clsData?.spellcasting?.spellcastingAbility;
+  /* Incantesimi: caratteristica auto da classe (o da archetipo che sblocca la magia) */
+  const archCasting = (formRef.current?.character_data?.archetype)
+    ? getArchetypeCasting(formRef.current?.character_data?.archetype)
+    : null;
+  const archSlots = archCasting ? getArchetypeSlotsAtLevel(formRef.current?.character_data?.archetype || "", level) : {};
+  const spellAbility = clsData?.spellcasting?.spellcastingAbility || archCasting?.ability;
   const spellAbilityScore = spellAbility ? getTotalScore(spellAbility) : 10;
   const spellAbilityMod = getModifier(spellAbilityScore);
   const spellDC = spellAbility ? getSpellDC(spellAbility as any, { [spellAbility]: spellAbilityScore } as any, pb) : 0;
   const spellAtk = spellAbility ? getSpellAttack(spellAbility as any, { [spellAbility]: spellAbilityScore } as any, pb) : 0;
 
-  /* Slot/Trucchetti/Incantesimi automatici dal leveling PHB */
-  const autoSlotTotals = clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
-  const cantripLimit = clsKey ? getCantripsKnown(clsKey, level) : 0;
+  /* Slot/Trucchetti/Incantesimi automatici dal leveling PHB (archetipo se la classe non lancia) */
+  const autoSlotTotals = archCasting?.slots ? archSlots : clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
+  const cantripLimit = archCasting?.cantripsKnown ?? (clsKey ? getCantripsKnown(clsKey, level) : 0);
   const preparedLimit = clsKey ? preparedSpellLimit(clsKey, level, spellAbilityMod) : 0;
-  const spellLimit = (clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999;
+  const spellLimit = archCasting?.spellsKnown
+    ? archCasting.spellsKnown(level)
+    : ((clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999);
   const totalKnown = [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((acc, lvl) =>
     acc + ((((cd as any)[`spells${lvl}`]) || []) as string[]).length, 0);
 
@@ -185,6 +192,7 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
     form, formRef, cd,
     attacks, spellSlots, conditions,
     clsKey, clsData, raceData, bgData,
+    archCasting,
     level, pb, hitDie, conMod, dexMod, raceSpeed, expectedHP,
     spellAbility, spellAbilityScore, spellAbilityMod, spellDC, spellAtk,
     autoSlotTotals, cantripLimit, preparedLimit, spellLimit, totalKnown,

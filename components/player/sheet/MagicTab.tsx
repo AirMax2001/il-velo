@@ -1,17 +1,23 @@
 "use client";
-import { getSpellsForClass } from "@/lib/data/spells";
+import { getSpellsForClass, getSpellByName } from "@/lib/data/spells";
 import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL } from "@/lib/data/leveling";
+import { getArchetypeSlotsAtLevel } from "@/lib/data/classAbilities";
 import { preparedSpellLimit } from "@/lib/characterEngine";
 import type { SheetCtx } from "./types";
 
 export function MagicTab({ ctx }: { ctx: SheetCtx }) {
-  const { cd, clsKey, clsData, level, pb, spellAbility, spellAbilityMod, updCd, updCdAll, save } = ctx;
-  const hasSpellcasting = !!clsData?.spellcasting || !!spellAbility;
+  const { cd, clsKey, clsData, level, pb, spellAbility, spellAbilityMod, updCd, updCdAll, save, archCasting } = ctx;
+  const hasSpellcasting = !!clsData?.spellcasting || !!spellAbility || !!archCasting;
 
-  const autoSlotTotals = clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
-  const cantripLimit = clsKey ? getCantripsKnown(clsKey, level) : 0;
+  const listKey = clsData?.spellcasting ? (clsKey || "") : (archCasting?.list || clsKey || "");
+  const autoSlotTotals = archCasting?.slots
+    ? getArchetypeSlotsAtLevel(cd.archetype || "", level)
+    : clsKey ? getSpellSlotsAtLevel(clsKey, level) : {};
+  const cantripLimit = archCasting?.cantripsKnown ?? (clsKey ? getCantripsKnown(clsKey, level) : 0);
   const preparedLimit = clsKey ? preparedSpellLimit(clsKey, level, spellAbilityMod) : 0;
-  const spellLimit = (clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999;
+  const spellLimit = archCasting?.spellsKnown
+    ? archCasting.spellsKnown(level)
+    : ((clsKey ? getSpellsKnownLimit(clsKey, level) : 0) || preparedLimit || 999);
   const totalKnown = [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce((acc, lvl) =>
     acc + ((((cd as any)[`spells${lvl}`]) || []) as string[]).length, 0);
 
@@ -29,6 +35,33 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
 
       {hasSpellcasting && (
         <>
+          {/* Magie pagate in Ki (es. Via dell'Ombra) */}
+          {archCasting?.ki && (
+            <div className="veil-panel p-4">
+              <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Arti delle Ombre</h3>
+              <p className="text-[10px] text-white/30 mb-3">
+                Magie della Via dell'Ombra che lanci spendendo <strong className="text-veil-gold/70">2 Ki</strong> ciascuna
+                (vedi Punti Ki nel tab Combattimento). Non consumano slot.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                {archCasting.ki.spells.map(name => {
+                  const sp = getSpellByName(name);
+                  if (!sp) return null;
+                  return (
+                    <div key={name} className="rounded-lg border border-indigo-500/15 bg-indigo-950/10 px-2.5 py-2">
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1 text-xs text-white/70 font-medium">{name}</p>
+                        <span className="text-[9px] text-indigo-300/60">{sp.school}</span>
+                        <span className="rounded-full bg-indigo-500/20 border border-indigo-400/30 px-2 py-0.5 text-[9px] text-indigo-200/80">2 Ki</span>
+                      </div>
+                      <p className="text-[10px] text-white/35 mt-1 leading-snug">{sp.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Trucchetti */}
           <div className="veil-panel p-4">
             <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Trucchetti</h3>
@@ -37,7 +70,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
               {cantripLimit > 0 && <> (max <strong className="text-veil-gold/70">{cantripLimit}</strong>)</>}.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-44 overflow-y-auto pr-1 mb-2">
-              {clsKey && getSpellsForClass(clsKey, 0).map(sp => {
+              {listKey && getSpellsForClass(listKey, 0).map(sp => {
                 const isSel = (cd.cantrips || []).includes(sp.name);
                 const atLimit = (cd.cantrips || []).length >= cantripLimit;
                 return (
@@ -129,7 +162,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
             <div className="mb-3">
               <label className="text-xs text-white/40 mb-1 block">1° Livello</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1 mb-2">
-                {clsKey && getSpellsForClass(clsKey, 1).map(sp => {
+                {listKey && getSpellsForClass(listKey, 1).map(sp => {
                   const cur = (cd.spells1 || []) as string[];
                   const isSel = cur.includes(sp.name);
                   const atGlobalLimit = totalKnown >= spellLimit;
@@ -165,7 +198,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
             {/* Livelli 2-9: selezione guidata PHB, si sbloccano con lo slot */}
             {[2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
               const unlocked = (autoSlotTotals[lv] ?? 0) > 0 || (clsKey === "warlock" && WARLOCK_SLOT_LEVEL[level] >= lv);
-              const list = clsKey ? getSpellsForClass(clsKey, lv) : [];
+              const list = listKey ? getSpellsForClass(listKey, lv) : [];
               const cur = ((cd as any)[`spells${lv}`] || []) as string[];
               return (
                 <div key={lv} className="mb-3">

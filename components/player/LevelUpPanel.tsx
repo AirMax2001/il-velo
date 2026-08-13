@@ -5,6 +5,7 @@ import {
   levelFromXp, xpForLevel, getFeaturesAtLevel, getSpellSlotsAtLevel,
   getCantripsKnown, getSpellsKnownLimit, getAsiLevels, WARLOCK_SLOT_LEVEL,
 } from "@/lib/data/leveling";
+import { getArchetypeForClass, getArchetypeAbilities, getArchetypeCasting } from "@/lib/data/classAbilities";
 import { calculateHP, getModifier, getProficiencyBonus } from "@/lib/characterEngine";
 
 type Props = {
@@ -112,6 +113,31 @@ export function LevelUpPanel({ player, onApply }: Props) {
                   🎓 Incremento Punteggi di Caratteristica: +2 a una o +1 a due (max 20)
                 </p>
               )}
+
+              {/* Archetipo */}
+              {(() => {
+                const arch = getArchetypeForClass(clsKey || "");
+                if (!arch || lv < arch.level) return null;
+                const picked = (cd as any).archetype || "";
+                if (picked) {
+                  const cast = getArchetypeCasting(picked);
+                  const acts = getArchetypeAbilities(picked);
+                  return (
+                    <p className="text-[11px] text-violet-300/80 mt-1">
+                      ✨ {arch.label}: {arch.options.find(o => o.key === picked)?.name}
+                      {cast ? ` · ${cast.label}` : ""}
+                      {acts.length > 0 ? ` · ${acts.map(a => a.name).join(", ")}` : ""}
+                    </p>
+                  );
+                }
+                const magicOptions = arch.options.filter(o => getArchetypeCasting(o.key));
+                return (
+                  <p className="text-[11px] text-violet-300/80 mt-1">
+                    🎭 Scegli il tuo {arch.label.toLowerCase()} nella scheda (tab Personaggio).
+                    {magicOptions.length > 0 && ` ${magicOptions.map(o => o.name).join(" e ")} sbloccano anche la magia.`}
+                  </p>
+                );
+              })()}
 
               {/* Incantesimi */}
               {(() => {

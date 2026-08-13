@@ -452,6 +452,68 @@ export function getArchetypeAbilities(archetypeKey: string): ClassAbility[] {
   return ARCHETYPE_ABILITIES[archetypeKey] || [];
 }
 
+/* ── Incantatori per Archetipo (PHB) ─────────────────────────
+   Alcuni archetipi sbloccano la magia in classi che altrimenti
+   non lanciano (es. Truffatore Arcano, Cavaliere) o magie pagate
+   in Ki (Via dell'Ombra). */
+
+export type ArchetypeCasting = {
+  label: string;
+  list: string;
+  ability?: string;
+  cantripsKnown?: number;
+  spellsKnown?: (level: number) => number;
+  slots?: (level: number) => number[];
+  ki?: { cost: number; spells: string[] };
+};
+
+/* Slot e incantesimi conosciuti dei Terzi Incantatori (Truffatore Arcano / Cavaliere).
+   Indice = livello - 1. */
+const THIRD_CAST_SLOTS: number[][] = [
+  [], [], [2], [3], [3], [3], [4, 2], [4, 2], [4, 2], [4, 3],
+  [4, 3], [4, 3], [4, 3, 2], [4, 3, 2], [4, 3, 2], [4, 3, 3], [4, 3, 3], [4, 3, 3], [4, 3, 3, 1], [4, 3, 3, 1],
+];
+const THIRD_CAST_KNOWN = [
+  0, 0, 3, 4, 4, 4, 5, 6, 6, 7,
+  7, 7, 8, 9, 9, 10, 10, 10, 11, 11,
+];
+
+export const ARCHETYPE_CASTING: Record<string, ArchetypeCasting> = {
+  truffatore_arcano: {
+    label: "Magia arcana: trucchetti e incantesimi da mago (caratteristica INT)",
+    list: "wizard",
+    ability: "intelligence",
+    cantripsKnown: 3,
+    spellsKnown: lv => THIRD_CAST_KNOWN[Math.max(0, lv - 1)] ?? 0,
+    slots: lv => THIRD_CAST_SLOTS[Math.max(0, lv - 1)] ?? [],
+  },
+  cavaliere: {
+    label: "Magia del cavaliere: incantesimi da mago delle scuole di abiurazione ed evocazione (INT)",
+    list: "wizard",
+    ability: "intelligence",
+    cantripsKnown: 3,
+    spellsKnown: lv => THIRD_CAST_KNOWN[Math.max(0, lv - 1)] ?? 0,
+    slots: lv => THIRD_CAST_SLOTS[Math.max(0, lv - 1)] ?? [],
+  },
+  via_ombra: {
+    label: "Arti delle Ombre: magie pagate in punti Ki (2 Ki ciascuna)",
+    list: "wizard",
+    ki: { cost: 2, spells: ["Tenebre", "Scurovisione", "Passo Senza Tracce", "Silenzio"] },
+  },
+};
+
+export function getArchetypeCasting(archetypeKey: string): ArchetypeCasting | null {
+  return ARCHETYPE_CASTING[archetypeKey] || null;
+}
+
+export function getArchetypeSlotsAtLevel(archetypeKey: string, level: number): Record<number, number> {
+  const c = getArchetypeCasting(archetypeKey);
+  const arr = c?.slots ? c.slots(level) : [];
+  const out: Record<number, number> = {};
+  arr.forEach((n, i) => { if (n > 0) out[i + 1] = n; });
+  return out;
+}
+
 /* ── Risorse consumabili di classe (es. Ki) ───────────────────
    Mostrate nel tab Magia come slot consumabili, come gli slot
    incantesimo. Il totale è automatico per classe/livello. */

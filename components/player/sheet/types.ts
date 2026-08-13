@@ -2,6 +2,7 @@ import type { CharacterData, Player } from "@/lib/types";
 import type { BackgroundData } from "@/lib/data/backgrounds";
 import type { ClassData } from "@/lib/data/classes";
 import type { RaceData } from "@/lib/data/races";
+import type { ArchetypeCasting } from "@/lib/data/classAbilities";
 import type { MutableRefObject } from "react";
 
 export type SheetCtx = {
@@ -15,6 +16,7 @@ export type SheetCtx = {
   clsData: ClassData | null;
   raceData: RaceData | null;
   bgData: BackgroundData | null;
+  archCasting: ArchetypeCasting | null;
   level: number;
   pb: number;
   hitDie: number | undefined;

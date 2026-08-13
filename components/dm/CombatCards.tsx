@@ -9,6 +9,7 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
   const { engine, state, resolver } = useGameEngine();
 
   const [combats, setCombats] = useState<any[]>([]);
+  const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({});
   const [activeCombat, setActiveCombat] = useState<any>(null);
   const [combatants, setCombatants] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
@@ -26,7 +27,16 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
   async function load() {
     if (!sessionId) return;
     const d = await fetch(`/api/combat?sessionId=${sessionId}`).then(r => r.json());
-    setCombats(d.items || []);
+    const items = d.items || [];
+    setCombats(items);
+    const counts: Record<string, number> = {};
+    await Promise.all(items.map(async (c: any) => {
+      try {
+        const ct = await fetch(`/api/combatants?combatId=${c.id}`).then(r => r.json());
+        counts[c.id] = (ct.items || []).filter((x: any) => x.type === "player").length;
+      } catch { counts[c.id] = 0; }
+    }));
+    setPlayerCounts(counts);
   }
   useEffect(() => { if (sessionId) { load(); loadPlayers(); } }, [sessionId]);
 
@@ -304,28 +314,64 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
         </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+      <div className="mb-6 space-y-4">
         <button onClick={() => setShowCreateModal(true)}
           className="rounded-xl border border-emerald-400/40 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 transition">
           + Crea Combattimento
         </button>
-        {combats.map(c => (
-          <div key={c.id} className="relative">
-            <button onClick={() => selectCombat(c)}
-              className={`rounded-xl border pl-4 pr-7 py-2 text-sm transition ${
-                activeCombat?.id === c.id
-                  ? "border-red-400/30 bg-red-900/20 text-red-200"
-                  : "border-white/[0.06] bg-black/20 text-white/50 hover:border-white/[0.12]"
-              }`}>
-              {c.title} {c.is_active ? "⚔" : ""}
-            </button>
-            <button onClick={(e) => deleteCombat(c.id, e)}
-              className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-red-400/50 bg-red-900/80 text-[10px] text-red-200 font-bold hover:bg-red-700 hover:border-red-300 shadow-lg"
-              title="Elimina combattimento">
-              &times;
-            </button>
+
+        <div>
+          <p className="mb-2 text-[10px] uppercase tracking-[0.15em] text-blue-300/50">Con i giocatori</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {combats.filter(c => playerCounts[c.id] > 0).map(c => (
+              <div key={c.id} className="relative">
+                <button onClick={() => selectCombat(c)}
+                  className={`rounded-xl border pl-4 pr-7 py-2 text-sm transition ${
+                    activeCombat?.id === c.id
+                      ? "border-red-400/30 bg-red-900/20 text-red-200"
+                      : "border-blue-400/20 bg-blue-900/10 text-blue-200/90 hover:border-blue-400/40"
+                  }`}>
+                  {c.title} {c.is_active ? "⚔" : ""}
+                  <span className="ml-2 text-[10px] text-blue-300/70">👥 {playerCounts[c.id]}</span>
+                </button>
+                <button onClick={(e) => deleteCombat(c.id, e)}
+                  className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-red-400/50 bg-red-900/80 text-[10px] text-red-200 font-bold hover:bg-red-700 hover:border-red-300 shadow-lg"
+                  title="Elimina combattimento">
+                  &times;
+                </button>
+              </div>
+            ))}
+            {combats.filter(c => playerCounts[c.id] > 0).length === 0 && (
+              <p className="text-xs text-white/20">Nessun combattimento con giocatori ancora.</p>
+            )}
           </div>
-        ))}
+        </div>
+
+        <div>
+          <p className="mb-2 text-[10px] uppercase tracking-[0.15em] text-white/30">Senza giocatori</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {combats.filter(c => !playerCounts[c.id]).map(c => (
+              <div key={c.id} className="relative">
+                <button onClick={() => selectCombat(c)}
+                  className={`rounded-xl border pl-4 pr-7 py-2 text-sm transition ${
+                    activeCombat?.id === c.id
+                      ? "border-red-400/30 bg-red-900/20 text-red-200"
+                      : "border-white/[0.06] bg-black/20 text-white/50 hover:border-white/[0.12]"
+                  }`}>
+                  {c.title} {c.is_active ? "⚔" : ""}
+                </button>
+                <button onClick={(e) => deleteCombat(c.id, e)}
+                  className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-red-400/50 bg-red-900/80 text-[10px] text-red-200 font-bold hover:bg-red-700 hover:border-red-300 shadow-lg"
+                  title="Elimina combattimento">
+                  &times;
+                </button>
+              </div>
+            ))}
+            {combats.filter(c => !playerCounts[c.id]).length === 0 && (
+              <p className="text-xs text-white/20">Tutti i combattimenti hanno giocatori collegati.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {showCreateModal && (
