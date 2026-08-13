@@ -9,6 +9,7 @@ import backgrounds, { getBackgroundData } from "@/lib/data/backgrounds";
 import { getModifier, formatMod, getProficiencyBonus, ABILITY_SHORT, parseConditions, serializeConditions, CONDITIONS_LIST } from "@/lib/characterEngine";
 import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
+import { CharacterSheet } from "@/components/player/CharacterSheet";
 import {
   getFeaturesUpTo, getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, WARLOCK_SLOT_LEVEL,
 } from "@/lib/data/leveling";
@@ -24,12 +25,14 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   const [echoAllText, setEchoAllText] = useState("");
   const [echoSent, setEchoSent] = useState(false);
   const [openRef, setOpenRef] = useState<"ability" | "skill" | "cantrips" | "spells" | null>(null);
+  const [sheetPlayer, setSheetPlayer] = useState<any>(null);
 
   async function load() {
     const d = await fetch(`/api/players?sessionId=${sessionId}`).then(r => r.json());
     const list = d.players || [];
     setPlayers(list);
     setSelected(prev => prev ? list.find(p => p.id === prev.id) || prev : prev);
+    setSheetPlayer(prev => prev ? list.find(p => p.id === prev.id) || prev : prev);
   }
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
 
@@ -218,6 +221,12 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] text-emerald-400/70">Online</span>
               <span className="text-[10px] text-white/20 ml-auto">XP {p.xp ?? 0}</span>
+              <button
+                onClick={e => { e.stopPropagation(); setSheetPlayer(p); }}
+                className="rounded-lg border border-veil-gold/20 bg-veil-gold/[0.06] px-2 py-0.5 text-[10px] text-veil-gold/80 hover:border-veil-gold/40 hover:text-veil-gold transition"
+                title="Apri la scheda completa come vista giocatore">
+                🧝 Entra nella scheda
+              </button>
             </div>
           </div>
         ))}
@@ -249,6 +258,12 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
                   <p className="text-[10px] uppercase text-white/30">◎</p>
                   <p className="text-lg text-veil-gold">{selected.coins ?? 0}</p>
                 </div>
+                <button
+                  onClick={() => setSheetPlayer(selected)}
+                  className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-4 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition"
+                  title="Apri la scheda del giocatore come la vede lui (modifiche in tempo reale)">
+                  🧝 Entra nella scheda del giocatore
+                </button>
               </div>
             </div>
 
@@ -297,6 +312,10 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
             {echoSent ? "Inviato a tutti!" : "Invia Echo a tutti"}
           </button>
         </div>
+      )}
+
+      {sheetPlayer && (
+        <PlayerSheetOverlay player={sheetPlayer} sessionId={sessionId} onClose={() => setSheetPlayer(null)} />
       )}
     </div>
   );
@@ -807,6 +826,43 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
       <Section title="Note Private DM">
         <DMField label="Note DM" value={player.dm_private_notes} area onSave={v => onSave({ dm_private_notes: v })} />
       </Section>
+    </div>
+  );
+}
+
+// ---------- Scheda giocatore in overlay (vista DM = vista player) ----------
+function PlayerSheetOverlay({ player, sessionId, onClose }: { player: any; sessionId: string; onClose: () => void }) {
+  const [live, setLive] = useState<any>(player);
+  useEffect(() => {
+    const t = setInterval(async () => {
+      const r = await fetch(`/api/players?sessionId=${sessionId}`).then(r => r.json());
+      const found = (r.players || []).find((p: any) => p.id === player.id);
+      if (found) setLive(found);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [player.id, sessionId]);
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0b0e14]">
+      <div className="sticky top-0 z-30 border-b border-veil-gold/15 bg-[#12161f]/95 px-4 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <button onClick={onClose}
+            className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 hover:border-veil-gold/40 hover:text-veil-gold transition">
+            ← Torna in DM
+          </button>
+          <p className="text-[11px] text-white/35 truncate">
+            Vista giocatore: <span className="text-veil-gold/80">{live?.character_name || player.character_name}</span>
+          </p>
+        </div>
+      </div>
+      <div className="mx-auto max-w-3xl px-2 pb-24 pt-1">
+        <CharacterSheet
+          player={live || player}
+          onUpdate={setLive}
+          sessionId={sessionId}
+          onExit={onClose}
+        />
+      </div>
     </div>
   );
 }
