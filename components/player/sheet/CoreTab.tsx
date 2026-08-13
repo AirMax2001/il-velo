@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import type { CharacterData } from "@/lib/types";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
+import { SKILL_DESCRIPTIONS } from "@/components/shared/AbilityReferenceTables";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import races from "@/lib/data/races";
 import { getRaceData, findRaceKey, getSubRaceData } from "@/lib/data/races";
@@ -342,6 +343,13 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
       {/* Tiri Salvezza */}
       <div className="veil-panel p-4">
         <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Tiri Salvezza</h3>
+        <p className="text-[10px] text-white/30 mb-3 leading-relaxed">
+          I tiri salvezza servono per resistere a effetti avversi: incantesimi, trappole, veleni,
+          pericoli ambientali. Quando un effetto ti colpisce, tiri <strong className="text-white/50">1d20</strong> e sommi il
+          modificatore dell'abilità corrispondente; se la caratteristica è tra le competenze della tua classe
+          (checkbox attiva), aggiungi anche il <strong className="text-white/50">Bonus di Competenza (+{pb})</strong>.
+          Il risultato deve superare la CD dell'effetto (es. la CD Incantatore di un mago nemico).
+        </p>
         {clsData && (
           <p className="text-[10px] text-white/30 mb-2">
             Competenze dalla classe: {clsData.savingThrows.map(s => {
@@ -406,27 +414,30 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
             const mod = getModifier(score);
             const total = isChecked ? mod + pb : mod;
             return (
-              <label key={sk.key} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition text-sm
+              <label key={sk.key} className={`flex flex-col rounded-lg border px-2.5 py-1.5 transition text-sm
                 ${isChecked ? isLocked ? "border-emerald-500/20 bg-emerald-900/[0.06]" : "border-veil-gold/20 bg-veil-gold/[0.04]" : isClassOption ? "border-white/[0.06] bg-black/20 hover:border-white/[0.10] cursor-pointer" : "border-white/[0.03] bg-black/10 opacity-40"}`}>
-                <input type="checkbox" className="accent-veil-gold w-4 h-4 flex-shrink-0"
-                  checked={isChecked}
-                  disabled={!isClassOption && !isLocked}
-                  onChange={e => {
-                    if (isLocked) return;
-                    if (e.target.checked && atClassLimit) return;
-                    updCd(sk.key, e.target.checked);
-                    save({ [sk.key]: e.target.checked });
-                  }} />
-                <span className={`flex-1 text-xs ${isChecked ? "text-white/80" : "text-white/40"}`}>
-                  {sk.label}
-                </span>
-                <span className="text-[10px] text-white/25">{ABILITY_SHORT[sk.ability]}</span>
-                <span className={`text-xs font-medium w-8 text-right ${isChecked ? "text-veil-gold" : "text-white/25"}`}>
-                  {total >= 0 ? `+${total}` : `${total}`}
-                </span>
-                {isBgSkill && <span className="text-[9px] text-emerald-400/40">BG</span>}
-                {isRaceSkill && !isBgSkill && <span className="text-[9px] text-emerald-400/40">razza</span>}
-                {isClassOption && !isLocked && <span className="text-[9px] text-veil-gold/30">cls</span>}
+                <div className="flex items-center gap-2 w-full">
+                  <input type="checkbox" className="accent-veil-gold w-4 h-4 flex-shrink-0"
+                    checked={isChecked}
+                    disabled={!isClassOption && !isLocked}
+                    onChange={e => {
+                      if (isLocked) return;
+                      if (e.target.checked && atClassLimit) return;
+                      updCd(sk.key, e.target.checked);
+                      save({ [sk.key]: e.target.checked });
+                    }} />
+                  <span className={`flex-1 text-xs ${isChecked ? "text-white/80" : "text-white/40"}`}>
+                    {sk.label}
+                  </span>
+                  <span className="text-[10px] text-white/25">{ABILITY_SHORT[sk.ability]}</span>
+                  <span className={`text-xs font-medium w-8 text-right ${isChecked ? "text-veil-gold" : "text-white/25"}`}>
+                    {total >= 0 ? `+${total}` : `${total}`}
+                  </span>
+                  {isBgSkill && <span className="text-[9px] text-emerald-400/40">BG</span>}
+                  {isRaceSkill && !isBgSkill && <span className="text-[9px] text-emerald-400/40">razza</span>}
+                  {isClassOption && !isLocked && <span className="text-[9px] text-veil-gold/30">cls</span>}
+                </div>
+                <p className="text-[10px] text-white/25 pl-6 pt-1 leading-snug">{SKILL_DESCRIPTIONS[sk.label]}</p>
               </label>
             );
           })}

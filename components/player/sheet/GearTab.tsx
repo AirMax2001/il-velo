@@ -39,26 +39,6 @@ export function GearTab({ ctx }: { ctx: SheetCtx }) {
           1 PP = 10 GP = 50 SA = 100 MC
         </p>
       </div>
-
-      {/* Tesoro / oggetti speciali */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Tesoro e Oggetti Speciali</h3>
-        <textarea className="veil-input w-full min-h-[80px] text-sm"
-          placeholder="Anello del nuotatore, Pietra del teletrasporto, Mappa del dungeon..."
-          value={cd.treasure || ""}
-          onChange={e => updCd("treasure", e.target.value)}
-          onBlur={() => save({ treasure: ctx.formRef.current?.character_data?.treasure })} />
-      </div>
-
-      {/* Alleati e Organizzazioni */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Alleati e Organizzazioni</h3>
-        <textarea className="veil-input w-full min-h-[60px] text-sm"
-          placeholder="Ordine dei Cavalieri d'Oro, Gilda dei Ladri di Waterdeep..."
-          value={cd.allies || ""}
-          onChange={e => updCd("allies", e.target.value)}
-          onBlur={() => save({ allies: ctx.formRef.current?.character_data?.allies })} />
-      </div>
     </div>
   );
 }

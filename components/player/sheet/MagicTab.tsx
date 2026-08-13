@@ -133,19 +133,22 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
                 const isSel = (cd.cantrips || []).includes(sp.name);
                 const atLimit = (cd.cantrips || []).length >= cantripLimit;
                 return (
-                  <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
-                    <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
-                      checked={isSel}
-                      disabled={!isSel && atLimit}
-                      onChange={e => {
-                        const cur = cd.cantrips || [];
-                        if (e.target.checked && cur.length >= cantripLimit) return;
-                        const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
-                        updCd("cantrips", next);
-                        save({ cantrips: next });
-                      }} />
-                    <span className="flex-1 text-white/70">{sp.name}</span>
-                    <span className="text-[9px] text-white/25">{sp.school}</span>
+                  <label key={sp.name} className={`flex flex-col gap-1 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
+                    <div className="flex items-center gap-2 w-full">
+                      <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
+                        checked={isSel}
+                        disabled={!isSel && atLimit}
+                        onChange={e => {
+                          const cur = cd.cantrips || [];
+                          if (e.target.checked && cur.length >= cantripLimit) return;
+                          const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
+                          updCd("cantrips", next);
+                          save({ cantrips: next });
+                        }} />
+                      <span className="flex-1 text-white/70">{sp.name}</span>
+                      <span className="text-[9px] text-white/25">{sp.school}</span>
+                    </div>
+                    <p className="text-[10px] text-white/30 pl-6 leading-snug">{sp.description}</p>
                   </label>
                 );
               })}
@@ -161,8 +164,11 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
           {/* Slot incantesimi */}
           <div className="veil-panel p-4">
             <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Slot Incantesimi</h3>
-            <p className="text-[10px] text-white/30 mb-3">
-              Gli slot totali sono automatici per livello di classe. Usati = slot spesi, si recuperano dopo un riposo lungo.
+            <p className="text-[10px] text-white/30 mb-3 leading-relaxed">
+              Uno <strong className="text-white/50">slot incantesimo</strong> è una carica di magia di un certo livello:
+              lanciare un incantesimo consuma uno slot del suo livello (o di uno superiore, se vuoi potenziarlo).
+              Ogni pallina è uno slot: cliccala per segnarlo come usato. Gli slot totali sono automatici per
+              classe e livello e si <strong className="text-white/50">recuperano tutti con un riposo lungo</strong>.
               {clsKey === "warlock" && <> I tuoi slot sono sempre di livello {WARLOCK_SLOT_LEVEL[level] ?? 1}.</>}
             </p>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
@@ -220,18 +226,21 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
                   const isSel = cur.includes(sp.name);
                   const atGlobalLimit = totalKnown >= spellLimit;
                   return (
-                    <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
-                      <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
-                        checked={isSel}
-                        disabled={!isSel && atGlobalLimit}
-                        onChange={e => {
-                          if (e.target.checked && atGlobalLimit) return;
-                          const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
-                          updCd("spells1", next);
-                          save({ spells1: next });
-                        }} />
-                      <span className="flex-1 text-white/70">{sp.name}</span>
-                      <span className="text-[9px] text-white/25">{sp.school}</span>
+                    <label key={sp.name} className={`flex flex-col gap-1 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
+                      <div className="flex items-center gap-2 w-full">
+                        <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
+                          checked={isSel}
+                          disabled={!isSel && atGlobalLimit}
+                          onChange={e => {
+                            if (e.target.checked && atGlobalLimit) return;
+                            const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
+                            updCd("spells1", next);
+                            save({ spells1: next });
+                          }} />
+                        <span className="flex-1 text-white/70">{sp.name}</span>
+                        <span className="text-[9px] text-white/25">{sp.school}</span>
+                      </div>
+                      <p className="text-[10px] text-white/30 pl-6 leading-snug">{sp.description}</p>
                     </label>
                   );
                 })}
@@ -260,18 +269,21 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
                       const isSel = cur.includes(sp.name);
                       const atGlobalLimit = totalKnown >= spellLimit;
                       return (
-                        <label key={sp.name} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
-                          <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
-                            checked={isSel}
-                            disabled={!isSel && atGlobalLimit}
-                            onChange={e => {
-                              if (e.target.checked && atGlobalLimit) return;
-                              const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
-                              updCd(`spells${lv}` as any, next);
-                              save({ [`spells${lv}`]: next });
-                            }} />
-                          <span className="flex-1 text-white/70">{sp.name}</span>
-                          <span className="text-[9px] text-white/25">{sp.school}</span>
+                        <label key={sp.name} className={`flex flex-col gap-1 rounded-lg border px-2.5 py-1.5 text-xs transition ${isSel ? "border-blue-500/25 bg-blue-900/[0.08]" : "border-white/[0.05] bg-black/20 hover:border-white/[0.10]"}`}>
+                          <div className="flex items-center gap-2 w-full">
+                            <input type="checkbox" className="accent-blue-400 w-4 h-4 flex-shrink-0"
+                              checked={isSel}
+                              disabled={!isSel && atGlobalLimit}
+                              onChange={e => {
+                                if (e.target.checked && atGlobalLimit) return;
+                                const next = e.target.checked ? [...cur, sp.name] : cur.filter(n => n !== sp.name);
+                                updCd(`spells${lv}` as any, next);
+                                save({ [`spells${lv}`]: next });
+                              }} />
+                            <span className="flex-1 text-white/70">{sp.name}</span>
+                            <span className="text-[9px] text-white/25">{sp.school}</span>
+                          </div>
+                          <p className="text-[10px] text-white/30 pl-6 leading-snug">{sp.description}</p>
                         </label>
                       );
                     })}
