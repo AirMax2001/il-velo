@@ -5,6 +5,9 @@ import { parseConditions, serializeConditions, CONDITIONS_LIST } from "@/lib/cha
 import { AbilityReferenceTables } from "@/components/shared/AbilityReferenceTables";
 import { SpellReferenceTables } from "@/components/shared/SpellReferenceTables";
 import { CharacterSheet } from "@/components/player/CharacterSheet";
+import { CollapseSection } from "@/components/player/sheet/ui";
+import { getClassData } from "@/lib/data/classes";
+import { CLASS_RESOURCES, CLASS_ABILITIES, ARCHETYPE_ABILITIES } from "@/lib/data/classAbilities";
 
 type PlayerCardsProps = { sessionId: string };
 type PlayerDetailTab = "character" | "secrets";
@@ -13,7 +16,7 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   const [players, setPlayers] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [detailTab, setDetailTab] = useState<PlayerDetailTab>("character");
-  const [openRef, setOpenRef] = useState<"ability" | "skill" | "cantrips" | "spells" | null>(null);
+  const [openRef, setOpenRef] = useState<"ability" | "skill" | "cantrips" | "spells" | "resources" | null>(null);
   const [sheetPlayer, setSheetPlayer] = useState<any>(null);
 
   async function load() {
@@ -116,7 +119,17 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
             <h3 className="text-base font-medium text-veil-gold">Incantesimi</h3>
             <span className="text-veil-gold/60 text-sm">{openRef === "spells" ? "−" : "+"}</span>
           </div>
-          <p className="mt-1 text-xs text-white/40">Incantesimi di 1°-5° livello, scuola e cosa fanno.</p>
+          <p className="mt-1 text-xs text-white/40">Tutti gli incantesimi 1°-9°, scuola e cosa fanno (già aperti).</p>
+        </button>
+        <button onClick={() => setOpenRef(openRef === "resources" ? null : "resources")}
+          className={`rounded-2xl border p-5 text-left transition ${
+            openRef === "resources" ? "border-veil-gold/30 bg-veil-gold/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
+          }`}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-medium text-veil-gold">Ki &amp; Risorse</h3>
+            <span className="text-veil-gold/60 text-sm">{openRef === "resources" ? "−" : "+"}</span>
+          </div>
+          <p className="mt-1 text-xs text-white/40">Punti Ki, Ire, Incanalare Divinità e le capacità che spendono Ki.</p>
         </button>
       </div>
 
@@ -125,7 +138,8 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
           {openRef === "ability" && <AbilityReferenceTables only="ability" />}
           {openRef === "skill" && <AbilityReferenceTables only="skill" />}
           {openRef === "cantrips" && <SpellReferenceTables only="cantrips" />}
-          {openRef === "spells" && <SpellReferenceTables only="spells" />}
+          {openRef === "spells" && <SpellReferenceTables only="spells" expandAll />}
+          {openRef === "resources" && <ResourceReferenceTables />}
         </div>
       )}
 
@@ -133,7 +147,8 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
         <p className="text-sm text-white/40">Nessun giocatore in questa campagna.</p>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {players.map(p => (
           <div
             key={p.id}
@@ -199,39 +214,39 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
         ))}
       </div>
 
-      {selected && (
-        <div className="mt-8">
-          <div className="rounded-2xl border border-white/[0.06] bg-black/30">
-            <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] p-6">
+      <div className={`${selected ? "" : "hidden"} lg:sticky lg:top-6`}>
+        {selected && (
+          <div className="rounded-2xl border border-white/[0.06] bg-black/30 max-h-[calc(100vh-4.5rem)] overflow-y-auto">
+            <div className="flex flex-col gap-4 border-b border-white/[0.06] p-5">
               <div className="flex items-center gap-4">
-                <PlayerAvatar url={selected.avatar_url} name={selected.character_name} size="xl" />
-                <div>
-                  <h3 className="text-xl text-veil-gold">{selected.character_name}</h3>
-                  <p className="mt-1 text-sm text-white/50">
+                <PlayerAvatar url={selected.avatar_url} name={selected.character_name} size="lg" />
+                <div className="min-w-0">
+                  <h3 className="text-lg text-veil-gold truncate">{selected.character_name}</h3>
+                  <p className="mt-0.5 text-xs text-white/50">
                     {selected.race || "—"} · {selected.class || "—"} · Liv. {selected.level || 1}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-5">
-                <div className="text-center">
-                  <p className="text-[10px] uppercase text-white/30">HP</p>
-                  <p className="text-lg text-emerald-400">{selected.hp_current ?? 0}/{selected.hp_max ?? 0}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 rounded-xl border border-emerald-400/15 bg-emerald-900/10 px-3 py-1.5 text-center">
+                  <p className="text-[9px] uppercase text-white/30">HP</p>
+                  <p className="text-sm text-emerald-400">{selected.hp_current ?? 0}/{selected.hp_max ?? 0}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-[10px] uppercase text-white/30">XP</p>
-                  <p className="text-lg text-veil-gold">{selected.xp ?? 0}</p>
+                <div className="flex-1 rounded-xl border border-veil-gold/20 bg-veil-gold/[0.06] px-3 py-1.5 text-center">
+                  <p className="text-[9px] uppercase text-white/30">XP</p>
+                  <p className="text-sm text-veil-gold">{selected.xp ?? 0}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-[10px] uppercase text-white/30">◎</p>
-                  <p className="text-lg text-veil-gold">{selected.coins ?? 0}</p>
+                <div className="flex-1 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-center">
+                  <p className="text-[9px] uppercase text-white/30">◎</p>
+                  <p className="text-sm text-white/80">{selected.coins ?? 0}</p>
                 </div>
-                <button
-                  onClick={() => setSheetPlayer(selected)}
-                  className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-4 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition"
-                  title="Apri la scheda del giocatore come la vede lui (modifiche in tempo reale)">
-                  🧝 Entra nella scheda del giocatore
-                </button>
               </div>
+              <button
+                onClick={() => setSheetPlayer(selected)}
+                className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-4 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition"
+                title="Apri la scheda del giocatore come la vede lui (modifiche in tempo reale)">
+                🧝 Entra nella scheda del giocatore
+              </button>
             </div>
 
             <div className="flex gap-1 border-b border-white/[0.06] px-6">
@@ -252,12 +267,82 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
               {detailTab === "secrets" && <PlayerSecrets sessionId={sessionId} playerId={selected.id} />}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {sheetPlayer && (
         <PlayerSheetOverlay player={sheetPlayer} sessionId={sessionId} onClose={() => setSheetPlayer(null)} />
       )}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Riferimento Ki & Risorse (per il DM) ----------
+function ResourceReferenceTables() {
+  const kiAbilities = [
+    ...(CLASS_ABILITIES.monk || []),
+    ...Object.values(ARCHETYPE_ABILITIES).flat(),
+  ].filter(a => a.uses.toLowerCase().includes("ki"));
+
+  const resourceTotal = (clsKey: string, r: any): string => {
+    if (clsKey === "monk") return "pari al livello del Monaco";
+    if (clsKey === "barbarian") return "2 + bonus di competenza";
+    if (clsKey === "bard") return "mod. CAR (min 1)";
+    if (clsKey === "cleric") return "1 (2 al 6°, 3 al 13°, 4 al 17°)";
+    if (clsKey === "druid") return "2";
+    if (clsKey === "fighter") return r.key === "secondo_soffio" ? "1" : "1 (2 al 17°)";
+    if (clsKey === "paladin") return "1 + mod. CAR";
+    if (clsKey === "sorcerer") return "pari al livello dello Stregone";
+    if (clsKey === "wizard") return "1";
+    return "—";
+  };
+
+  return (
+    <div className="space-y-3">
+      <CollapseSection
+        title="☯ Risorse consumabili di classe"
+        subtitle="Il totale è automatico per classe e livello"
+        defaultOpen
+        badge={<span className="rounded-full border border-veil-gold/20 px-2 py-0.5 text-[10px] text-veil-gold/60">Punti Ki = livello del Monaco</span>}
+      >
+        <div className="grid gap-2 md:grid-cols-2">
+          {Object.entries(CLASS_RESOURCES).flatMap(([clsKey, arr]) =>
+            arr.map(r => {
+              const cls = getClassData(clsKey);
+              return (
+                <div key={clsKey + r.key} className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base leading-none">{r.icon}</span>
+                    <p className="text-xs text-white/70 font-medium">{cls?.name || clsKey} · {r.name}</p>
+                  </div>
+                  <p className="text-[10px] text-white/35 mt-1">Totale: {resourceTotal(clsKey, r)}</p>
+                  <p className="text-[10px] text-veil-gold/50">Ripristino: {r.restore}</p>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </CollapseSection>
+
+      <CollapseSection
+        title="⚡ Capacità che spendono Ki"
+        subtitle="Costo in punti Ki di ogni capacità del Monaco (e delle sue tradizioni)"
+        defaultOpen
+      >
+        <div className="space-y-2">
+          {kiAbilities.map(a => (
+            <div key={a.key} className="rounded-xl border border-white/[0.06] bg-black/20 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-white/70 font-medium">{a.name}</p>
+                <span className="rounded-full border border-indigo-400/25 bg-indigo-500/10 px-2 py-0.5 text-[10px] text-indigo-300/80">{a.uses}</span>
+              </div>
+              <p className="text-[10px] text-white/30 mt-0.5">{a.action} · lv. {a.level}</p>
+              <p className="text-[11px] text-white/45 mt-1 leading-snug">{a.effect}</p>
+            </div>
+          ))}
+        </div>
+      </CollapseSection>
     </div>
   );
 }

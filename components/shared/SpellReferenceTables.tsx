@@ -58,7 +58,7 @@ function SpellRow({ spell }: { spell: (typeof spells)[number] }) {
   );
 }
 
-export function SpellReferenceTables({ only }: { only?: "cantrips" | "spells" }) {
+export function SpellReferenceTables({ only, expandAll }: { only?: "cantrips" | "spells"; expandAll?: boolean }) {
   const levels = spells.reduce<number[]>((acc, s) => (acc.includes(s.level) ? acc : [...acc, s.level]), []).sort((a, b) => a - b)
     .filter(l => (only === "cantrips" ? l === 0 : only === "spells" ? l > 0 : true));
 
@@ -71,7 +71,7 @@ export function SpellReferenceTables({ only }: { only?: "cantrips" | "spells" })
             key={level}
             title={LEVEL_LABELS[level]}
             badge={<span className="rounded-full border border-veil-gold/20 px-2 py-0.5 text-[10px] text-veil-gold/60">{list.length}</span>}
-            defaultOpen={level === 0}
+            defaultOpen={expandAll ? true : level === 0}
           >
             <div className="rounded-xl border border-white/[0.06] overflow-hidden">
               {list.map(spell => <SpellRow key={spell.name} spell={spell} />)}
