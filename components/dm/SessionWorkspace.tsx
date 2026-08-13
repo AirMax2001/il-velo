@@ -25,16 +25,16 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (!sessionId) return;
-    const saved = localStorage.getItem(`veil-notes-${sessionId}`);
-    if (saved) setNotes(saved);
-  }, [sessionId]);
+    if (!activePackId) { setNotes(""); return; }
+    const saved = localStorage.getItem(`veil-session-notes-${activePackId}`);
+    setNotes(saved || "");
+  }, [activePackId]);
 
   useEffect(() => {
-    if (!sessionId) return;
-    const t = setTimeout(() => localStorage.setItem(`veil-notes-${sessionId}`, notes), 400);
+    if (!activePackId) return;
+    const t = setTimeout(() => localStorage.setItem(`veil-session-notes-${activePackId}`, notes), 400);
     return () => clearTimeout(t);
-  }, [notes, sessionId]);
+  }, [notes, activePackId]);
 
   async function loadPacks() {
     if (!sessionId) return;
@@ -86,20 +86,25 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
     return <div className="flex h-full items-center justify-center"><p className="text-sm text-white/20">Nessuna campagna attiva.</p></div>;
   }
 
+  const activePack = sessionPacks.find(p => p.id === activePackId) || null;
+
   return (
     <div className="flex h-full gap-6">
       {/* Colonne sinistra: note + sessioni */}
       <div className="flex-1 min-w-0 space-y-5">
         {/* Casella di testo per scrivere la sessione */}
         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-4">
-          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">📝 Appunti sessione</h3>
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-3">
+            📝 Appunti sessione{activePack && <span className="text-white/40 font-normal"> — {activePack.title || `Sessione ${activePack.session_number}`}</span>}
+          </h3>
           <textarea
             className="w-full min-h-44 rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:border-veil-gold/30 focus:outline-none"
-            placeholder="Scrivi qui gli appunti della sessione..."
+            placeholder={activePack ? `Scrivi qui gli appunti della sessione "${activePack.title || activePack.session_number}"...` : "Apri una sessione dalla lista per scrivere i suoi appunti."}
             value={notes}
             onChange={e => setNotes(e.target.value)}
           />
-          {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente su questo dispositivo.</p>}
+          {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente per questa sessione.</p>}
+          {!activePack && <p className="mt-1 text-[10px] text-white/25">Ogni sessione ha i suoi appunti.</p>}
         </div>
 
         {/* Sessioni */}
