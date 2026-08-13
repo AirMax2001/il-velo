@@ -86,11 +86,15 @@ export function getAsiLevels(classKey: string): number[] {
 }
 
 export function getSpellSlotsAtLevel(classKey: string, level: number): Record<number, number> {
-  let arr: number[] = [];
-  if (classKey === "warlock") arr = SPELL_SLOTS_WARLOCK[level] || [];
-  else if (["paladin", "ranger"].includes(classKey)) arr = SPELL_SLOTS_HALF[level] || [];
-  else if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(classKey)) arr = SPELL_SLOTS_FULL[level] || [];
   const out: Record<number, number> = {};
+  if (classKey === "warlock") {
+    const count = SPELL_SLOTS_WARLOCK[level]?.[0] || 0;
+    if (count > 0) out[WARLOCK_SLOT_LEVEL[level] || 1] = count;
+    return out;
+  }
+  let arr: number[] = [];
+  if (["paladin", "ranger"].includes(classKey)) arr = SPELL_SLOTS_HALF[level] || [];
+  else if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(classKey)) arr = SPELL_SLOTS_FULL[level] || [];
   arr.forEach((n, i) => { if (n > 0) out[i + 1] = n; });
   return out;
 }
