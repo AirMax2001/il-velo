@@ -13,11 +13,11 @@ import { MagicTab } from "./sheet/MagicTab";
 import { GearTab } from "./sheet/GearTab";
 import { PersonalityTab } from "./sheet/PersonalityTab";
 import { ExtraTab } from "./sheet/ExtraTab";
-import { RulesTab } from "./sheet/RulesTab";
+import { PartyTab } from "./sheet/PartyTab";
 import type { SheetCtx } from "./sheet/types";
 
-type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void };
-type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "extra" | "rules";
+type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void; sessionId?: string };
+type SheetTab = "core" | "combat" | "magic" | "gear" | "personality" | "party";
 
 const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
   { id: "core", label: "Nucleo", short: "Nucleo", icon: "⚡" },
@@ -25,11 +25,10 @@ const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
   { id: "magic", label: "Magia", short: "Magia", icon: "✨" },
   { id: "gear", label: "Equipaggiamento", short: "Equip.", icon: "🎒" },
   { id: "personality", label: "Personalità", short: "Pers.", icon: "📖" },
-  { id: "extra", label: "Extra", short: "Extra", icon: "🔧" },
-  { id: "rules", label: "Regole", short: "Regole", icon: "📜" },
+  { id: "party", label: "Party", short: "Party", icon: "👥" },
 ];
 
-export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange }: Props) {
+export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, sessionId }: Props) {
   const [form, setForm] = useState(player);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [activeTab, setActiveTab] = useState<SheetTab>("core");
@@ -199,9 +198,14 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange }: 
     combat: () => <SpellTab ctx={ctx} />,
     magic: () => <MagicTab ctx={ctx} />,
     gear: () => <GearTab ctx={ctx} />,
-    personality: () => <PersonalityTab ctx={ctx} />,
-    extra: () => <ExtraTab ctx={ctx} />,
-    rules: () => <RulesTab />,
+    personality: () => (
+      <>
+        <PersonalityTab ctx={ctx} />
+        <div className="h-3" />
+        <ExtraTab ctx={ctx} />
+      </>
+    ),
+    party: () => <PartyTab ctx={ctx} sessionId={sessionId} />,
   };
 
   return (
