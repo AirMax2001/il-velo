@@ -16,6 +16,7 @@ export default function Home() {
   const [playerStep, setPlayerStep] = useState<"code" | "character">("code");
   const [charName, setCharName] = useState("");
   const [charPassword, setCharPassword] = useState("");
+  const [savedPlayer, setSavedPlayer] = useState<{ name: string; access_token: string; session_id?: string } | null>(null);
 
   useEffect(() => {
     const storedCode = localStorage.getItem("veil_player_code");
@@ -27,6 +28,13 @@ export default function Home() {
     if (storedName) setCharName(storedName);
     const storedPass = localStorage.getItem("veil_player_pass");
     if (storedPass) setCharPassword(storedPass);
+    const raw = localStorage.getItem("veil_player");
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+        if (p && p.access_token) setSavedPlayer(p);
+      } catch { /* ignora JSON corrotto */ }
+    }
   }, []);
 
   // Auto-save player join fields on change
@@ -113,7 +121,20 @@ export default function Home() {
     localStorage.removeItem("veil_player_pass");
     const playerData = { ...data.player, session_id: data.session.id };
     localStorage.setItem("veil_player", JSON.stringify(playerData));
+    setSavedPlayer(playerData);
     router.push(`/player/${data.player.access_token}?sessionId=${data.session.id}`);
+  }
+
+  // ---------- RE-LOGIN ONE TAP (ultimo giocatore di questo dispositivo) ----------
+  function continueAsSaved() {
+    setError("");
+    if (!savedPlayer) return;
+    router.push(`/player/${savedPlayer.access_token}?sessionId=${savedPlayer.session_id || ""}`);
+  }
+
+  function forgetSaved() {
+    localStorage.removeItem("veil_player");
+    setSavedPlayer(null);
   }
 
   return (
@@ -152,6 +173,21 @@ export default function Home() {
 
           {role === "player" && (
             <div className="flex flex-col gap-3">
+              {savedPlayer && (
+                <>
+                  <button onClick={continueAsSaved}
+                    className="group relative overflow-hidden rounded-2xl border border-veil-gold/30 bg-veil-gold/[0.08] px-4 py-3 text-left transition hover:border-veil-gold/50 hover:bg-veil-gold/[0.12]">
+                    <span className="text-[9px] uppercase tracking-[0.24em] text-white/30">Ultimo giocatore su questo dispositivo</span>
+                    <span className="mt-1 flex items-center gap-2">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-veil-gold/25 bg-veil-gold/[0.06] text-base">🧝</span>
+                      <span className="flex-1 text-sm font-semibold text-veil-gold">{savedPlayer.name}</span>
+                      <span className="text-lg text-veil-gold/60">→</span>
+                    </span>
+                  </button>
+                  <p className="text-center text-[10px] text-white/25">— oppure accedi con un altro personaggio —</p>
+                </>
+              )}
+
               {playerStep === "code" && (
                 <>
                   <input className="veil-input" placeholder="Codice campagna (es. X7K2PQ)" value={campaignCode} onChange={e => setCampaignCode(e.target.value.toUpperCase())} onKeyDown={e => e.key === "Enter" && setCodeAndContinue()} autoFocus />
@@ -171,6 +207,11 @@ export default function Home() {
                   <input className="veil-input" type="password" placeholder="Password" value={charPassword} onChange={e => setCharPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && loginOrJoin()} />
                   <button className="veil-btn" onClick={loginOrJoin}>Accedi / Registrati</button>
                   {error && <p className="text-sm text-red-300">{error}</p>}
+                  {savedPlayer && (
+                    <button className="text-[10px] text-white/25 hover:text-red-300/70 transition" onClick={forgetSaved}>
+                      dimentica {savedPlayer.name} da questo dispositivo
+                    </button>
+                  )}
                   <button className="mt-2 text-xs text-white/30 hover:text-white/60 transition" onClick={() => { setPlayerStep("code"); setError(""); localStorage.removeItem("veil_player_code"); setCampaignCode(""); }}>← cambia codice</button>
                 </>
               )}

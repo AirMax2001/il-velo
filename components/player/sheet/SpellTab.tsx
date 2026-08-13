@@ -159,13 +159,13 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
-                      <button type="button" onClick={() => adjustResource(r.key, total, -1)} disabled={used <= 0}
-                        className="px-2 py-1 text-sm text-white/60 hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent transition"
-                        title={used > 0 ? "Ripristina un punto" : "Nessun punto speso"}>−</button>
-                      <span className="px-2 py-1 text-[10px] text-white/40 border-x border-white/10">{available}/{total} disponibili</span>
                       <button type="button" onClick={() => adjustResource(r.key, total, +1)} disabled={used >= total}
                         className="px-2 py-1 text-sm text-white/60 hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent transition"
-                        title={used < total ? "Spendi un punto" : "Tutti i punti usati"}>+</button>
+                        title={used < total ? "Spendi un punto" : "Tutti i punti usati"}>−</button>
+                      <span className="px-2 py-1 text-[10px] text-white/40 border-x border-white/10">{available}/{total} disponibili</span>
+                      <button type="button" onClick={() => adjustResource(r.key, total, -1)} disabled={used <= 0}
+                        className="px-2 py-1 text-sm text-white/60 hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent transition"
+                        title={used > 0 ? "Ripristina un punto" : "Nessun punto speso"}>+</button>
                     </div>
                     <button onClick={() => restResource(r.key, total)}
                       className="rounded-lg border border-emerald-400/20 px-2 py-1 text-[10px] text-emerald-300/70 hover:bg-emerald-400/10 transition">
