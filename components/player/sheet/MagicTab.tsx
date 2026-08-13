@@ -110,7 +110,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
               lanciare un incantesimo consuma uno slot del suo livello (o di uno superiore, se vuoi potenziarlo).
               Ogni pallina è uno slot: cliccala per segnarlo come usato. Gli slot totali sono automatici per
               classe e livello e si <strong className="text-white/50">recuperano tutti con un riposo lungo</strong>.
-              {clsKey === "warlock" && <> I tuoi slot sono sempre di livello {WARLOCK_SLOT_LEVEL[level] ?? 1}.</>}
+              {clsKey === "warlock" && <> I tuoi slot sono sempre di livello {WARLOCK_SLOT_LEVEL[level] ?? 1}: con loro puoi lanciare anche incantesimi di livello inferiore (es. quelli di 1°).</>}
             </p>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lv => {
