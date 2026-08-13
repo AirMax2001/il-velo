@@ -6,7 +6,7 @@ import {
   getModifier, ALL_SKILLS, SKILL_ABILITY, ABILITY_SHORT, SKILL_LABELS,
 } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
-import { CLASS_ABILITIES } from "@/lib/data/classAbilities";
+import { CLASS_ABILITIES, getArchetypeAbilities, getArchetypeForClass } from "@/lib/data/classAbilities";
 import { NumberBubbles, CollapseSection } from "./ui";
 import type { SheetCtx } from "./types";
 
@@ -30,6 +30,13 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const availableAbilities = (CLASS_ABILITIES[clsKey || ""] || [])
     .filter(a => a.level <= level)
     .sort((a, b) => a.level - b.level);
+
+  const archetype = clsKey ? getArchetypeForClass(clsKey) : null;
+  const archetypeKey = cd.archetype || "";
+  const archetypeLabel = archetype?.options.find(o => o.key === archetypeKey)?.name;
+  const archetypeAbilities = archetypeKey
+    ? getArchetypeAbilities(archetypeKey).filter(a => a.level <= level)
+    : [];
 
   const chosenSkills = SKILL_LIST.filter(s => (cd as any)[s.key]);
 
@@ -180,6 +187,36 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
               <p className="text-[11px] text-white/40 mt-1.5">{a.effect}</p>
             </div>
           ))}
+
+          {archetypeKey && archetypeAbilities.length > 0 && (
+            <div className="rounded-xl border border-veil-gold/25 bg-veil-gold/[0.06] p-3">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-veil-gold/60 mb-2">
+                🎭 {archetypeLabel || archetypeKey} — capacità extra dell'archetipo
+              </p>
+              {archetypeAbilities.map(a => (
+                <div key={a.key} className="mb-2 last:mb-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-sm text-white/80 font-medium">✦ {a.name}</p>
+                    <div className="flex gap-1">
+                      <span className="rounded-full bg-veil-gold/15 px-2 py-0.5 text-[10px] text-veil-gold/70">{a.action}</span>
+                      {a.die && <span className="rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/40">🎲 {a.die}</span>}
+                      <span className="rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/40">{a.uses}</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-white/40 mt-1">{a.effect}</p>
+                </div>
+              ))}
+              <p className="text-[9px] text-white/25 mt-2">
+                Scegli/cambia il tuo {archetype?.label?.toLowerCase() || "archetipo"} nel tab Nucleo → Caratteristiche di Classe.
+              </p>
+            </div>
+          )}
+
+          {availableAbilities.length === 0 && !archetypeKey && (
+            <p className="text-xs text-white/30 text-center py-2">
+              Nessuna capacità attivabile per la tua classe a questo livello.
+            </p>
+          )}
         </div>
       </div>
 

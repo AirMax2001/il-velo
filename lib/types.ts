@@ -49,6 +49,7 @@ export type CharacterData = {
   spellAttackBonus?: number;
   cantrips?: string[];
   spellSlots?: Record<number, { total?: number; expended?: number }>;
+  resources?: Record<string, { total?: number; expended?: number }>;
   personalityTraits?: string;
   ideals?: string;
   bonds?: string;

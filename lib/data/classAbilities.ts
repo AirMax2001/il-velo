@@ -72,9 +72,19 @@ export const CLASS_ABILITIES: Record<string, ClassAbility[]> = {
   ],
   monk: [
     {
-      key: "monk_ki", name: "Ki", level: 2, action: "vedi effetti",
-      uses: "punti Ki = livello da monaco, recupero dopo riposo breve/lungo",
-      effect: "Spendi 1 Ki per: Raffica di Colpi (azione bonus: 2 attacchi senz'armi), Presa Difensiva (azione bonus: azione di Schivare), Passo del Vento (azione bonus: Scatto o Disimpegno + salto doppio).",
+      key: "monk_raffica_colpi", name: "Raffica di Colpi", level: 2, action: "azione bonus",
+      uses: "1 Ki",
+      effect: "Dopo l'azione Attacco fai 2 attacchi senz'armi extra con le stesse regole (dado arti marziali: 1d4 al 1°-4° liv., 1d6 al 5°, 1d8 all'11°, 1d10 al 17°).",
+    },
+    {
+      key: "monk_presa_difensiva", name: "Presa Difensiva", level: 2, action: "azione bonus",
+      uses: "1 Ki",
+      effect: "Compi l'azione di Schivare: i tiri per colpire contro di te hanno svantaggio fino al tuo prossimo turno.",
+    },
+    {
+      key: "monk_passo_vento", name: "Passo del Vento", level: 2, action: "azione bonus",
+      uses: "1 Ki",
+      effect: "Compi un'azione di Scatto o Disimpegno e la distanza del tuo salto raddoppia per il turno.",
     },
     {
       key: "monk_colpo_stordente", name: "Colpo Stordente", level: 5, action: "dopo un colpo in mischia",
@@ -251,4 +261,251 @@ export const ARCHETYPES: Record<string, { level: number; label: string; options:
 
 export function getArchetypeForClass(classKey: string): { level: number; label: string; options: ArchetypeOption[] } | null {
   return ARCHETYPES[classKey] || null;
+}
+
+/* ── Capacità attivabili degli Archetipi ──────────────────────
+   Quando il giocatore sceglie un archetipo (es. Tradizione Monastica)
+   sblocca queste capacità, che compaiono nel tab Spell. */
+
+export const ARCHETYPE_ABILITIES: Record<string, ClassAbility[]> = {
+  berserker: [
+    { key: "berserker_furia", name: "Furia Selvaggia", level: 3, action: "azione bonus durante l'Ira", die: "1d8",
+      uses: "1 Ira per uso", effect: "Un attacco in più con un'azione bonus, ma ottieni un livello di esaurimento alla fine dell'Ira." },
+  ],
+  totem: [
+    { key: "totem_spirito", name: "Spirito Totemico", level: 3, action: "quando entri in Ira",
+      uses: "1 Ira per uso", effect: "Scegli lo spirito guida: orso (resistenze da guerriero), aquila (vantaggio su percezione e opportunità), lupo (alleati in vantaggio sui nemici vicini)." },
+  ],
+  ancestrale: [
+    { key: "ancestrali_guardiani", name: "Guardiani Ancestrali", level: 3, action: "quando attacchi",
+      uses: "durante l'Ira", effect: "Il primo nemico che colpisci ha svantaggio sugli attacchi contro i tuoi alleati e subisce meno danni." },
+  ],
+  sapere: [
+    { key: "sapere_ispirazione_taglio", name: "Ispirazione di Taglio", level: 3, action: "reazione", die: "1d6",
+      uses: "1 uso di Ispirazione Bardica", effect: "Riduci di 1d6 il tiro di un nemico entro 18m." },
+  ],
+  valore: [
+    { key: "valore_ispirazione_combattiva", name: "Ispirazione Combattiva", level: 3, action: "azione bonus", die: "1d6",
+      uses: "1 uso di Ispirazione Bardica", effect: "Un alleato entro 18m può aggiungere il dado a un attacco o a un danno." },
+  ],
+  spade: [
+    { key: "spade_stile_duello", name: "Stile con due Armi", level: 3, action: "passiva",
+      uses: "senza limite", effect: "Combatti con un'arma in ogni mano: attacco bonus con l'arma secondaria (senza modificatore al danno)." },
+  ],
+  vita: [
+    { key: "vita_preservare_vita", name: "Preservare Vita", level: 1, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Curi fino a 5 × livello PF di creature entro 9m, dividendoli come vuoi." },
+  ],
+  luce: [
+    { key: "luce_radianza_alba", name: "Radianza dell'Alba", level: 1, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Raggio di luce radiante: nemici entro 9m, TS DES o danni radianti." },
+  ],
+  guerra: [
+    { key: "guerra_colpo_guidato", name: "Colpo Guidato", level: 1, action: "dopo un tiro per colpire",
+      uses: "1 Incanalare Divinità", effect: "Aggiungi +10 a un tiro per colpire che hai appena effettuato." },
+  ],
+  inganno: [
+    { key: "inganno_duplicato", name: "Inganno di Invocazione", level: 1, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Crei un duplicato illusorio di te stesso: i nemici devono scegliere quale bersagliare." },
+  ],
+  conoscenza: [
+    { key: "conoscenza_eoni", name: "Conoscenza degli Eoni", level: 1, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Ottieni competenza in un'abilità o strumento a scelta per 10 minuti." },
+  ],
+  natura: [
+    { key: "natura_incanto", name: "Incanto della Natura", level: 1, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Comandi piante e animali: una creatura deve superare TS SAG o essere affascinata." },
+  ],
+  tempesta: [
+    { key: "tempesta_ira", name: "Ira della Tempesta", level: 1, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Fulmini vendicativi: chi ti attacca in mischia subisce danni da tuono." },
+  ],
+  luna: [
+    { key: "luna_forma_combattiva", name: "Forma Selvatica Potenziata", level: 2, action: "azione bonus",
+      uses: "1 uso di Forma Selvatica", effect: "Ti trasformi in una bestia più potente: CR pari a un terzo del tuo livello." },
+  ],
+  terra: [
+    { key: "terra_recupero_naturale", name: "Recupero Naturale", level: 2, action: "durante riposo breve",
+      uses: "1 volta per riposo lungo", effect: "Recuperi slot incantesimo per un totale pari a metà del tuo livello da druido." },
+  ],
+  sogni: [
+    { key: "sogni_guarigione_distante", name: "Guarigione dei Sogni", level: 2, action: "azione bonus",
+      uses: "2 volte per riposo lungo", effect: "Curi un alleato entro 36m per 1d4 PF." },
+  ],
+  campione: [
+    { key: "campione_critico", name: "Critico Migliorato", level: 3, action: "passiva",
+      uses: "senza limite", effect: "I tuoi colpi critici arrivano con 19-20." },
+  ],
+  maestro_armi: [
+    { key: "maestro_manovre", name: "Dadi Manovra", level: 3, action: "azione/azione bonus/reazione", die: "d8",
+      uses: "4 per riposo breve/lungo", effect: "Manovre speciali (disarmo, spinta, parata, comando): aggiungi il dado al tiro o al danno." },
+  ],
+  cavaliere: [
+    { key: "cavaliere_sfida", name: "Sfida Marziale", level: 3, action: "azione bonus",
+      uses: "1 volta per riposo breve", effect: "Provochi un nemico entro 9m: se ti attacca altrove ha svantaggio." },
+  ],
+  via_aperta: [
+    { key: "via_aperta_onda_ki", name: "Onda di Energia Ki", level: 3, action: "azione",
+      uses: "2 Ki", effect: "Scateni un'onda di energia da pugno: bersagli in una linea, TS DES o 2d6 danni da forza." },
+  ],
+  ombra: [
+    { key: "ombra_passo_ombroso", name: "Passo Ombroso", level: 3, action: "azione bonus",
+      uses: "2 Ki", effect: "Svanisci in tenebre e riappari in un punto che vedi entro 18m." },
+  ],
+  quattro_elementi: [
+    { key: "elementi_ondata_acqua", name: "Ondata d'Acqua", level: 3, action: "azione", die: "2d10",
+      uses: "2 Ki", effect: "Una frusta d'acqua colpisce una creatura entro 9m: TS DES o 2d10 danni da contundente e viene atterrata." },
+    { key: "elementi_pugno_pietra", name: "Pugno di Pietra", level: 3, action: "azione", die: "3d10",
+      uses: "2 Ki", effect: "Un colpo di aria compressa su una creatura entro 9m: TS FOR o 3d10 danni da contundente e viene spinta indietro." },
+    { key: "elementi_manto_fuoco", name: "Manto di Fuoco", level: 3, action: "azione bonus", die: "1d4",
+      uses: "2 Ki", effect: "Il tuo corpo si avvolge di fiamme: per 1 minuto chi ti colpisce in mischia subisce 1d4 danni da fuoco." },
+    { key: "elementi_alito_ghiaccio", name: "Alito di Ghiaccio", level: 3, action: "azione", die: "2d8",
+      uses: "2 Ki", effect: "Espiri un cono di gelo di 4,5m: le creature devono superare un TS COS o subire 2d8 danni da freddo." },
+  ],
+  devozione: [
+    { key: "devozione_arma_radiosa", name: "Arma Sacra", level: 3, action: "azione bonus",
+      uses: "1 Incanalare Divinità", effect: "La tua arma emette luce: aggiungi mod CAR ai tiri per colpire." },
+  ],
+  antichi: [
+    { key: "antichi_presenza", name: "Presenza della Natura", level: 3, action: "azione",
+      uses: "1 Incanalare Divinità", effect: "Bestie e piante ti riconoscono come amico: non ti attaccano a meno che non le provochi." },
+  ],
+  vendetta: [
+    { key: "vendetta_nemico_giurato", name: "Nemico Giurato", level: 3, action: "azione bonus",
+      uses: "1 volta per riposo lungo", effect: "Scegli un nemico: vantaggio sui suoi attacchi e sui suoi tiri salvezza contro di te." },
+  ],
+  cacciatore: [
+    { key: "cacciatore_difesa", name: "Difesa dal Colpo", level: 3, action: "reazione",
+      uses: "1 volta per round", effect: "Riduci i danni di un attacco subito della tua competenza." },
+  ],
+  maestro_bestie: [
+    { key: "bestie_comando", name: "Compagno Animale", level: 3, action: "azione bonus",
+      uses: "senza limite", effect: "Il tuo compagno animale agisce nel tuo turno e obbedisce ai tuoi comandi." },
+  ],
+  ladro: [
+    { key: "ladro_mano_veloce", name: "Mano Veloce", level: 3, action: "azione bonus",
+      uses: "senza limite", effect: "Usi un oggetto, scassi o usi la Mano Lesta come azione bonus." },
+  ],
+  assassino: [
+    { key: "assassino_colpo_mortale", name: "Colpo Assassino", level: 3, action: "passiva",
+      uses: "una volta per combattimento", effect: "Critico automatico contro creature sorprese che non hanno ancora agito." },
+  ],
+  truffatore_arcano: [
+    { key: "truffatore_mano_magica", name: "Mano Magica", level: 3, action: "azione bonus",
+      uses: "senza limite", effect: "Mano Magica invisibile: usa oggetti, recupera cose, distrae." },
+  ],
+  stirpe_draconica: [
+    { key: "draconica_squame", name: "Squame Draconiche", level: 1, action: "passiva",
+      uses: "senza limite", effect: "CA 13 + mod DES senza armatura, +1 PF per livello da stregone." },
+  ],
+  magia_selvaggia: [
+    { key: "selvaggia_ondata", name: "Ondata di Magia Selvaggia", level: 1, action: "quando lanci un incantesimo",
+      uses: "a discrezione del DM", effect: "Dopo un incantesimo puoi innestare un effetto casuale dalla tabella della magia selvaggia." },
+  ],
+  arcano: [
+    { key: "arcano_colpo_oscuro", name: "Colpo Oscuro", level: 1, action: "quando colpisci", die: "1d6",
+      uses: "senza limite", effect: "Danno extra del patto quando riduci un nemico a 0 PF." },
+  ],
+  fatato: [
+    { key: "fatato_ferocia", name: "Ferocia Fatata", level: 1, action: "quando colpisci",
+      uses: "senza limite", effect: "Il tuo patrono fatato ti dà poteri di affascinamento e paura." },
+  ],
+  antico: [
+    { key: "antico_telepatia", name: "Telepatia dell'Antico", level: 1, action: "azione",
+      uses: "senza limite", effect: "Parli telepaticamente con creature entro 36m che comprendono una lingua." },
+  ],
+  abiurazione: [
+    { key: "abiurazione_scudo_arcano", name: "Scudo Arcano", level: 2, action: "reazione",
+      uses: "2 volte per riposo lungo", effect: "Assorbi danni da incantesimi: aggiungi il tuo mod INT al tuo tiro salvezza." },
+  ],
+  congiurazione: [
+    { key: "congiurazione_evocazione_minore", name: "Evocazione Minore", level: 2, action: "azione",
+      uses: "1 volta per riposo lungo", effect: "Evochi un oggetto o una creatura minore benigna per alcuni minuti." },
+  ],
+  divinazione: [
+    { key: "divinazione_portento", name: "Portento", level: 2, action: "reazione",
+      uses: "2 per riposo lungo", effect: "Prevedi il futuro: sostituisci un tiro (tuo o di un nemico) con un d20 che hai tirato in anticipo." },
+  ],
+  ammaliamento: [
+    { key: "ammaliamento_sguardo", name: "Sguardo Ipnotico", level: 2, action: "azione",
+      uses: "1 volta per riposo breve", effect: "Il nemico deve superare un TS SAG o essere affascinato da te." },
+  ],
+  evocazione: [
+    { key: "evocazione_scultore", name: "Scultore di Incantesimi", level: 2, action: "passiva",
+      uses: "senza limite", effect: "Modelli i tuoi incantesimi di evocazione per non colpire gli alleati." },
+  ],
+  illusione: [
+    { key: "illusione_migliorata", name: "Illusione Migliorata", level: 2, action: "passiva",
+      uses: "senza limite", effect: "Le tue illusioni sopravvivono all'ispezione: chi le esamina crede che siano reali." },
+  ],
+  necromanzia: [
+    { key: "necromanzia_recupero", name: "Recupero Necrotico", level: 2, action: "passiva",
+      uses: "senza limite", effect: "Quando uccidi una creatura con un incantesimo recuperi PF pari al suo livello." },
+  ],
+  trasmutazione: [
+    { key: "trasmutazione_alchimia", name: "Alchimia", level: 2, action: "azione",
+      uses: "1 volta per riposo lungo", effect: "Creazione di un elisir o di materiali con le tue abilità alchemiche." },
+  ],
+};
+
+export function getArchetypeAbilities(archetypeKey: string): ClassAbility[] {
+  return ARCHETYPE_ABILITIES[archetypeKey] || [];
+}
+
+/* ── Risorse consumabili di classe (es. Ki) ───────────────────
+   Mostrate nel tab Magia come slot consumabili, come gli slot
+   incantesimo. Il totale è automatico per classe/livello. */
+
+export type ClassResourceDef = {
+  key: string;
+  name: string;
+  icon: string;
+  color: string;
+  restore: string;
+  max: (level: number, cd: { strength?: number; charisma?: number; wisdom?: number }, pb: number) => number;
+};
+
+export const CLASS_RESOURCES: Record<string, ClassResourceDef[]> = {
+  barbarian: [
+    { key: "ira", name: "Ire", icon: "🔥", color: "bg-red-500/40 border-red-400/50",
+      restore: "riposo lungo", max: (_lv, _cd, pb) => 2 + pb },
+  ],
+  bard: [
+    { key: "ispirazione_bardica", name: "Ispirazioni Bardiche", icon: "🎵", color: "bg-pink-500/40 border-pink-400/50",
+      restore: "riposo lungo", max: (_lv, cd, _pb) => Math.max(1, Math.floor((Number(cd.charisma) || 10 - 10) / 2)) },
+  ],
+  cleric: [
+    { key: "incanalare_divinita", name: "Incanalare Divinità", icon: "✨", color: "bg-yellow-500/40 border-yellow-400/50",
+      restore: "riposo breve/lungo", max: (lv, _cd, _pb) => lv >= 17 ? 4 : lv >= 13 ? 3 : lv >= 6 ? 2 : 1 },
+  ],
+  druid: [
+    { key: "forma_selvatica", name: "Forme Selvatiche", icon: "🐻", color: "bg-emerald-500/40 border-emerald-400/50",
+      restore: "riposo breve/lungo", max: (_lv, _cd, _pb) => 2 },
+  ],
+  fighter: [
+    { key: "secondo_soffio", name: "Secondi Soffi", icon: "🫁", color: "bg-orange-500/40 border-orange-400/50",
+      restore: "riposo breve/lungo", max: (_lv, _cd, _pb) => 1 },
+    { key: "azione_impetuosa", name: "Azioni Impetuose", icon: "⚡", color: "bg-cyan-500/40 border-cyan-400/50",
+      restore: "riposo breve/lungo", max: (lv, _cd, _pb) => lv >= 17 ? 2 : 1 },
+  ],
+  monk: [
+    { key: "ki", name: "Punti Ki", icon: "☯", color: "bg-indigo-500/40 border-indigo-400/50",
+      restore: "riposo breve/lungo", max: (lv, _cd, _pb) => lv },
+  ],
+  paladin: [
+    { key: "percezione_divino", name: "Percezioni del Divino", icon: "👁️", color: "bg-amber-500/40 border-amber-400/50",
+      restore: "riposo lungo", max: (_lv, cd, _pb) => Math.max(1, 1 + Math.floor((Number(cd.charisma) || 10 - 10) / 2)) },
+  ],
+  sorcerer: [
+    { key: "punti_stregoneria", name: "Punti Stregoneria", icon: "💠", color: "bg-violet-500/40 border-violet-400/50",
+      restore: "riposo lungo", max: (lv, _cd, _pb) => lv },
+  ],
+  wizard: [
+    { key: "recupero_arcano", name: "Recuperi Arcano", icon: "📖", color: "bg-blue-500/40 border-blue-400/50",
+      restore: "riposo lungo", max: (_lv, _cd, _pb) => 1 },
+  ],
+};
+
+export function getClassResources(classKey: string): ClassResourceDef[] {
+  return CLASS_RESOURCES[classKey] || [];
 }

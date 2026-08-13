@@ -3,6 +3,7 @@ import { getModifier, ABILITY_SHORT } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
 import { getSpellSlotsAtLevel, getCantripsKnown, getSpellsKnownLimit, getFeaturesAtLevel, WARLOCK_SLOT_LEVEL } from "@/lib/data/leveling";
 import { getSpellDC, getSpellAttack, preparedSpellLimit } from "@/lib/characterEngine";
+import { getClassResources } from "@/lib/data/classAbilities";
 import type { CharacterData } from "@/lib/types";
 import type { SheetCtx } from "./types";
 
@@ -25,8 +26,69 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
   const dcd = spellAbility && clsKey ? getSpellDC(spellAbility as any, { [spellAbility]: spellAbilityScore } as any, pb) : 0;
   const datk = spellAbility && clsKey ? getSpellAttack(spellAbility as any, { [spellAbility]: spellAbilityScore } as any, pb) : 0;
 
+  const resources = clsKey ? getClassResources(clsKey) : [];
+  const spent = (cd.resources || {}) as Record<string, { total?: number; expended?: number }>;
+
+  function toggleResource(key: string, i: number, total: number) {
+    const cur = spent[key]?.expended ?? 0;
+    const newVal = cur > i ? i : i + 1;
+    const next = { ...spent, [key]: { total, expended: Math.min(newVal, total) } };
+    updCdAll({ resources: next });
+    save({ resources: next });
+  }
+
+  function restResource(key: string, total: number) {
+    const next = { ...spent, [key]: { total, expended: 0 } };
+    updCdAll({ resources: next });
+    save({ resources: next });
+  }
+
   return (
     <div className="space-y-4">
+      {/* Risorse consumabili di classe (es. Ki, Ire, Punti Stregoneria) */}
+      {resources.length > 0 && (
+        <div className="veil-panel p-4">
+          <h3 className="text-sm text-veil-gold/80 font-medium mb-1">Risorse di Classe</h3>
+          <p className="text-[10px] text-white/30 mb-3">
+            Capacità consumabili (come gli slot incantesimo): clicca su una pallina per spendere la risorsa,
+            sul pulsante per riposare. Il totale è automatico per classe e livello.
+          </p>
+          <div className="space-y-4">
+            {resources.map(r => {
+              const total = r.max(level, cd, pb);
+              const used = spent[r.key]?.expended ?? 0;
+              const available = Math.max(0, total - used);
+              return (
+                <div key={r.key} className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <div className="flex items-center gap-2 min-w-[160px]">
+                    <span className="text-base leading-none">{r.icon}</span>
+                    <div>
+                      <p className="text-xs text-white/70 font-medium">{r.name}</p>
+                      <p className="text-[9px] text-white/25">ripristino: {r.restore}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {Array.from({ length: Math.min(total, 20) }, (_, i) => (
+                      <button key={i} onClick={() => toggleResource(r.key, i, total)}
+                        className={`w-4 h-4 rounded-full border transition ${i < available ? r.color : "bg-white/[0.04] border-white/10"}`}
+                        title={i < available ? "Disponibile (clicca per usare)" : "Usato"} />
+                    ))}
+                    {total > 20 && <span className="text-[9px] text-white/30 ml-1">+{total - 20}</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-white/40">{available}/{total} disponibili</span>
+                    <button onClick={() => restResource(r.key, total)}
+                      className="rounded-lg border border-emerald-400/20 px-2 py-1 text-[10px] text-emerald-300/70 hover:bg-emerald-400/10 transition">
+                      🔄 Riposo
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {!hasSpellcasting && (
         <div className="veil-panel p-6 text-center">
           <p className="text-3xl mb-3">⚔️</p>

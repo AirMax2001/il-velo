@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Player, CharacterData } from "@/lib/types";
 import { getClassData, findClassKey } from "@/lib/data/classes";
-import { itemCategory, buildAttackFromWeapon } from "@/lib/data/weapons";
+import { itemCategory, buildAttackFromWeapon, isLightWeapon, isTwoHandedWeapon, findWeapon } from "@/lib/data/weapons";
 
 const CAPACITY = 27;
 
@@ -278,38 +278,100 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
 
   const isWeaponItem = (it: any) => itemCategory(it.name) === "weapon";
 
-  /* Equipaggia/rimuovi arma: una sola alla volta. L'arma equipaggiata
-     genera l'attacco (regole: d20 + PB + mod. caratteristica) che
-     compare nel tab Spell, pronto per il combattimento. */
+  /* Mani occupate: due armi leggere (una per mano) o un'arma qualsiasi
+     (le armi a due mani occupano entrambe le mani). */
+  const equippedWeapons = items.filter(i => isWeaponItem(i) && i.equipped);
+  const handsLabel = (() => {
+    if (equippedWeapons.length === 0) return "Mani libere";
+    if (equippedWeapons.length === 2 && equippedWeapons.every(w => isLightWeapon(w.name))) {
+      return `Combo a due mani: ${equippedWeapons.map(w => w.name).join(" + ")} (attacco bonus off-hand)`;
+    }
+    return `In mano: ${equippedWeapons.map(w => w.name).join(", ")}${equippedWeapons.some(w => isTwoHandedWeapon(w.name)) ? " (a due mani)" : ""}`;
+  })();
+
+  /* Ricostruisce gli attacchi derivati dalle armi equipaggiate:
+     - 1 arma → 1 attacco (mod caratteristica + PB)
+     - 2 armi leggere → attacco principale + attacco off-hand come azione bonus
+       (il danno dell'off-hand NON aggiunge il modificatore di caratteristica) */
+  async function syncEquippedAttacks() {
+    const d = await fetch(`/api/inventory?sessionId=${player.session_id}&playerId=${player.id}`).then(r => r.json());
+    const fresh = (d.items || []).filter((i: any) => !i.hidden);
+    const equips = fresh.filter((i: any) => isWeaponItem(i) && i.equipped);
+    const str = Number(cd.strength) || 10;
+    const dex = Number(cd.dexterity) || 10;
+
+    const desired: { name: string; bonus: string; damage: string; type: string }[] = [];
+    if (equips.length === 2 && equips.every((w: any) => isLightWeapon(w.name))) {
+      const main = buildAttackFromWeapon(equips[0].name, str, dex, pb);
+      const off = buildAttackFromWeapon(equips[1].name, str, dex, pb);
+      if (main) desired.push(main);
+      if (off) {
+        const m = off.damage.match(/^(\d+d\d+)([+-]\d+)$/);
+        desired.push({
+          ...off,
+          name: `${off.name} (Off-Hand)`,
+          damage: m && Number(m[2]) >= 0 ? m[1] : off.damage,
+        });
+      }
+    } else if (equips.length === 1) {
+      const atk = buildAttackFromWeapon(equips[0].name, str, dex, pb);
+      if (atk) desired.push(atk);
+    }
+
+    /* Gli attacchi derivati da armi sono rimpiazzati (nome arma o Off-Hand);
+       quelli manuali (es. Colpo Senz'Armi) restano. */
+    const isWeaponDerived = (a: any) => {
+      const base = (a.name || "").replace(/ \(Off-Hand\)$/, "").trim().toLowerCase();
+      return !!findWeapon(base);
+    };
+    const kept = (cd.attacks || []).filter(a => !isWeaponDerived(a));
+    const merged = [...kept];
+    for (const atk of desired) {
+      const lower = atk.name.toLowerCase();
+      const idx = merged.findIndex(a => a.name.toLowerCase() === lower);
+      if (idx >= 0) merged[idx] = atk; else merged.push(atk);
+    }
+    updCd("attacks", merged);
+    save({ attacks: merged });
+  }
+
+  /* Equipaggia/rimuovi arma con le regole PHB:
+     - arma a due mani: occupa entrambe le mani → toglie ogni altra arma
+     - arma leggera: max 2, una per mano (combat a due armi)
+     - arma a una mano: una alla volta */
   async function toggleEquip(it: any) {
+    setError("");
     const equipped = !it.equipped;
-    const atk = isWeaponItem(it)
-      ? buildAttackFromWeapon(it.name, Number(cd.strength) || 10, Number(cd.dexterity) || 10, pb)
-      : null;
+    const itTwoHanded = isWeaponItem(it) && isTwoHandedWeapon(it.name);
+    const itLight = isWeaponItem(it) && isLightWeapon(it.name);
+    const others = items.filter(o => o.id !== it.id && isWeaponItem(o) && o.equipped);
+
     if (equipped) {
-      for (const other of items) {
-        if (other.id !== it.id && isWeaponItem(other) && other.equipped) {
+      if (itTwoHanded) {
+        for (const other of others) {
+          await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: other.id, equipped: false }) });
+        }
+      } else if (itLight) {
+        const lightEquipped = others.filter(o => isLightWeapon(o.name));
+        if (lightEquipped.length >= 2) {
+          setError("Hai già un'arma leggera in ogni mano. Togliene una prima di equipaggiarne un'altra.");
+          return;
+        }
+        for (const other of others) {
+          if (!isLightWeapon(other.name)) {
+            await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: other.id, equipped: false }) });
+          }
+        }
+      } else {
+        for (const other of others) {
           await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: other.id, equipped: false }) });
         }
       }
       await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: it.id, equipped: true }) });
-      if (atk) {
-        const lower = atk.name.toLowerCase();
-        const na = (cd.attacks || []).some(a => a.name.toLowerCase() === lower)
-          ? (cd.attacks || []).map(a => a.name.toLowerCase() === lower ? { ...a, ...atk } : a)
-          : [...(cd.attacks || []), atk];
-        updCd("attacks", na);
-        save({ attacks: na });
-      }
     } else {
       await fetch("/api/inventory", { method: "PATCH", body: JSON.stringify({ id: it.id, equipped: false }) });
-      if (atk) {
-        const lower = atk.name.toLowerCase();
-        const na = (cd.attacks || []).filter(a => a.name.toLowerCase() !== lower);
-        updCd("attacks", na);
-        save({ attacks: na });
-      }
     }
+    await syncEquippedAttacks();
     setSelected((prev: any) => prev ? { ...prev, equipped } : prev);
     loadItems();
   }
@@ -348,6 +410,12 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
               </button>
             );
           })}
+        </div>
+
+        {/* Mani occupate */}
+        <div className="mt-2 flex items-center gap-2 text-[10px]">
+          <span className="text-white/35">✊</span>
+          <span className={equippedWeapons.length > 0 ? "text-veil-gold/70" : "text-white/25"}>{handsLabel}</span>
         </div>
 
         {/* Carico */}
@@ -453,8 +521,15 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
 
             {itemCategory(selected.name) === "weapon" && (() => {
               const atk = buildAttackFromWeapon(selected.name, Number(cd.strength) || 10, Number(cd.dexterity) || 10, pb);
+              const light = isLightWeapon(selected.name);
+              const twoHanded = isTwoHandedWeapon(selected.name);
               return (
                 <div className="mt-3 rounded-xl border border-emerald-400/15 bg-emerald-900/10 p-3">
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {twoHanded && <span className="rounded-full bg-veil-gold/15 px-2 py-0.5 text-[10px] text-veil-gold/80">🙌 A due mani</span>}
+                    {light && <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/50">🪶 Leggera (1 mano)</span>}
+                    {!twoHanded && !light && <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/50">✊ A una mano</span>}
+                  </div>
                   <p className="text-xs text-emerald-300/70">
                     {selected.equipped ? "✓ Arma equipaggiata" : "Non è l'arma in mano"}
                     {atk && <span className="text-white/40"> · {atk.bonus} colpire · {atk.damage} · {atk.type}</span>}
@@ -474,8 +549,11 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
                     )}
                   </div>
                   <p className="mt-2 text-[10px] text-white/25">
-                    L'arma equipaggiata compare nel tab Spell come attacco pronto, con le regole del manuale
-                    (colpire: d20 + Bonus Competenza + modificatore; danno: dado + modificatore).
+                    {twoHanded
+                      ? "Occupa entrambe le mani: equipaggiandola togli ogni altra arma. Dadi danni più alti."
+                      : light
+                        ? "Leggera: puoi equipaggiarne una per mano. Con due armi leggere ottieni l'attacco bonus off-hand (senza modificatore al danno)."
+                        : "A una mano: una alla volta. L'arma equipaggiata compare nel tab Spell come attacco pronto."}
                   </p>
                 </div>
               );

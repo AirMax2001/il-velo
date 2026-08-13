@@ -9,32 +9,42 @@ export type WeaponInfo = {
   ability: WeaponAbility;
   type: string;
   weaponType: "melee" | "ranged";
+  light?: boolean;
+  twoHanded?: boolean;
 };
 
 export const WEAPON_DB: Record<string, WeaponInfo> = {
-  "spadone": { damage: "2d6", ability: "str", type: "Tagliente", weaponType: "melee" },
-  "ascia bipenne": { damage: "1d12", ability: "str", type: "Tagliente", weaponType: "melee" },
+  "spadone": { damage: "2d6", ability: "str", type: "Tagliente", weaponType: "melee", twoHanded: true },
+  "ascia bipenne": { damage: "1d12", ability: "str", type: "Tagliente", weaponType: "melee", twoHanded: true },
   "spada lunga": { damage: "1d8", ability: "str", type: "Tagliente", weaponType: "melee" },
   "ascia da battaglia": { damage: "1d8", ability: "str", type: "Tagliente", weaponType: "melee" },
-  "ascia da lancio": { damage: "1d6", ability: "str", type: "Tagliente", weaponType: "ranged" },
+  "ascia da lancio": { damage: "1d6", ability: "str", type: "Tagliente", weaponType: "ranged", light: true },
   "stocco": { damage: "1d8", ability: "finesse", type: "Perforante", weaponType: "melee" },
-  "spada corta": { damage: "1d6", ability: "finesse", type: "Perforante", weaponType: "melee" },
-  "arco lungo": { damage: "1d8", ability: "dex", type: "Perforante", weaponType: "ranged" },
-  "arco corto": { damage: "1d6", ability: "dex", type: "Perforante", weaponType: "ranged" },
-  "balestra leggera": { damage: "1d8", ability: "dex", type: "Perforante", weaponType: "ranged" },
+  "spada corta": { damage: "1d6", ability: "finesse", type: "Perforante", weaponType: "melee", light: true },
+  "arco lungo": { damage: "1d8", ability: "dex", type: "Perforante", weaponType: "ranged", twoHanded: true },
+  "arco corto": { damage: "1d6", ability: "dex", type: "Perforante", weaponType: "ranged", twoHanded: true },
+  "balestra leggera": { damage: "1d8", ability: "dex", type: "Perforante", weaponType: "ranged", twoHanded: true },
   "giavellotto": { damage: "1d6", ability: "str", type: "Perforante", weaponType: "ranged" },
-  "daga": { damage: "1d4", ability: "finesse", type: "Perforante", weaponType: "melee" },
-  "pugnale": { damage: "1d4", ability: "finesse", type: "Perforante", weaponType: "melee" },
+  "daga": { damage: "1d4", ability: "finesse", type: "Perforante", weaponType: "melee", light: true },
+  "pugnale": { damage: "1d4", ability: "finesse", type: "Perforante", weaponType: "melee", light: true },
   "mazza": { damage: "1d6", ability: "str", type: "Contundente", weaponType: "melee" },
-  "martello leggero": { damage: "1d4", ability: "str", type: "Contundente", weaponType: "melee" },
+  "martello leggero": { damage: "1d4", ability: "str", type: "Contundente", weaponType: "melee", light: true },
   "clava": { damage: "1d4", ability: "str", type: "Contundente", weaponType: "melee" },
   "randello": { damage: "1d4", ability: "str", type: "Contundente", weaponType: "melee" },
-  "scimitarra": { damage: "1d6", ability: "finesse", type: "Tagliente", weaponType: "melee" },
+  "scimitarra": { damage: "1d6", ability: "finesse", type: "Tagliente", weaponType: "melee", light: true },
   "fionda": { damage: "1d4", ability: "dex", type: "Contundente", weaponType: "ranged" },
   "lancia": { damage: "1d6", ability: "str", type: "Perforante", weaponType: "melee" },
-  "dardo": { damage: "1d4", ability: "finesse", type: "Perforante", weaponType: "ranged" },
+  "dardo": { damage: "1d4", ability: "finesse", type: "Perforante", weaponType: "ranged", light: true },
   "falce": { damage: "1d4", ability: "str", type: "Tagliente", weaponType: "melee" },
 };
+
+export function isLightWeapon(name: string): boolean {
+  return !!findWeapon(name)?.info.light;
+}
+
+export function isTwoHandedWeapon(name: string): boolean {
+  return !!findWeapon(name)?.info.twoHanded;
+}
 
 export function findWeapon(name: string): { key: string; info: WeaponInfo } | null {
   const lower = name.toLowerCase();

@@ -3,18 +3,36 @@ import { supabaseAdmin } from "@/lib/supabaseClient";
 
 const TABLE = "inventory_items";
 
-/* Colonne disponibili nella tabella: lette una volta e cachate.
-   Così l'API funziona anche se non sono state applicate tutte le migrazioni
-   (es. `value` di supabase/inventory_value.sql): i campi mancanti vengono ignorati. */
+/* Colonne disponibili nella tabella: lette da information_schema e cachate.
+   Se la cache è vecchia (creata prima di una migrazione) l'API prova comunque
+   prima con tutti i campi: solo se il DB risponde "colonna inesistente"
+   ricarica la lista e ritenta filtrando. */
 let columnsCache: string[] | null = null;
-async function getColumns(): Promise<string[]> {
-  if (columnsCache) return columnsCache;
+let columnsCacheAt = 0;
+async function getColumns(force = false): Promise<string[]> {
+  const now = Date.now();
+  if (columnsCache && !force && now - columnsCacheAt < 5 * 60 * 1000) return columnsCache;
   const { data } = await supabaseAdmin()
     .from("information_schema.columns")
     .select("column_name")
     .eq("table_name", TABLE);
   columnsCache = (data || []).map((c: any) => c.column_name);
+  columnsCacheAt = now;
   return columnsCache;
+}
+
+function isMissingColumnError(error: any): boolean {
+  const msg = error?.message || "";
+  return msg.includes("column") || msg.includes("Could not find the");
+}
+
+async function filterToExisting(row: Record<string, any>): Promise<Record<string, any>> {
+  const cols = await getColumns(true);
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (cols.includes(k)) clean[k] = v;
+  }
+  return clean;
 }
 
 export async function GET(req: NextRequest) {
@@ -51,7 +69,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const db = supabaseAdmin();
-  const cols = await getColumns();
 
   const row: Record<string, any> = {
     session_id: body.session_id,
@@ -62,18 +79,17 @@ export async function POST(req: NextRequest) {
     category: body.category || "general",
     item_type: body.item_type || body.type || "other",
     is_relic: body.rarity === "relic" || body.is_relic || false,
-  };
-  const optional: Record<string, any> = {
     weight: body.weight ?? 0,
     value: body.value ?? 0,
     quantity: body.quantity ?? 1,
     hidden: false,
   };
-  for (const [k, v] of Object.entries(optional)) {
-    if (cols.includes(k)) row[k] = v;
-  }
 
-  const { data, error } = await db.from(TABLE).insert(row).select().single();
+  let { data, error } = await db.from(TABLE).insert(row).select().single();
+  if (error && isMissingColumnError(error)) {
+    const { data: d2, error: e2 } = await db.from(TABLE).insert(await filterToExisting(row)).select().single();
+    data = d2; error = e2;
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ item: data });
 }
@@ -82,12 +98,12 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   const db = supabaseAdmin();
   const { id, ...fields } = body;
-  const cols = await getColumns();
-  const clean: Record<string, any> = {};
-  for (const [k, v] of Object.entries(fields)) {
-    if (cols.includes(k)) clean[k] = v;
+
+  let { error } = await db.from(TABLE).update(fields).eq("id", id);
+  if (error && isMissingColumnError(error)) {
+    const { error: e2 } = await db.from(TABLE).update(await filterToExisting(fields)).eq("id", id);
+    error = e2;
   }
-  const { error } = await db.from(TABLE).update(clean).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
