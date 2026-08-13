@@ -20,6 +20,7 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
   const [filter, setFilter] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const noteKey = selected ? `veil-object-note-${selected.id}` : "";
   const [createForm, setCreateForm] = useState({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
 
@@ -151,38 +152,82 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
         })}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mb-8">
-        {filtered.length === 0 && <div className="col-span-full text-center py-8"><p className="text-sm text-white/30">Nessun oggetto.</p></div>}
-        {filtered.map((item: any) => {
-          const c = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
-          const ownerName = getOwnerName(item.player_id);
-          return (
-            <div key={item.id} onClick={() => setSelected(selected?.id === item.id ? null : item)} className={`relative rounded-2xl border p-4 cursor-pointer transition ${selected?.id === item.id ? `${c.border} ${c.bg}` : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"}`}>
-              <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
-                className="absolute -top-2.5 -right-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-red-400/40 bg-red-900/60 text-[11px] text-red-200 hover:bg-red-600/70 hover:text-white transition"
-                title="Elimina oggetto">
-                &times;
-              </button>
-              <div className="flex items-start gap-3">
-                <span className={`text-lg ${c.text}`}>{item.rarity === "legendary" ? "🌟" : item.rarity === "epic" ? "✦" : item.rarity === "rare" ? "◆" : item.rarity === "artifact" ? "⚔" : item.rarity === "relic" ? "◈" : "◇"}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-white truncate">{item.name}</p>
-                  <p className={`text-[10px] uppercase tracking-wider ${c.text}`}>{c.label}</p>
-                  {item.description && <p className="mt-2 text-xs text-white/40 line-clamp-2">{item.description}</p>}
-                  {(Number(item.weight) > 0 || Number(item.value) > 0) && (
-                    <p className="mt-1 text-[10px] text-white/30">
-                      {Number(item.weight) > 0 ? `${item.weight} kg` : ""}
-                      {Number(item.weight) > 0 && Number(item.value) > 0 ? " · " : ""}
-                      {Number(item.value) > 0 ? `${item.value} mo` : ""}
-                    </p>
-                  )}
-                  {ownerName && <p className="mt-1 text-xs text-sky-400/70">⊘ {ownerName}</p>}
+      {(() => {
+        const grouped = players
+          .map(p => ({ player: p, list: filtered.filter(i => i.player_id === p.id) }))
+          .filter(g => g.list.length > 0)
+          .sort((a, b) => (a.player.character_name || "").localeCompare(b.player.character_name || ""));
+        const unassigned = filtered.filter(i => !i.player_id);
+
+        const isOpen = (key: string) => openGroups[key] ?? true;
+        const toggle = (key: string) => setOpenGroups(prev => ({ ...prev, [key]: !isOpen(key) }));
+
+        const renderItems = (list: any[]) => (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {list.map((item: any) => {
+              const c = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
+              return (
+                <div key={item.id} onClick={() => setSelected(selected?.id === item.id ? null : item)} className={`relative rounded-2xl border p-4 cursor-pointer transition ${selected?.id === item.id ? `${c.border} ${c.bg}` : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"}`}>
+                  <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
+                    className="absolute -top-2.5 -right-2.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-red-400/40 bg-red-900/60 text-[11px] text-red-200 hover:bg-red-600/70 hover:text-white transition"
+                    title="Elimina oggetto">
+                    &times;
+                  </button>
+                  <div className="flex items-start gap-3">
+                    <span className={`text-lg ${c.text}`}>{item.rarity === "legendary" ? "🌟" : item.rarity === "epic" ? "✦" : item.rarity === "rare" ? "◆" : item.rarity === "artifact" ? "⚔" : item.rarity === "relic" ? "◈" : "◇"}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white truncate">{item.name}</p>
+                      <p className={`text-[10px] uppercase tracking-wider ${c.text}`}>{c.label}</p>
+                      {item.description && <p className="mt-2 text-xs text-white/40 line-clamp-2">{item.description}</p>}
+                      {(Number(item.weight) > 0 || Number(item.value) > 0) && (
+                        <p className="mt-1 text-[10px] text-white/30">
+                          {Number(item.weight) > 0 ? `${item.weight} kg` : ""}
+                          {Number(item.weight) > 0 && Number(item.value) > 0 ? " · " : ""}
+                          {Number(item.value) > 0 ? `${item.value} mo` : ""}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        );
+
+        if (grouped.length === 0 && unassigned.length === 0) {
+          return <div className="text-center py-8 mb-8"><p className="text-sm text-white/30">Nessun oggetto.</p></div>;
+        }
+
+        return (
+          <div className="space-y-4 mb-8">
+            {grouped.map(({ player, list }) => (
+              <div key={player.id} className="rounded-2xl border border-white/[0.06] bg-black/20 overflow-hidden">
+                <button onClick={() => toggle(player.id)}
+                  className="w-full flex items-center gap-3 px-5 py-4 text-left transition hover:bg-white/[0.02]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-veil-gold/20 bg-veil-gold/[0.06] text-base">🧝</span>
+                  <p className="flex-1 min-w-0 text-sm font-semibold text-white truncate">{player.character_name}</p>
+                  <span className="rounded-full border border-veil-gold/25 bg-veil-gold/[0.06] px-2.5 py-0.5 text-[10px] text-veil-gold">{list.length} {list.length === 1 ? "oggetto" : "oggetti"}</span>
+                  <span className={`text-veil-gold/50 transition-transform ${isOpen(player.id) ? "" : "rotate-180"}`}>▾</span>
+                </button>
+                {isOpen(player.id) && <div className="px-4 pb-4">{renderItems(list)}</div>}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+
+            {unassigned.length > 0 && (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 overflow-hidden">
+                <button onClick={() => toggle("__unassigned")}
+                  className="w-full flex items-center gap-3 px-5 py-4 text-left transition hover:bg-white/[0.02]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-base">📦</span>
+                  <p className="flex-1 min-w-0 text-sm font-semibold text-white/60 truncate">Non assegnati</p>
+                  <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-0.5 text-[10px] text-white/40">{unassigned.length} {unassigned.length === 1 ? "oggetto" : "oggetti"}</span>
+                  <span className={`text-white/40 transition-transform ${isOpen("__unassigned") ? "" : "rotate-180"}`}>▾</span>
+                </button>
+                {isOpen("__unassigned") && <div className="px-4 pb-4">{renderItems(unassigned)}</div>}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {selected && (
         <div className="rounded-2xl border border-white/[0.06] bg-black/30 p-6">
