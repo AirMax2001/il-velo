@@ -29,6 +29,7 @@ function PlayerView() {
       return;
     }
     setPlayer(d.player);
+    localStorage.setItem("veil_player", JSON.stringify({ ...d.player, access_token: token, session_id: sessionId }));
     const hasData = d.player.character_data && Object.keys(d.player.character_data).length > 0;
     if (hasData) markWizardDone(d.player.id);
     if (!hasData && !isWizardDone(d.player.id)) {
@@ -98,9 +99,9 @@ function PlayerView() {
           </div>
           <div className="hidden sm:block"><SaveBadge state={saveState} /></div>
           <button
-            onClick={() => { localStorage.removeItem("veil_player"); localStorage.removeItem("veil_player_code"); localStorage.removeItem("veil_player_email"); router.push("/"); }}
+            onClick={() => { localStorage.removeItem("veil_player_code"); localStorage.removeItem("veil_player_email"); router.push("/"); }}
             className="shrink-0 rounded-xl border border-veil-gold/25 bg-veil-gold/[0.06] px-3 py-2 text-xs text-veil-gold/80 hover:border-red-300/40 hover:bg-red-900/20 hover:text-red-300 transition"
-            title="Esci e torna alla home">
+            title="Esci e torna alla home (l'ultimo login resta salvato)">
             Esci
           </button>
         </div>
@@ -118,7 +119,6 @@ function PlayerView() {
         onSaveStateChange={setSaveState}
         sessionId={sessionId}
         onExit={() => {
-          localStorage.removeItem("veil_player");
           localStorage.removeItem("veil_player_code");
           localStorage.removeItem("veil_player_email");
           router.push("/");
