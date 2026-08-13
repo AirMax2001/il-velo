@@ -9,6 +9,7 @@ import { getSpellsForClass } from "@/lib/data/spells";
 import { CLASS_ABILITIES, getArchetypeAbilities, getArchetypeForClass, getClassResources } from "@/lib/data/classAbilities";
 import { SKILL_DESCRIPTIONS } from "@/components/shared/AbilityReferenceTables";
 import { NumberBubbles, CollapseSection } from "./ui";
+import { CombatOverlay } from "./CombatOverlay";
 import type { SheetCtx } from "./types";
 
 const SKILL_LIST = ALL_SKILLS.map(k => ({ key: k, label: SKILL_LABELS[k], ability: SKILL_ABILITY[k] }));
@@ -23,6 +24,7 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const canCast = !!clsData?.spellcasting || !!spellAbility;
   const spellAbilityLabel = spellAbility ? (ABILITY_SHORT[spellAbility] || spellAbility) : null;
   const [query, setQuery] = useState("");
+  const [showCombat, setShowCombat] = useState(false);
   const [openLevels, setOpenLevels] = useState<Record<number, boolean>>({});
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
@@ -516,6 +518,20 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
           ))}
         </div>
       </div>
+
+      {/* Entra in combattimento */}
+      <div className="veil-panel p-4 text-center">
+        <h3 className="text-sm text-veil-gold/80 font-medium mb-1">Combattimento</h3>
+        <p className="text-[10px] text-white/30 mb-3">
+          Inserisci la tua iniziativa e gestisci il tuo turno passo dopo passo, come nelle regole D&D 5.
+        </p>
+        <button type="button" onClick={() => setShowCombat(true)}
+          className="rounded-xl border border-veil-gold/40 bg-veil-gold/10 px-5 py-3 text-sm text-veil-gold hover:bg-veil-gold/20 transition font-medium">
+          ⚔️ Entra in Combattimento
+        </button>
+      </div>
+
+      {showCombat && <CombatOverlay ctx={ctx} onClose={() => setShowCombat(false)} />}
     </div>
   );
 }
