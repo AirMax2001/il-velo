@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { NpcPopup } from "@/components/dm/popups/NpcPopup";
 import { LocationPopup } from "@/components/dm/popups/LocationPopup";
 import { ItemPopup } from "@/components/dm/popups/ItemPopup";
-import { CombatCards } from "@/components/dm/CombatCards";
 import { FirstSessionGuide } from "@/components/dm/FirstSessionGuide";
 import { writeTableDisplay } from "@/lib/tableDisplay";
 
@@ -39,7 +38,6 @@ type SessionWorkspaceProps = { sessionId?: string };
 export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
   const { engine, state, resolver } = useGameEngine();
   const [popup, setPopup] = useState<{ type: PopupType; id: string } | null>(null);
-  const [showCombat, setShowCombat] = useState(false);
   const [sessionPacks, setSessionPacks] = useState<SessionPack[]>([]);
   const [activePackId, setActivePackId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -317,11 +315,7 @@ export function SessionWorkspace({ sessionId: _sid }: SessionWorkspaceProps) {
                 </div>
               )}
 
-              {scene.isCombat && scene.combat_id && (
-                <div className="border-t border-white/[0.06] pt-4 mt-4">
-                  <CombatCards sessionId={_sid} />
-                </div>
-              )}
+              
             </div>
           </div>
 

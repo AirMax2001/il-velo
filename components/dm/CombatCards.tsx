@@ -14,6 +14,12 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
   const [players, setPlayers] = useState<any[]>([]);
   const [note, setNote] = useState("");
   const [showInitiativeModal, setShowInitiativeModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newCombatTitle, setNewCombatTitle] = useState("");
+  const [draftEnemies, setDraftEnemies] = useState<any[]>([]);
+  const [enemyForm, setEnemyForm] = useState({
+    name: "", type: "enemy", hp: 20, ac: 12, initiative: 10, attack: 3, damage: "1d6",
+  });
   const [tableSynced, setTableSynced] = useState(false);
   const noteKey = activeCombat ? `veil-combat-note-${activeCombat.id}` : "";
 
@@ -72,6 +78,59 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
 
   function setInitiativeDraft(id: string, value: number) {
     setCombatants(prev => prev.map(c => c.id === id ? { ...c, initiative: value } : c));
+  }
+
+  function addEnemyDraft() {
+    if (!enemyForm.name.trim()) return;
+    setDraftEnemies(prev => [...prev, { ...enemyForm }]);
+    setEnemyForm({ name: "", type: "enemy", hp: 20, ac: 12, initiative: 10, attack: 3, damage: "1d6" });
+  }
+
+  function removeEnemyDraft(idx: number) {
+    setDraftEnemies(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function createCombat() {
+    if (!sessionId || draftEnemies.length === 0) return;
+    const res = await fetch("/api/combat", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: sessionId,
+        title: newCombatTitle.trim() || `Combattimento ${combats.length + 1}`,
+      }),
+    });
+    const data = await res.json();
+    if (!data.item) return;
+    const combat = data.item;
+    for (const e of draftEnemies) {
+      await fetch("/api/combatants", {
+        method: "POST",
+        body: JSON.stringify({
+          combat_id: combat.id,
+          name: e.name,
+          type: e.type,
+          hp_max: e.hp,
+          hp_current: e.hp,
+          armor_class: e.ac,
+          initiative: e.initiative,
+          attack_bonus: e.attack,
+          damage: e.damage,
+          is_dead: false,
+          sort_order: 0,
+        }),
+      });
+    }
+    setCombats(prev => [combat, ...prev]);
+    setActiveCombat(combat);
+    setCombatants(draftEnemies.map(e => ({ ...e, name: e.name, combat_id: combat.id, is_dead: false })));
+    setShowCreateModal(false);
+    setDraftEnemies([]);
+    setNewCombatTitle("");
+    setShowInitiativeModal(false);
+    const ct = await fetch(`/api/combatants?combatId=${combat.id}`).then(r => r.json());
+    setCombatants(ct.items || []);
+    engine.startCombat(combat.id);
+    setShowInitiativeModal(true);
   }
 
   async function confirmStartCombat() {
@@ -245,7 +304,11 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
         </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <button onClick={() => setShowCreateModal(true)}
+          className="rounded-xl border border-emerald-400/40 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 transition">
+          + Crea Combattimento
+        </button>
         {combats.map(c => (
           <div key={c.id} className="relative">
             <button onClick={() => selectCombat(c)}
@@ -264,6 +327,106 @@ export function CombatCards({ sessionId }: CombatCardsProps) {
           </div>
         ))}
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-emerald-500/25 bg-[#0a0806] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">⚔</span>
+                <span className="text-base font-semibold text-white">Crea Combattimento</span>
+              </div>
+              <button onClick={() => { setShowCreateModal(false); setDraftEnemies([]); }}
+                className="shrink-0 rounded-lg border border-white/15 bg-black/30 px-3 py-1 text-sm text-white/40 hover:bg-black/50 transition">
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-white/40 mb-5 leading-relaxed">
+              Crea i nemici del combattimento senza JSON: nome, PF, CA e iniziativa per ciascuno.
+              I giocatori si aggiungono nella fase successiva.
+            </p>
+
+            <div className="mb-5">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Titolo</p>
+              <input value={newCombatTitle} onChange={e => setNewCombatTitle(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400/50"
+                placeholder={`Combattimento ${combats.length + 1}`} />
+            </div>
+
+            <div className="mb-6">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-emerald-400/60 mb-3">Nemici ({draftEnemies.length})</p>
+              <div className="space-y-2">
+                {draftEnemies.map((e, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl border border-emerald-500/15 bg-emerald-900/10 px-4 py-2.5">
+                    <span className={`text-sm font-medium min-w-[120px] ${e.type === "boss" ? "text-emerald-200" : "text-emerald-200/80"}`}>
+                      {e.type === "boss" ? "⚔ " : "○ "}{e.name}
+                    </span>
+                    <span className="text-[10px] text-white/30">CA {e.ac} · PF {e.hp} · Init {e.initiative}</span>
+                    <button onClick={() => removeEnemyDraft(i)}
+                      className="ml-auto rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:bg-red-900/30 transition">
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {draftEnemies.length === 0 && (
+                  <p className="text-xs text-white/20">Nessun nemico ancora: aggiungili con il modulo qui sotto.</p>
+                )}
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
+                <input value={enemyForm.name} onChange={e => setEnemyForm({ ...enemyForm, name: e.target.value })}
+                  placeholder="Nome nemico"
+                  className="col-span-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400/50" />
+                <select value={enemyForm.type} onChange={e => setEnemyForm({ ...enemyForm, type: e.target.value })}
+                  className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400/50">
+                  <option value="enemy">Nemico</option>
+                  <option value="boss">Boss</option>
+                  <option value="ally">Alleato</option>
+                </select>
+                <div className="grid grid-cols-2 gap-2 col-span-2 md:col-span-4">
+                  <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/40">
+                    PF
+                    <input type="number" min={1} value={enemyForm.hp} onChange={e => setEnemyForm({ ...enemyForm, hp: parseInt(e.target.value) || 0 })}
+                      className="w-full bg-transparent text-sm text-white focus:outline-none" />
+                  </label>
+                  <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/40">
+                    CA
+                    <input type="number" min={1} value={enemyForm.ac} onChange={e => setEnemyForm({ ...enemyForm, ac: parseInt(e.target.value) || 0 })}
+                      className="w-full bg-transparent text-sm text-white focus:outline-none" />
+                  </label>
+                  <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/40">
+                    Iniziativa
+                    <input type="number" min={0} max={99} value={enemyForm.initiative}
+                      onChange={e => setEnemyForm({ ...enemyForm, initiative: parseInt(e.target.value) || 0 })}
+                      className="w-full bg-transparent text-sm text-white focus:outline-none" />
+                  </label>
+                  <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/40">
+                    Attacco +{enemyForm.attack}
+                    <input type="number" min={0} value={enemyForm.attack} onChange={e => setEnemyForm({ ...enemyForm, attack: parseInt(e.target.value) || 0 })}
+                      className="w-full bg-transparent text-sm text-white focus:outline-none" />
+                  </label>
+                </div>
+                <button onClick={addEnemyDraft} disabled={!enemyForm.name.trim()}
+                  className="col-span-2 md:col-span-4 rounded-lg border border-emerald-400/30 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-30 transition">
+                  + Aggiungi nemico
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => { setShowCreateModal(false); setDraftEnemies([]); }}
+                className="flex-1 rounded-lg border border-white/15 bg-black/30 px-6 py-2.5 text-sm text-white/50 hover:bg-black/50 transition font-medium">
+                Annulla
+              </button>
+              <button onClick={createCombat} disabled={draftEnemies.length === 0}
+                className="flex-1 rounded-lg bg-emerald-600/30 border border-emerald-500/40 px-6 py-2.5 text-sm text-emerald-200 hover:bg-emerald-600/40 disabled:opacity-30 transition font-semibold">
+                Crea Combattimento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeCombat && showInitiativeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
