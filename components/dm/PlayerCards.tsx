@@ -13,9 +13,6 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   const [players, setPlayers] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [detailTab, setDetailTab] = useState<PlayerDetailTab>("character");
-  const [echoText, setEchoText] = useState("");
-  const [echoAllText, setEchoAllText] = useState("");
-  const [echoSent, setEchoSent] = useState(false);
   const [openRef, setOpenRef] = useState<"ability" | "skill" | "cantrips" | "spells" | null>(null);
   const [sheetPlayer, setSheetPlayer] = useState<any>(null);
 
@@ -68,28 +65,6 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
     await fetch(`/api/players?id=${id}&cascade=true`, { method: "DELETE" });
     if (selected?.id === id) setSelected(null);
     load();
-  }
-
-  async function sendEcho(playerId?: string) {
-    if (playerId) {
-      if (!echoText.trim()) return;
-      await fetch("/api/notifications", {
-        method: "POST",
-        body: JSON.stringify({ session_id: sessionId, player_id: playerId, type: "message", title: "Echo", content: echoText })
-      });
-      setEchoText("");
-    } else {
-      if (!echoAllText.trim()) return;
-      await Promise.all(players.map(p =>
-        fetch("/api/notifications", {
-          method: "POST",
-          body: JSON.stringify({ session_id: sessionId, player_id: p.id, type: "message", title: "Echo a tutti", content: echoAllText })
-        })
-      ));
-      setEchoAllText("");
-    }
-    setEchoSent(true);
-    setTimeout(() => setEchoSent(false), 2000);
   }
 
   const tabs: { id: PlayerDetailTab; label: string }[] = [
@@ -225,7 +200,7 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
       </div>
 
       {selected && (
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="mt-8">
           <div className="rounded-2xl border border-white/[0.06] bg-black/30">
             <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] p-6">
               <div className="flex items-center gap-4">
@@ -277,32 +252,6 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
               {detailTab === "secrets" && <PlayerSecrets sessionId={sessionId} playerId={selected.id} />}
             </div>
           </div>
-
-          <div className="rounded-2xl border border-white/[0.06] bg-black/30 p-5 h-fit sticky top-6">
-            <h3 className="text-sm font-semibold text-veil-gold mb-1">Notifica Echo</h3>
-            <p className="text-xs text-white/40 mb-4">Invia una notifica a {selected.character_name}</p>
-            <textarea className="w-full rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:outline-none focus:border-veil-gold/30"
-              rows={5} placeholder="Scrivi il messaggio echo..." value={echoText}
-              onChange={e => setEchoText(e.target.value)} />
-            <button className="mt-3 w-full rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-4 py-2.5 text-sm text-veil-gold hover:bg-veil-gold/20 transition disabled:opacity-40"
-              disabled={!echoText.trim()} onClick={() => sendEcho(selected.id)}>
-              {echoSent ? "Inviato!" : "Invia Echo"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {!selected && players.length > 0 && (
-        <div className="mt-8 rounded-2xl border border-white/[0.06] bg-black/30 p-5 max-w-md">
-          <h3 className="text-sm font-semibold text-veil-gold mb-1">Notifica Echo a tutti</h3>
-          <p className="text-xs text-white/40 mb-4">Invia una notifica a tutti i giocatori</p>
-          <textarea className="w-full rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:outline-none focus:border-veil-gold/30"
-            rows={5} placeholder="Scrivi il messaggio echo per tutti..." value={echoAllText}
-            onChange={e => setEchoAllText(e.target.value)} />
-          <button className="mt-3 w-full rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-4 py-2.5 text-sm text-veil-gold hover:bg-veil-gold/20 transition disabled:opacity-40"
-            disabled={!echoAllText.trim()} onClick={() => sendEcho()}>
-            {echoSent ? "Inviato a tutti!" : "Invia Echo a tutti"}
-          </button>
         </div>
       )}
 
