@@ -13,6 +13,7 @@ import { LocationModule } from "@/components/dm/modules/LocationModule";
 import { ObjectsModule } from "@/components/dm/modules/ObjectsModule";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { GameEngineProvider, useGameEngine } from "@/lib/mythos/GameEngineContext";
+import { PartyStatusRail } from "@/components/dm/PartyStatusRail";
 import type { DmSection } from "@/types/campaign";
 
 export default function DMPanel() {
@@ -123,6 +124,7 @@ function DMPanelInner() {
   return (
     <main className="flex h-screen bg-[#0b0c10] text-white">
       <DmSidebar activeTab={tab} onTabChange={setTab} onLogout={logout} onSearch={() => setShowGlobalSearch(true)} />
+      <PartyStatusRail sessionId={sessionId} onOpenPlayers={() => setTab("players")} />
 
       <section className="flex-1 overflow-y-auto p-6">
         <div className={tab === "home" ? "" : "hidden"}>

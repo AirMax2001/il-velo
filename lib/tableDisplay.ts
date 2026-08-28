@@ -14,6 +14,7 @@ export type TableDisplayConfig = {
   countdown: number | null;
   title: string;
   subtitle: string;
+  displayMode: "scene" | "world_map" | "battle_grid";
 };
 
 export const DEFAULT_TABLE_DISPLAY: TableDisplayConfig = {
@@ -30,6 +31,7 @@ export const DEFAULT_TABLE_DISPLAY: TableDisplayConfig = {
   countdown: null,
   title: "",
   subtitle: "",
+  displayMode: "scene",
 };
 
 const displayKey = (sessionId: string) => `veil-table-display:${sessionId}`;

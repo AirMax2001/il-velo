@@ -15,7 +15,6 @@ export function RulesTab() {
       <CollapseSection
         title="Trucchetti e Incantesimi"
         subtitle="Tutti i trucchetti e gli incantesimi del gioco con descrizione completa."
-        defaultOpen
       >
         <SpellReferenceTables />
       </CollapseSection>

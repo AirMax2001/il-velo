@@ -196,6 +196,41 @@ export function CombatOverlay({ ctx, onClose }: { ctx: SheetCtx; onClose: () => 
               </p>
             </div>
 
+            {/* PF in combattimento */}
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-3 mb-4">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-300/60 mb-2">❤️ Punti Ferita</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-[9px] text-white/30">PF Correnti</p>
+                  <input type="number" className="veil-input w-full text-center text-sm font-bold !py-1.5 mt-1"
+                    value={ctx.form?.hp_current ?? ""}
+                    onChange={e=> ctx.upd("hp_current", Number(e.target.value))}
+                    onBlur={()=> ctx.save({ hp_current: ctx.formRef.current?.hp_current })} />
+                </div>
+                <div className="text-center">
+                  <p className="text-[9px] text-white/30">PF Max</p>
+                  <div className="veil-input w-full text-center text-sm font-bold !py-1.5 mt-1 pointer-events-none opacity-60">{ctx.form?.hp_max ?? "—"}</div>
+                </div>
+                <div className="text-center">
+                  <p className="text-[9px] text-white/30">Temp</p>
+                  <input type="number" className="veil-input w-full text-center text-sm font-bold !py-1.5 mt-1"
+                    value={ctx.form?.temp_hp ?? ""}
+                    onChange={e=> ctx.upd("temp_hp", Number(e.target.value))}
+                    onBlur={()=> ctx.save({ temp_hp: ctx.formRef.current?.temp_hp })} />
+                </div>
+              </div>
+              {ctx.form?.hp_max ? (
+                <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${((ctx.form.hp_current||0)/ctx.form.hp_max)>0.5? "bg-emerald-500":((ctx.form.hp_current||0)/ctx.form.hp_max)>0.25? "bg-yellow-500":"bg-red-500"}`} style={{width:`${Math.max(0,Math.min(100,((ctx.form.hp_current||0)/ctx.form.hp_max)*100))}%`}}/>
+                </div>
+              ): null}
+              <div className="mt-1.5 flex items-center justify-between text-[9px] text-white/25"><span>Dadi Vita {ctx.level}d{ctx.hitDie} · COS {ctx.conMod>=0?`+${ctx.conMod}`:ctx.conMod}</span><span>{ctx.form?.hp_current||0}/{ctx.form?.hp_max||0} {ctx.form?.temp_hp? `+${ctx.form.temp_hp} temp`:""}</span></div>
+              <div className="mt-2 flex gap-1.5">
+                <button onClick={()=>{ const cur=Number(ctx.form?.hp_current)||0; const v=Math.max(0,cur-1); ctx.upd("hp_current",v); ctx.save({hp_current:v}); }} className="flex-1 rounded-lg border border-red-400/20 bg-red-900/10 py-1 text-xs text-red-300/70">-1 danno</button>
+                <button onClick={()=>{ const cur=Number(ctx.form?.hp_current)||0; const v=Math.min(Number(ctx.form?.hp_max)||cur,cur+1); ctx.upd("hp_current",v); ctx.save({hp_current:v}); }} className="flex-1 rounded-lg border border-emerald-400/20 bg-emerald-900/10 py-1 text-xs text-emerald-300/70">+1 cura</button>
+              </div>
+            </div>
+
             <div className="space-y-3">
               {/* MOVIMENTO */}
               <TurnBlock
@@ -221,12 +256,16 @@ export function CombatOverlay({ ctx, onClose }: { ctx: SheetCtx; onClose: () => 
                 {BASE_ACTIONS.map(a => <Item key={a.name} title={a.name} desc={a.desc} />)}
                 {(cd.attacks || []).length > 0 && (
                   <>
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 pt-1">🗡️ I tuoi attacchi</p>
-                    {(cd.attacks || []).map((a: any, i: number) => (
-                      <Item key={i} icon="⚔️" title={a.name || "Attacco"}
-                        meta={`1d20 + ${a.bonus || "0"} vs CA`}
-                        desc={`Tiri 1d20 e sommi ${a.bonus || "0"}: se il totale è maggiore o uguale alla CA del bersaglio, infliggi ${a.damage || "—"} danni ${a.type ? `di tipo ${a.type}` : ""}.`} />
-                    ))}
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 pt-1">🗡️ I tuoi attacchi — cosa tirare</p>
+                    {(cd.attacks || []).map((a: any, i: number) => {
+                      const bonus = a.bonus || "0";
+                      const dmg = a.damage || "—";
+                      return (
+                        <Item key={i} icon="⚔️" title={a.name || "Attacco"}
+                          meta={`1d20 ${bonus.startsWith("-") ? bonus : `+${bonus}`} vs CA → ${dmg}`}
+                          desc={`Tiro per colpire: 1d20 ${bonus.startsWith("-") ? bonus : `+${bonus}`} (mod. caratteristica + competenza + bonus arma). Se ≥ CA del bersaglio → colpisci e tiri ${dmg} ${a.type ? `(${a.type})` : ""}. Critico naturale 20 = danni doppi.`} />
+                      );
+                    })}
                   </>
                 )}
                 {byAction("action").length > 0 && (

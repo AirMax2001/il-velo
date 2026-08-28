@@ -14,7 +14,7 @@ import { GearTab } from "@/components/player/sheet/GearTab";
 import { PersonalityTab } from "@/components/player/sheet/PersonalityTab";
 import { ExtraTab } from "@/components/player/sheet/ExtraTab";
 import { PartyTab } from "@/components/player/sheet/PartyTab";
-import type { SheetCtx } from "./sheet/types";
+import type { SheetCtx } from "@/components/player/sheet/types";
 
 type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void; sessionId?: string; dmMode?: boolean };
 type SheetTab = "core" | "combat" | "gear" | "personality" | "party";
@@ -214,7 +214,7 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
     party: () => <PartyTab ctx={ctx} sessionId={sessionId} onExit={onExit} />,
   };
 
-  const hasInspiration = !!cd.inspiration;
+  const hasInspiration = !!(cd as any)?.inspiration;
   return (
     <div className={`w-full px-2 pb-24 sm:px-4 lg:px-8 ${hasInspiration ? "rounded-2xl border border-veil-gold/25 bg-[rgba(201,164,76,0.04)] shadow-[0_0_22px_rgba(201,164,76,0.18),0_0_48px_rgba(201,164,76,0.07)]" : ""}`}>
       {/* Tab content */}

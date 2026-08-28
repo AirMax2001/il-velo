@@ -6,7 +6,7 @@ import { SKILL_DESCRIPTIONS } from "@/components/shared/AbilityReferenceTables";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import races from "@/lib/data/races";
 import { getRaceData, findRaceKey, getSubRaceData } from "@/lib/data/races";
-import { getFeaturesAtLevel } from "@/lib/data/leveling";
+import { getFeaturesAtLevel, levelFromXp, xpForLevel } from "@/lib/data/leveling";
 import { CLASS_ABILITIES, getArchetypeForClass, getArchetypeAbilities, getArchetypeCasting } from "@/lib/data/classAbilities";
 import classes from "@/lib/data/classes";
 import { getClassData, findClassKey } from "@/lib/data/classes";
@@ -41,6 +41,11 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [xpAdd, setXpAdd] = useState("");
   const [xpError, setXpError] = useState("");
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [saveInfoOpen, setSaveInfoOpen] = useState(false);
+  const [abilityInfoOpen, setAbilityInfoOpen] = useState(false);
+  const [traitInfoOpen, setTraitInfoOpen] = useState<Record<string, boolean>>({});
+  const [classFeatInfoOpen, setClassFeatInfoOpen] = useState<Record<string, boolean>>({});
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
     setIsDesktop(mq.matches);
@@ -48,15 +53,26 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
+  const derivedLevel = levelFromXp(Number(form?.xp) || 0);
+  const canLevel = derivedLevel > level;
+  const nextXp = xpForLevel(level + 1);
 
   function applyXp(sign: 1 | -1) {
     setXpError("");
     const add = Number(xpAdd);
     if (!xpAdd || isNaN(add) || add <= 0) { setXpError("Inserisci un numero valido."); return; }
     const total = Math.max(0, (Number(form?.xp) || 0) + sign * add);
-    upd("xp", total);
-    save({ xp: total });
+    const derivedAfter = levelFromXp(total);
+    if (derivedAfter < level) {
+      upd("xp", total);
+      upd("level", derivedAfter);
+      save({ xp: total, level: derivedAfter });
+    } else {
+      upd("xp", total);
+      save({ xp: total });
+    }
     setXpAdd("");
+    if (derivedAfter < level) setShowLevelUp(false);
   }
 
   const subRaceKey = cd.subRaceKey || "";
@@ -66,13 +82,13 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
 
   return (
     <div className="space-y-4">
-      {/* Avatar + Info principale */}
-      <div className="veil-panel p-4">
-        <div className="flex items-start gap-4">
-          <div className="flex flex-col items-center gap-2">
-            <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="xl" />
-            <label className="cursor-pointer rounded-lg border border-veil-gold/20 px-2 py-1 text-[10px] text-veil-gold/50 hover:bg-veil-gold/10 hover:text-veil-gold transition text-center">
-              Immagine
+      {/* Avatar + Info principale - compatto */}
+      <div className="veil-panel p-3">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="lg" />
+            <label className="cursor-pointer rounded border border-veil-gold/20 px-1.5 py-0.5 text-[9px] text-veil-gold/50 hover:bg-veil-gold/10 hover:text-veil-gold transition text-center">
+              {form?.avatar_url ? "Modifica" : "Immagine"}
               <input type="file" accept="image/*" className="hidden" onChange={e => {
                 const file = e.target.files?.[0];
                 if (!file) return;
@@ -83,182 +99,52 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
               }} />
             </label>
             {form?.avatar_url && (
-              <button onClick={() => { upd("avatar_url", ""); save({ avatar_url: "" }); }}
-                className="text-[10px] text-red-300/40 hover:text-red-300">Rimuovi</button>
+              <button onClick={() => { upd("avatar_url", ""); save({ avatar_url: "" }); }} className="text-[9px] text-red-300/40 hover:text-red-300">Rimuovi</button>
             )}
           </div>
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="col-span-full">
-              <LabelWithGuide fieldKey="character_name" label="Nome Personaggio" />
-              <input type="text" className="veil-input mt-1 w-full"
-                value={form?.character_name || ""}
-                onChange={e => upd("character_name", e.target.value)}
-                onBlur={() => save({ character_name: ctx.formRef.current?.character_name })} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-white truncate">{form?.character_name || "—"}</h2>
+              <span className="rounded-full bg-veil-gold/10 border border-veil-gold/20 px-2 py-0.5 text-[10px] text-veil-gold shrink-0">Lv {level}</span>
+              <span className="text-xs text-white/40 truncate">{form?.race || "—"} · {form?.class || "—"}</span>
+              {canLevel && <button onClick={()=>setShowLevelUp(true)} className="ml-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-1 text-[11px] text-emerald-300 font-medium animate-pulse shrink-0">⚡ Lv {derivedLevel} pronto!</button>}
             </div>
-            <div>
-              <LabelWithGuide fieldKey="level" label="Livello" />
-              <input type="number" className="veil-input mt-1 w-full" min={1} max={20}
-                value={form?.level || 1}
-                onChange={e => upd("level", Number(e.target.value))}
-                onBlur={() => save({ level: ctx.formRef.current?.level })} />
-            </div>
-            <div>
-              <LabelWithGuide fieldKey="race" label="Razza" />
-              <select className="veil-input mt-1 w-full"
-                value={findRaceKey(form?.race || "") || form?.race || ""}
-                onChange={e => {
-                  const rk = e.target.value;
-                  const rd = getRaceData(rk);
-                  const name = rd?.name || rk;
-                  upd("race", name);
-                  if (rd?.speed) updCd("speed", rd.speed);
-                }}
-                onBlur={() => {
-                  const rk = findRaceKey(form?.race || "");
-                  const rd = rk ? getRaceData(rk) : null;
-                  save({ race: form?.race, ...(rd?.speed ? { speed: rd.speed } : {}) });
-                }}>
-                <option value="">— Seleziona razza —</option>
-                {Object.values(races).map(r => (
-                  <option key={r.key} value={r.key}>{r.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-full sm:col-span-1">
-              <LabelWithGuide fieldKey="class_label" label="Classe" />
-              <select className="veil-input mt-1 w-full"
-                value={findClassKey(form?.class || "") || ""}
-                onChange={e => {
-                  const ck = e.target.value;
-                  const clsd = getClassData(ck);
-                  upd("class", clsd?.name || ck);
-                }}
-                onBlur={() => {
-                  const ck = findClassKey(form?.class || "");
-                  const clsd = ck ? getClassData(ck) : null;
-                  if (!clsd) return;
-                  const saveFields: Record<string, boolean> = {};
-                  for (const sv of ["stStrength", "stDexterity", "stConstitution", "stIntelligence", "stWisdom", "stCharisma"]) {
-                    saveFields[sv] = clsd.savingThrows.includes(sv);
-                  }
-                  save({ class: clsd.name, ...saveFields });
-                }}>
-                <option value="">— Seleziona classe —</option>
-                {Object.values(classes).map(c => (
-                  <option key={c.key} value={c.key}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-full">
-              <LabelWithGuide fieldKey="xp" label="Esperienza" />
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <p className="text-sm font-bold text-veil-gold">{Number(form?.xp || 0).toLocaleString("it-IT")} XP</p>
-                <div className="ml-auto flex min-w-0 items-center gap-2">
-                  <input type="number" min="1" placeholder="Fight +XP"
-                    className="veil-input w-24 min-w-0 text-xs !py-1.5"
-                    value={xpAdd}
-                    onChange={e => { setXpAdd(e.target.value); setXpError(""); }}
-                    onKeyDown={e => e.key === "Enter" && applyXp(1)} />
-                  {dmMode && (
-                    <button onClick={() => applyXp(-1)}
-                      className="shrink-0 rounded-lg border border-red-400/30 bg-red-900/10 px-2.5 py-1.5 text-[11px] text-red-300/80 hover:bg-red-900/20 transition"
-                      title="Solo DM: togli XP al giocatore">
-                      − Togli
-                    </button>
-                  )}
-                  <button onClick={() => applyXp(1)}
-                    className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-2.5 py-1.5 text-[11px] text-veil-gold hover:bg-veil-gold/20 transition">
-                    + Aggiungi
-                  </button>
-                </div>
-                {xpError && <p className="w-full text-[11px] text-red-300">{xpError}</p>}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-veil-gold">{Number(form?.xp||0).toLocaleString("it-IT")} XP</span>
+              <span className="text-[10px] text-white/30">{canLevel ? <span className="text-emerald-300">pronto al passaggio</span> : ` / ${nextXp.toLocaleString("it-IT")} al Lv ${level+1}`}</span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <input type="number" min={1} placeholder="+XP" className="veil-input w-16 min-w-0 text-xs !py-1 !px-2" value={xpAdd} onChange={e=>{setXpAdd(e.target.value); setXpError("");}} onKeyDown={e=> e.key==="Enter" && applyXp(1)} />
+                {dmMode && <button onClick={()=>applyXp(-1)} className="shrink-0 rounded-lg border border-red-400/30 bg-red-900/10 px-2 py-1 text-[11px] text-red-300/80 hover:bg-red-900/20 transition" title="Solo DM">−</button>}
+                <button onClick={()=>applyXp(1)} className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-2 py-1 text-[11px] text-veil-gold hover:bg-veil-gold/20 transition">+ Aggiungi</button>
+                {canLevel && <button onClick={()=>setShowLevelUp(true)} className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/15 px-2.5 py-1 text-[11px] text-veil-gold font-medium">📜 Avanza</button>}
               </div>
+              {xpError && <p className="w-full text-[11px] text-red-300">{xpError}</p>}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Razza e Tratti */}
-      {raceData && (
-        <CollapseSection
-          title="Razza e Tratti"
-          subtitle={<>Velocità {raceData.speed}m · {raceData.size} · {raceData.traits.length + (subRace?.traits?.length || 0)} tratti</>}
-          defaultOpen={isDesktop}
-          right={
-            <span className="text-[10px] text-white/35">{raceData.name}{subRace ? ` — ${subRace.name}` : ""}</span>
-          }>
-          {raceData.subRaces && raceData.subRaces.length > 0 && (
-            <div className="mb-3">
-              <label className="text-[10px] text-white/35 block mb-1">Sottorazza</label>
-              <select className="veil-input w-full"
-                value={subRaceKey}
-                onChange={e => {
-                  const srKey = e.target.value;
-                  const sr = raceData.subRaces?.find(s => s.key === srKey);
-                  updCdAll({ subRaceKey: srKey, subRaceName: sr?.name || "" });
-                  save({ subRaceKey: srKey, subRaceName: sr?.name || "" });
-                }}>
-                <option value="">— Seleziona sottorazza —</option>
-                {raceData.subRaces.map(sr => (
-                  <option key={sr.key} value={sr.key}>{sr.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-1 mb-2">
-            {Object.entries(raceData.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
-              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
-                {ABILITY_SHORT[k] || k}+{v}
-              </span>
-            ))}
-            {subRace?.abilityBonuses && Object.entries(subRace.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
-              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
-                {ABILITY_SHORT[k] || k}+{v} (sottorazza)
-              </span>
-            ))}
-            {raceData.darkvision && (
-              <span className="rounded bg-indigo-900/20 border border-indigo-500/20 px-1.5 py-0.5 text-[10px] text-indigo-300/70">
-                👁️ Scurovisione {raceData.darkvision}m
-              </span>
-            )}
-            {(raceData.resistances || []).length > 0 && (
-              <span className="rounded bg-red-900/20 border border-red-500/20 px-1.5 py-0.5 text-[10px] text-red-300/70">
-                🛡️ Resistenza: {(raceData.resistances || []).join(", ")}
-              </span>
-            )}
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/40">
-              🗣️ {raceData.languages.join(", ")}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {raceData.traits.map(t => (
-              <div key={t.name} className="rounded-lg bg-black/20 p-2">
-                <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
-                <p className="text-[11px] text-white/40 mt-0.5">{t.description}</p>
-              </div>
-            ))}
-            {(subRace?.traits || []).map(t => (
-              <div key={t.name} className="rounded-lg bg-black/20 p-2">
-                <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(sottorazza)</span></p>
-                <p className="text-[11px] text-white/40 mt-0.5">{t.description}</p>
-              </div>
-            ))}
-          </div>
-        </CollapseSection>
+      {showLevelUp && canLevel && (
+        <LevelUpPanel player={form || ({} as any)} onApply={(u)=>{ onLevelUp(u); setShowLevelUp(false); }} />
       )}
+
+      {/* Stats veloci: CA / Iniziativa / Velocità / PB */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="veil-panel p-3 text-center">
+          <p className="text-[10px] uppercase tracking-[0.12em] text-white/35 mb-1">Classe Armatura</p>
+          <div className="text-xl font-bold text-white">{cd.armorClass || "—"}</div>
+        </div>
+        <StatBox label="Iniziativa" value={dexMod >= 0 ? `+${dexMod}` : `${dexMod}`} sub="DES mod" />
+        <div className="veil-panel p-3 text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/35 mb-1">Velocità</p>
+          <div className="text-xl font-bold text-white">{cd.speed || raceSpeed || "—"}</div>
+          <p className="text-[9px] text-white/20 mt-0.5">{raceSpeed ? `razza: ${raceSpeed}m` : "metri"}</p>
+        </div>
+        <StatBox label="Bon. Competenza" value={`+${pb}`} sub={`liv. ${level}`} />
+      </div>
 
       {/* Caratteristiche */}
       <div className="veil-panel p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm text-veil-gold/80 font-medium">Caratteristiche</h3>
-          {clsData && (
-            <span className="text-[10px] text-white/30">
-              Bonus Competenza: <strong className="text-veil-gold/60">+{pb}</strong>
-            </span>
-          )}
-        </div>
+        <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Caratteristiche</h3>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
           {ABILITY_KEYS.map(k => {
             const base = Number(cd[k as keyof CharacterData]) || 10;
@@ -266,196 +152,220 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
             return (
               <div key={k} className="text-center">
                 <p className="text-[10px] uppercase tracking-[0.15em] text-white/35 mb-1">{ABILITY_SHORT[k]}</p>
-                <input type="number" className="veil-input w-full text-center text-lg font-bold px-1"
-                  value={base}
-                  min={1} max={20}
-                  onChange={e => updCd(k, Number(e.target.value))}
-                  onBlur={() => save({ [k]: form?.character_data?.[k as keyof CharacterData] })} />
+                <div className="veil-input w-full text-center text-lg font-bold px-1 pointer-events-none opacity-80 bg-black/20">{base}</div>
                 <p className="text-base text-veil-gold font-bold mt-1">{mod >= 0 ? `+${mod}` : `${mod}`}</p>
-                <p className="text-[9px] text-white/20 mt-0.5">valore finale</p>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* PF + Stats di combattimento rapide */}
-      <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Punti Ferita</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-          <div>
-            <LabelWithGuide fieldKey="hp_max" label="PF Max" />
-            <input type="number" className="veil-input mt-1 w-full text-center" min={0}
-              value={form?.hp_max || ""}
-              onChange={e => upd("hp_max", Number(e.target.value))}
-              onBlur={() => save({ hp_max: ctx.formRef.current?.hp_max })} />
-            {expectedHP && <p className="text-[9px] text-white/20 mt-0.5 text-center">attesi: ~{expectedHP}</p>}
-          </div>
-          <div>
-            <LabelWithGuide fieldKey="hp_current" label="PF Correnti" />
-            <input type="number" className="veil-input mt-1 w-full text-center" min={0}
-              value={form?.hp_current ?? ""}
-              onChange={e => upd("hp_current", Number(e.target.value))}
-              onBlur={() => save({ hp_current: ctx.formRef.current?.hp_current })} />
-          </div>
-          <div>
-            <LabelWithGuide fieldKey="temp_hp" label="PF Temporanei" />
-            <input type="number" className="veil-input mt-1 w-full text-center" min={0}
-              value={form?.temp_hp ?? ""}
-              onChange={e => upd("temp_hp", Number(e.target.value))}
-              onBlur={() => save({ temp_hp: ctx.formRef.current?.temp_hp })} />
-          </div>
-          <div>
-            <LabelWithGuide fieldKey="hitDiceTotal" label="Dadi Vita" />
-            <div className="veil-input mt-1 w-full text-center pointer-events-none opacity-60">
-              {hitDie ? `${level}d${hitDie}` : "—"}
-            </div>
-            {hitDie && <p className="text-[9px] text-white/20 mt-0.5 text-center">COS mod: {conMod >= 0 ? `+${conMod}` : conMod}</p>}
-          </div>
-        </div>
-        {form?.hp_max && form?.hp_max > 0 && (
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-3">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${((form?.hp_current || 0) / form.hp_max) > 0.5 ? "bg-emerald-500" : ((form?.hp_current || 0) / form.hp_max) > 0.25 ? "bg-yellow-500" : "bg-red-500"}`}
-              style={{ width: `${Math.max(0, Math.min(100, ((form?.hp_current || 0) / form.hp_max) * 100))}%` }} />
-          </div>
-        )}
-      </div>
-
-      {/* Level-up guidato da XP */}
-      <LevelUpPanel player={form || ({} as any)} onApply={onLevelUp} />
-
-      {/* Stats veloci: CA / Iniziativa / Velocità / PB */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="veil-panel p-3 text-center">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-white/35 mb-1">CA</p>
-          <input type="number" className="bg-transparent text-xl font-bold text-white w-full text-center border-none outline-none"
-            value={cd.armorClass || ""}
-            onChange={e => updCd("armorClass", Number(e.target.value))}
-            onBlur={() => save({ armorClass: form?.character_data?.armorClass })} />
-          <p className="text-[9px] text-white/20 mt-0.5">Classe Armatura</p>
-        </div>
-        <StatBox label="Iniziativa" value={dexMod >= 0 ? `+${dexMod}` : `${dexMod}`} sub="DES mod" />
-        <div className="veil-panel p-3 text-center">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-white/35 mb-1">Velocità</p>
-          <input type="number" className="bg-transparent text-xl font-bold text-white w-full text-center border-none outline-none"
-            value={cd.speed || raceSpeed || ""}
-            onChange={e => updCd("speed", Number(e.target.value))}
-            onBlur={() => save({ speed: form?.character_data?.speed })} />
-          <p className="text-[9px] text-white/20 mt-0.5">{raceSpeed ? `razza: ${raceSpeed}m` : "metri"}</p>
-        </div>
-        <StatBox label="Bon. Competenza" value={`+${pb}`} sub={`liv. ${level}`} />
       </div>
 
       {/* Tiri Salvezza */}
       <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Tiri Salvezza</h3>
-        <p className="text-[10px] text-white/30 mb-3 leading-relaxed">
-          I tiri salvezza servono per resistere a effetti avversi: incantesimi, trappole, veleni,
-          pericoli ambientali. Quando un effetto ti colpisce, tiri <strong className="text-white/50">1d20</strong> e sommi il
-          modificatore dell'abilità corrispondente; se la caratteristica è tra le competenze della tua classe
-          (checkbox attiva), aggiungi anche il <strong className="text-white/50">Bonus di Competenza (+{pb})</strong>.
-          Il risultato deve superare la CD dell'effetto (es. la CD Incantatore di un mago nemico).
-        </p>
-        {clsData && (
-          <p className="text-[10px] text-white/30 mb-2">
-            Competenze dalla classe: {clsData.savingThrows.map(s => {
-              const found = SAVE_LIST.find(sl => sl.key === s);
-              return found?.label || s;
-            }).join(", ")} · non modificabili
-          </p>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <h3 className="text-sm text-veil-gold/80 font-medium">Tiri Salvezza</h3>
+          <button onClick={()=>setSaveInfoOpen(o=>!o)} className="w-5 h-5 rounded-full border border-veil-gold/20 bg-veil-gold/10 flex items-center justify-center text-[10px] text-veil-gold/70 hover:bg-veil-gold/20 transition" title="Mostra descrizione">i</button>
+        </div>
+        {saveInfoOpen && (
+          <>
+            <p className="text-[10px] text-white/30 mb-3 leading-relaxed">
+              I tiri salvezza servono per resistere a effetti avversi: incantesimi, trappole, veleni,
+              pericoli ambientali. Quando un effetto ti colpisce, tiri <strong className="text-white/50">1d20</strong> e sommi il
+              modificatore dell'abilità corrispondente; se la caratteristica è tra le competenze della tua classe
+              (checkbox attiva), aggiungi anche il <strong className="text-white/50">Bonus di Competenza (+{pb})</strong>.
+              Il risultato deve superare la CD dell'effetto (es. la CD Incantatore di un mago nemico).
+            </p>
+            {clsData && (
+              <p className="text-[10px] text-white/30 mb-2">
+                Competenze dalla classe: {clsData.savingThrows.map(s => {
+                  const found = SAVE_LIST.find(sl => sl.key === s);
+                  return found?.label || s;
+                }).join(", ")} · non modificabili
+              </p>
+            )}
+          </>
         )}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {SAVE_LIST.map(sv => {
+        {(() => {
+          const filtered = SAVE_LIST.filter(sv => {
             const isClassSave = clsData?.savingThrows.includes(sv.key as any) || false;
             const monkAllSaves = ctx.clsKey === "monk" && level >= 14;
-            const isChecked = isClassSave || monkAllSaves;
-            const score = Number(cd[sv.ability as keyof CharacterData]) || 10;
-            const mod = getModifier(score);
-            const total = isChecked ? mod + pb : mod;
-            return (
-              <div key={sv.key} className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition ${isChecked ? "border-veil-gold/20 bg-veil-gold/[0.04]" : "border-white/[0.04] bg-black/20"}`}>
-                <input type="checkbox" className="accent-veil-gold w-4 h-4"
-                  checked={isChecked}
-                  disabled
-                  title="I tiri salvezza derivano solo dalla classe"
-                />
-                <span className={`text-xs flex-1 ${isChecked ? "text-white/80" : "text-white/40"}`}>{sv.label}</span>
-                <span className={`text-xs font-medium ${isChecked ? "text-veil-gold" : "text-white/30"}`}>
-                  {total >= 0 ? `+${total}` : `${total}`}
-                </span>
-                {isChecked && <span className="text-[9px] text-veil-gold/30">{monkAllSaves ? "monaco" : "classe"}</span>}
-              </div>
-            );
-          })}
-        </div>
+            return isClassSave || monkAllSaves;
+          });
+          if (filtered.length === 0) return <p className="text-[11px] text-white/25 text-center py-2">Nessun tiro salvezza competente a questo livello.</p>;
+          return (
+            <div className="flex flex-wrap justify-center gap-2">
+              {filtered.map(sv => {
+                const score = Number(cd[sv.ability as keyof CharacterData]) || 10;
+                const mod = getModifier(score);
+                const total = mod + pb;
+                const monkAll = ctx.clsKey === "monk" && level >= 14;
+                return (
+                  <div key={sv.key} className="flex items-center justify-center gap-2 rounded-xl border border-veil-gold/25 bg-veil-gold/[0.07] px-4 py-2 min-w-[140px] text-center">
+                    <span className="text-xs text-white/85">{sv.label}</span>
+                    <span className="text-xs font-bold text-veil-gold">{total >= 0 ? `+${total}` : `${total}`}</span>
+                    {monkAll && <span className="text-[9px] text-veil-gold/30">monaco</span>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Abilità */}
       <div className="veil-panel p-4">
-        <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Abilità</h3>
-        {clsData && (
-          <p className="text-[10px] text-white/30 mb-2">
-            {clsData.skillPicks} abilità dalla classe ·
-            {bgData && ` ${bgData.skillProficiencies.length} dal background`}
-            {raceData?.proficiencies?.skills?.length ? ` · ${raceData.proficiencies.skills.length} dalla razza` : ""}
-          </p>
-        )}
-        <p className="text-[10px] text-white/20 mb-2">
-          Puoi selezionare solo abilità della lista della classe. Le abilità di background e razza sono automatiche.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-          {SKILL_LIST.map(sk => {
-            const isChecked = (cd as any)[sk.key] ?? false;
-            const isClassOption = clsData?.skillOptions.includes(sk.key) || false;
-            const isBgSkill = bgData?.skillProficiencies.includes(sk.key) || false;
-            const isRaceSkill = raceData?.proficiencies?.skills?.includes(sk.key) || false;
-            const isLocked = isBgSkill || isRaceSkill;
-            const classCheckedCount = SKILL_LIST.filter(s =>
-              (cd as any)[s.key] && clsData?.skillOptions.includes(s.key)
-              && !bgData?.skillProficiencies.includes(s.key)
-              && !raceData?.proficiencies?.skills?.includes(s.key)
-            ).length;
-            const atClassLimit = classCheckedCount >= (clsData?.skillPicks || 0);
-            const score = Number(cd[sk.ability as keyof CharacterData]) || 10;
-            const mod = getModifier(score);
-            const total = isChecked ? mod + pb : mod;
-            return (
-              <label key={sk.key} className={`flex flex-col rounded-lg border px-2.5 py-1.5 transition text-sm
-                ${isChecked ? isLocked ? "border-emerald-500/20 bg-emerald-900/[0.06]" : "border-veil-gold/20 bg-veil-gold/[0.04]" : isClassOption ? "border-white/[0.06] bg-black/20 hover:border-white/[0.10] cursor-pointer" : "border-white/[0.03] bg-black/10 opacity-40"}`}>
-                <div className="flex items-center gap-2 w-full">
-                  <input type="checkbox" className="accent-veil-gold w-4 h-4 flex-shrink-0"
-                    checked={isChecked}
-                    disabled={!isClassOption && !isLocked}
-                    onChange={e => {
-                      if (isLocked) return;
-                      if (e.target.checked && atClassLimit) return;
-                      updCd(sk.key, e.target.checked);
-                      save({ [sk.key]: e.target.checked });
-                    }} />
-                  <span className={`flex-1 text-xs ${isChecked ? "text-white/80" : "text-white/40"}`}>
-                    {sk.label}
-                  </span>
-                  <span className="text-[10px] text-white/25">{ABILITY_SHORT[sk.ability]}</span>
-                  <span className={`text-xs font-medium w-8 text-right ${isChecked ? "text-veil-gold" : "text-white/25"}`}>
-                    {total >= 0 ? `+${total}` : `${total}`}
-                  </span>
-                  {isBgSkill && <span className="text-[9px] text-emerald-400/40">BG</span>}
-                  {isRaceSkill && !isBgSkill && <span className="text-[9px] text-emerald-400/40">razza</span>}
-                  {isClassOption && !isLocked && <span className="text-[9px] text-veil-gold/30">cls</span>}
-                </div>
-                <p className="text-[10px] text-white/25 pl-6 pt-1 leading-snug">{SKILL_DESCRIPTIONS[sk.label]}</p>
-              </label>
-            );
-          })}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <h3 className="text-sm text-veil-gold/80 font-medium">Abilità</h3>
+          <button onClick={()=>setAbilityInfoOpen(o=>!o)} className="w-5 h-5 rounded-full border border-veil-gold/20 bg-veil-gold/10 flex items-center justify-center text-[10px] text-veil-gold/70 hover:bg-veil-gold/20 transition" title="Mostra descrizioni">i</button>
         </div>
+        {abilityInfoOpen && (
+          <>
+            {clsData && (
+              <p className="text-[10px] text-white/30 mb-2">
+                {clsData.skillPicks} abilità dalla classe ·
+                {bgData && ` ${bgData.skillProficiencies.length} dal background`}
+                {raceData?.proficiencies?.skills?.length ? ` · ${raceData.proficiencies.skills.length} dalla razza` : ""}
+              </p>
+            )}
+            <p className="text-[10px] text-white/20 mb-2">
+              Puoi selezionare solo abilità della lista della classe. Le abilità di background e razza sono automatiche.
+            </p>
+            <p className="text-[10px] text-white/25 mb-3 leading-snug border border-white/[0.04] bg-black/20 rounded-lg px-2.5 py-2">
+              <span className="text-veil-gold/60 font-medium">Come si tira:</span> d20 + mod. caratteristica + competenza (se spuntata).<br />
+              Esempio <strong className="text-white/50">Atletica</strong> per Monaco Tiefling con FOR 16 (+3) e competenza: <span className="text-white/60">d20 +3 (FOR) +2 (competenza) = d20+5</span>. Lanci un d20 fisico e sommi +5.
+            </p>
+          </>
+        )}
+        {(() => {
+          const selected = SKILL_LIST.filter(sk => (cd as any)[sk.key]);
+          if (selected.length === 0) return <p className="text-[11px] text-white/25 text-center py-2">Nessuna abilità selezionata.</p>;
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {selected.map(sk => {
+                const isBgSkill = bgData?.skillProficiencies.includes(sk.key) || false;
+                const isRaceSkill = raceData?.proficiencies?.skills?.includes(sk.key) || false;
+                const isLocked = isBgSkill || isRaceSkill;
+                const score = Number(cd[sk.ability as keyof CharacterData]) || 10;
+                const mod = getModifier(score);
+                const total = mod + pb;
+                const source = isBgSkill ? "background" : isRaceSkill ? "razza" : "classe";
+                return (
+                  <div key={sk.key} className={`flex flex-col rounded-lg border px-2.5 py-1.5 text-sm ${isLocked ? "border-emerald-500/25 bg-emerald-900/[0.09]" : "border-veil-gold/25 bg-veil-gold/[0.07]"}`}>
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="flex-1 text-xs text-white/85 font-medium">{sk.label}</span>
+                      <span className="text-[10px] text-white/30">{ABILITY_SHORT[sk.ability]}</span>
+                      <span className="text-xs font-bold w-8 text-right text-veil-gold">{total >= 0 ? `+${total}` : `${total}`}</span>
+                      {isBgSkill && <span className="text-[9px] text-emerald-400/50">BG</span>}
+                      {isRaceSkill && !isBgSkill && <span className="text-[9px] text-emerald-400/50">razza</span>}
+                      {!isLocked && <span className="text-[9px] text-veil-gold/40">cls</span>}
+                    </div>
+                    {abilityInfoOpen && (
+                      <>
+                        <p className="text-[10px] text-white/25 pl-6 pt-1 leading-snug">{SKILL_DESCRIPTIONS[sk.label]}</p>
+                        <div className="ml-6 mt-1.5 rounded-md bg-black/25 border border-white/[0.05] px-2 py-1.5">
+                          <p className="text-[8px] uppercase tracking-[0.12em] text-veil-gold/40 mb-1">Aggiungici al d20</p>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-white/60">{ABILITY_SHORT[sk.ability]} {mod >= 0 ? `+${mod}` : mod}</span>
+                            <span className="text-white/20 text-[10px]">+</span>
+                            <span className="rounded bg-veil-gold/10 border border-veil-gold/15 px-1.5 py-0.5 text-[10px] text-veil-gold/70">comp. +{pb} <span className="text-[8px] opacity-50">({source})</span></span>
+                            <span className="text-white/20 text-[10px]">=</span>
+                            <span className="rounded bg-emerald-500/15 border border-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">{total >= 0 ? `+${total}` : total}</span>
+                          </div>
+                          <p className="text-[9px] text-white/25 mt-1">→ 1d20 {total >= 0 ? `+${total}` : total}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
+
+      {/* Razza e Tratti */}
+      {raceData && (
+        <CollapseSection
+          title="Razza e Tratti"
+          defaultOpen={isDesktop}
+          right={
+            <span className="text-[10px] text-white/35">{raceData.name}{subRace ? ` — ${subRace.name}` : ""}</span>
+          }>
+          {raceData.subRaces && raceData.subRaces.length > 0 && subRaceKey && (
+            <div className="mb-3">
+              <p className="text-[10px] text-white/35">Sottorazza</p>
+              <div className="veil-input w-full pointer-events-none opacity-60 bg-black/20 text-white/60">{subRace?.name || (cd as any).subRaceName || subRaceKey}</div>
+              <p className="text-[9px] text-white/20 mt-1">Scelta alla creazione, non modificabile.</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1 mb-2">
+            {Object.entries(raceData.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
+              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
+                {ABILITY_SHORT[k] || k}+{v} <span className="text-[8px] opacity-60">già incluso</span>
+              </span>
+            ))}
+            {subRace?.abilityBonuses && Object.entries(subRace.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
+              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
+                {ABILITY_SHORT[k] || k}+{v} (sottorazza) <span className="text-[8px] opacity-60">già incluso</span>
+              </span>
+            ))}
+          </div>
+          <p className="text-[9px] text-white/20 mb-2">I bonus sopra sono già sommati nei punteggi di Caratteristiche — non aggiungerli di nuovo.</p>
+
+          {(raceData.resistances || []).length > 0 && (
+            <div className="space-y-2 mb-2">
+              {(raceData.resistances || []).map((r: string) => {
+                const key=`resist-${r}`;
+                const open=!!traitInfoOpen[key];
+                return (
+                  <div key={r} className="rounded-lg bg-black/20 p-2 border border-red-500/10">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-red-300/70 font-medium">✦ Resistenza: {r} <span className="text-[9px] text-white/20">(razza)</span></p>
+                      <button onClick={()=>setTraitInfoOpen(o=>({...o,[key]:!o[key]}))} className="w-5 h-5 rounded-full border border-red-400/20 bg-red-900/15 flex items-center justify-center text-[10px] text-red-300/60 hover:bg-red-900/25 transition">i</button>
+                    </div>
+                    {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">Hai resistenza ai danni da {r} (danni dimezzati) e vantaggio ai tiri salvezza contro l'avvelenamento se è veleno.</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {raceData.traits.map(t => {
+              const key=`race-${t.name}`;
+              const open=!!traitInfoOpen[key];
+              return (
+                <div key={t.name} className="rounded-lg bg-black/20 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
+                    <button onClick={()=>setTraitInfoOpen(o=>({...o, [key]: !o[key]}))} className="w-5 h-5 rounded-full border border-emerald-400/20 bg-emerald-900/15 flex items-center justify-center text-[10px] text-emerald-300/60 hover:bg-emerald-900/25 transition" title="Mostra descrizione">i</button>
+                  </div>
+                  {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">{t.description}</p>}
+                </div>
+              );
+            })}
+            {(subRace?.traits || []).map(t => {
+              const key=`sub-${t.name}`;
+              const open=!!traitInfoOpen[key];
+              return (
+                <div key={t.name} className="rounded-lg bg-black/20 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(sottorazza)</span></p>
+                    <button onClick={()=>setTraitInfoOpen(o=>({...o, [key]: !o[key]}))} className="w-5 h-5 rounded-full border border-emerald-400/20 bg-emerald-900/15 flex items-center justify-center text-[10px] text-emerald-300/60 hover:bg-emerald-900/25 transition" title="Mostra descrizione">i</button>
+                  </div>
+                  {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">{t.description}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </CollapseSection>
+      )}
 
       {/* Caratteristiche di Classe per livello */}
       {clsKey && (
         <CollapseSection
           title="Caratteristiche di Classe"
-          subtitle={`Capacità guadagnate salendo di livello (${clsData?.name}, attuale liv. ${level}).`}
           defaultOpen={isDesktop}
           right={<span className="text-[10px] text-white/35">{level} livelli</span>}>
 
@@ -469,30 +379,25 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
                 <p className="text-xs text-veil-gold/70 font-medium mb-1">🎭 {arch.label} <span className="text-[10px] text-white/30">(sceglila al {arch.level}° livello)</span></p>
                 {picked ? (
                   <div className="rounded-xl border border-emerald-400/20 bg-emerald-900/[0.08] p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm text-emerald-300/90 font-medium">{pickedOpt?.name}</p>
-                        <p className="text-[11px] text-white/50 mt-1">{pickedOpt?.description}</p>
-                        {(() => {
-                          const acts = getArchetypeAbilities(picked);
-                          const cast = getArchetypeCasting(picked);
-                          const changes: string[] = [
-                            ...(cast ? [cast.label] : []),
-                            ...acts.map(a => `${a.name} (${a.effect})`),
-                          ];
-                          if (changes.length === 0) return null;
-                          return (
-                            <div className="mt-2 space-y-1">
-                              {changes.map(c => (
-                                <p key={c} className="text-[10px] text-indigo-300/60 leading-snug">✨ {c}</p>
-                              ))}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <button onClick={() => { updCd("archetype", ""); save({ archetype: "" }); }}
-                        className="flex-shrink-0 text-[10px] text-red-300/50 hover:text-red-300">cambia</button>
-                    </div>
+                    <p className="text-sm text-emerald-300/90 font-medium">{pickedOpt?.name}</p>
+                    <p className="text-[11px] text-white/50 mt-1">{pickedOpt?.description}</p>
+                    {(() => {
+                      const acts = getArchetypeAbilities(picked);
+                      const cast = getArchetypeCasting(picked);
+                      const changes: string[] = [
+                        ...(cast ? [cast.label] : []),
+                        ...acts.map(a => `${a.name} (${a.effect})`),
+                      ];
+                      if (changes.length === 0) return null;
+                      return (
+                        <div className="mt-2 space-y-1">
+                          {changes.map(c => (
+                            <p key={c} className="text-[10px] text-indigo-300/60 leading-snug">✨ {c}</p>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    <p className="text-[9px] text-white/20 mt-2">Scelto al {arch.level}° livello — non modificabile.</p>
                   </div>
                 ) : (
                   <div className="space-y-2 mt-2">
@@ -530,28 +435,23 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
           <div className="space-y-3">
             {Array.from({ length: level }, (_, i) => i + 1).map(lv => {
               const feats = getFeaturesAtLevel(clsKey, lv);
-              const actives = (CLASS_ABILITIES[clsKey] || []).filter(a => a.level === lv);
-              if (feats.length === 0 && actives.length === 0) return null;
+              if (feats.length === 0) return null;
               return (
                 <div key={lv} className="mb-1">
                   <p className="text-xs text-white/30 mb-1">Livello {lv}</p>
-                  {feats.map(f => (
-                    <div key={f.name} className="rounded-lg bg-black/20 p-2 mb-1.5">
-                      <p className="text-xs text-veil-gold/70 font-medium">✦ {f.name}</p>
-                      <p className="text-[11px] text-white/40 mt-0.5">{f.description}</p>
-                    </div>
-                  ))}
-                  {actives.length > 0 && (
-                    <div className="rounded-lg bg-indigo-950/20 border border-indigo-500/15 p-2 mb-1.5">
-                      <p className="text-[10px] text-indigo-300/60 mb-1">Usabile in gioco (compare automaticamente nel tab Spell):</p>
-                      {actives.map(a => (
-                        <p key={a.key} className="text-xs text-white/60 py-0.5">
-                          ⚡ {a.name} {a.die ? `(${a.die})` : ""}
-                          <span className="text-[10px] text-white/30"> · {a.action} · {a.uses}</span>
-                        </p>
-                      ))}
-                    </div>
-                  )}
+                  {feats.map(f => {
+                    const key=`feat-${lv}-${f.name}`;
+                    const open=!!classFeatInfoOpen[key];
+                    return (
+                      <div key={f.name} className="rounded-lg bg-black/20 p-2 mb-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-veil-gold/70 font-medium">✦ {f.name}</p>
+                          <button onClick={()=>setClassFeatInfoOpen(o=>({...o,[key]:!o[key]}))} className="w-5 h-5 rounded-full border border-veil-gold/20 bg-veil-gold/10 flex items-center justify-center text-[10px] text-veil-gold/60 hover:bg-veil-gold/20 transition" title="Mostra descrizione">i</button>
+                        </div>
+                        {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">{f.description}</p>}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -559,16 +459,6 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
         </CollapseSection>
       )}
 
-      {/* Ispirazione */}
-      <div className="veil-panel p-3 flex items-center gap-3">
-        <input type="checkbox" id="inspiration" className="accent-veil-gold w-5 h-5"
-          checked={cd.inspiration ?? false}
-          onChange={e => { updCd("inspiration", e.target.checked); save({ inspiration: e.target.checked }); }} />
-        <label htmlFor="inspiration" className="text-sm text-white/70 cursor-pointer flex-1">
-          <span className="text-veil-gold/80">Ispirazione</span>
-          <span className="text-white/30 text-xs ml-2">assegnata dal DM</span>
-        </label>
-      </div>
     </div>
   );
 }

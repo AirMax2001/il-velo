@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
   if ("veilLevel" in body) fields.veil_level = body.veilLevel;
   if ("permanentDecisions" in body) fields.permanent_decisions = body.permanentDecisions;
   if ("time" in body) fields.time = body.time;
+  if ("displayMode" in body) fields.display_mode = body.displayMode;
 
   const { error } = await db.from("world_state").update(fields).eq("session_id", body.sessionId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

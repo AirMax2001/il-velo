@@ -8,6 +8,7 @@ import { CharacterSheet } from "@/components/player/CharacterSheet";
 import { CollapseSection } from "@/components/player/sheet/ui";
 import { getClassData } from "@/lib/data/classes";
 import { CLASS_RESOURCES, CLASS_ABILITIES, ARCHETYPE_ABILITIES } from "@/lib/data/classAbilities";
+import { subscribeToTable } from "@/lib/supabaseClient";
 
 type PlayerCardsProps = { sessionId: string };
 type PlayerDetailTab = "character" | "secrets";
@@ -28,12 +29,13 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
   }
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
 
-  // Sync live: mentre la pagina è aperta, ricarica i giocatori ogni 5s
-  // così le modifiche del player arrivano in automatico nella vista DM.
+  // Sync live via Supabase Realtime: aggiorna appena un giocatore salva.
+  // Il polling resta solo come rete di sicurezza (30s) se il socket cade.
   useEffect(() => {
     if (!sessionId) return;
-    const t = setInterval(load, 5000);
-    return () => clearInterval(t);
+    const unsubscribe = subscribeToTable("players", sessionId, load);
+    const t = setInterval(load, 30000);
+    return () => { unsubscribe(); clearInterval(t); };
   }, [sessionId]);
 
   async function save(id: string, fields: any) {
@@ -202,6 +204,12 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
             <div className="mt-3 flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               <span className="text-[10px] text-emerald-400/70">Online</span>
+              <button
+                onClick={e => { e.stopPropagation(); const v = !p.character_data?.inspiration; save(p.id, { inspiration: v }); }}
+                className={`rounded-lg border px-2 py-0.5 text-[10px] transition ${p.character_data?.inspiration ? "border-veil-gold/30 bg-veil-gold/15 text-veil-gold" : "border-white/10 bg-white/[0.03] text-white/40 hover:border-veil-gold/20 hover:text-veil-gold/70"}`}
+                title={p.character_data?.inspiration ? "Rimuovi ispirazione" : "Assegna ispirazione (il giocatore vedrà i bordi oro)"}>
+                {p.character_data?.inspiration ? "★ Ispirato" : "☆ Assegna ispirazione"}
+              </button>
               <span className="text-[10px] text-white/20 ml-auto">XP {p.xp ?? 0}</span>
               <button
                 onClick={e => { e.stopPropagation(); setSheetPlayer(p); }}
@@ -378,28 +386,25 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
               </div>
             </div>
           </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-[0.1em] text-white/30 mb-2 block">Condizioni attive</label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {parseConditions(player.conditions).map((c: string) => (
-                <span key={c} className="rounded-full border border-red-500/30 bg-red-900/20 px-2.5 py-1 text-xs text-red-300/80 flex items-center gap-1">
-                  {c}
-                  <button onClick={() => onSave({ conditions: serializeConditions(parseConditions(player.conditions).filter((x: string) => x !== c)) })}
-                    className="text-red-300/40 hover:text-red-300">×</button>
-                </span>
-              ))}
-              {parseConditions(player.conditions).length === 0 && <span className="text-xs text-white/25">Nessuna condizione attiva</span>}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {CONDITIONS_LIST.filter(c => !parseConditions(player.conditions).includes(c)).map(c => (
-                <button key={c} onClick={() => onSave({ conditions: serializeConditions([...parseConditions(player.conditions), c]) })}
-                  className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/35 hover:border-red-400/30 hover:text-red-300/70 transition">
-                  + {c}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
+      </Section>
+
+      <Section title="🩸 Condizioni (solo DM — appaiono in rosso sopra in Combattimento)">
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {parseConditions(player.conditions).map((c: string) => (
+            <span key={c} className="rounded-full border border-red-500/40 bg-red-900/30 px-2.5 py-1 text-xs font-bold text-red-300 flex items-center gap-1">
+              {c}
+              <button onClick={() => onSave({ conditions: serializeConditions(parseConditions(player.conditions).filter((x: string) => x !== c)) })} className="text-red-300/60 hover:text-red-300">×</button>
+            </span>
+          ))}
+          {parseConditions(player.conditions).length === 0 && <span className="text-xs text-white/25">Nessuna condizione attiva</span>}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {CONDITIONS_LIST.filter(c => !parseConditions(player.conditions).includes(c)).map(c => (
+            <button key={c} onClick={() => onSave({ conditions: serializeConditions([...parseConditions(player.conditions), c]) })} className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/35 hover:border-red-400/30 hover:text-red-300/70 transition">+ {c}</button>
+          ))}
+        </div>
+        <p className="text-[9px] text-white/20 mt-2">Le condizioni appaiono in rosso sopra in Combattimento del giocatore.</p>
       </Section>
 
     </div>

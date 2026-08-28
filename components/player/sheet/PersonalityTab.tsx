@@ -1,6 +1,6 @@
 "use client";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
-import { SuggestField } from "./ui";
+import { SuggestField, CollapseSection } from "./ui";
 import type { SheetCtx } from "./types";
 
 export function PersonalityTab({ ctx }: { ctx: SheetCtx }) {
@@ -11,6 +11,7 @@ export function PersonalityTab({ ctx }: { ctx: SheetCtx }) {
   const bgFlaws = bgData?.flaws || [];
 
   return (
+    <CollapseSection title="Personaggio" subtitle="Tratti, storia, motivazioni e aspetto fisico.">
     <div className="space-y-4">
       <div className="veil-panel p-4 space-y-4">
         <h3 className="text-sm text-veil-gold/80 font-medium">
@@ -120,6 +121,13 @@ export function PersonalityTab({ ctx }: { ctx: SheetCtx }) {
           </div>
         </div>
       </div>
+
+      <div className="veil-panel p-4">
+        <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Lingue</h3>
+        <p className="text-sm text-white/70">🗣️ {ctx.raceData?.languages?.join(", ") || "—"}</p>
+        <p className="text-[10px] text-white/30 mt-1">Lingue conosciute dalla razza (non modificabili).</p>
+      </div>
     </div>
+    </CollapseSection>
   );
 }

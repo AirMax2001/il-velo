@@ -4,7 +4,7 @@ import { subscribeToTable } from "@/lib/supabaseClient";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import type { SheetCtx } from "./types";
 
-export function PartyTab({ ctx, sessionId }: { ctx: SheetCtx; sessionId?: string }) {
+export function PartyTab({ ctx, sessionId, onExit }: { ctx: SheetCtx; sessionId?: string; onExit?: () => void; }) {
   const [players, setPlayers] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
@@ -43,13 +43,40 @@ export function PartyTab({ ctx, sessionId }: { ctx: SheetCtx; sessionId?: string
   }
 
   return (
+    <div className="space-y-4">
     <div className="veil-panel p-4">
       <h3 className="text-sm text-veil-gold/80 font-medium mb-1">Party</h3>
       <p className="text-[10px] text-white/30 mb-3">
         Diario di gruppo della sessione: chiunque può scrivere, il DM può leggere.
       </p>
 
-      <div className="flex flex-col-reverse sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Partecipanti: a sinistra, più stretti */}
+        <div className="shrink-0 sm:w-44 flex flex-col gap-3">
+          {players.map((p, idx) => (
+            <div key={p.id}
+              className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm ${p.id === playerId ? "border-veil-gold/50 bg-veil-gold/[0.08]" : "border-white/[0.10] bg-black/30"}`}>
+              <PlayerAvatar url={p.avatar_url} name={p.character_name || p.player_name} size="md" />
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-white/90 truncate">{p.character_name || p.player_name}</span>
+                <span className="block text-[10px] text-white/40 truncate">{p.race || "—"} · {p.class || p.cls || p.class_name || "—"}</span>
+                <span className="block text-[10px] text-white/30 truncate">{p.player_name || "—"}</span>
+              </div>
+              {idx === players.length - 1 && (
+                <div className="flex gap-1 shrink-0 ml-auto">
+                  <input className="veil-input min-w-[90px] w-28 text-[10px]" placeholder="Scrivi nel diario..." value={text}
+                    onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} />
+                  <button className="veil-btn text-[10px] px-2 shrink-0" onClick={send}>Invia</button>
+                </div>
+              )}
+            </div>
+          ))}
+          {players.length === 0 && (
+            <p className="text-xs text-white/25">Nessun altro partecipante.</p>
+          )}
+
+        </div>
+
         {/* Chat di gruppo */}
         <div className="flex-1 flex flex-col h-80">
           <div className="flex-1 overflow-y-auto flex flex-col gap-2 mb-2">
@@ -60,29 +87,25 @@ export function PartyTab({ ctx, sessionId }: { ctx: SheetCtx; sessionId?: string
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <input className="veil-input flex-1" placeholder="Scrivi nel diario di gruppo..." value={text}
-              onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} />
-            <button className="veil-btn" onClick={send}>Invia</button>
-          </div>
         </div>
 
-        {/* Partecipanti: a destra su desktop, sopra la chat su mobile */}
-        <div className="shrink-0 sm:w-28 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0">
-          {players.map(p => (
-            <div key={p.id}
-              className={`flex items-center gap-2 sm:flex-col sm:gap-1.5 rounded-xl border px-2 py-2 ${p.id === playerId ? "border-veil-gold/30 bg-veil-gold/[0.04]" : "border-white/[0.06] bg-black/20"}`}>
-              <PlayerAvatar url={p.avatar_url} name={p.character_name || p.player_name} size="sm" />
-              <span className="text-[10px] text-white/50 text-center truncate max-w-[72px] sm:max-w-full w-full">
-                {p.character_name || p.player_name}
-              </span>
-            </div>
-          ))}
-          {players.length === 0 && (
-            <p className="text-[10px] text-white/25 sm:text-center">Nessun altro partecipante.</p>
-          )}
-        </div>
       </div>
+
+    </div>
+
+    {/* Note aggiuntive — pannello separato sotto */}
+    <div className="veil-panel p-4 mt-4">
+      <h4 className="text-sm text-veil-gold/70 font-medium mb-2">Note Aggiuntive</h4>
+      <textarea className="veil-input w-full min-h-[100px] text-sm"
+        placeholder="Note varie, ricompense, missioni, ecc..."
+        value={(ctx.cd as any)?.notes || ""}
+        onChange={e => { ctx.updCd("notes", e.target.value); ctx.save({ notes: (ctx.formRef.current?.character_data as any)?.notes }); }}
+      />
+    </div>
+
+    {onExit && (
+      <button onClick={onExit} className="mt-2 w-full rounded-xl border border-red-300/20 bg-red-900/10 px-4 py-2.5 text-sm text-red-300/80 hover:border-red-300/30 hover:bg-red-900/20 hover:text-red-300 transition">⎋ Esci dalla sessione</button>
+    )}
     </div>
   );
 }

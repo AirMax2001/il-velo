@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { subscribeToTable } from "@/lib/supabaseClient";
 import { WorldMap } from "@/components/WorldMap/WorldMap";
 import { readTableDisplay, writeTableDisplay, type TableDisplayConfig } from "@/lib/tableDisplay";
+import { BattleGridDisplay } from "@/components/table/BattleGridDisplay";
 
 function slugify(name: string): string {
   return name
@@ -100,12 +101,16 @@ function TableView() {
     });
   }, [sessionId]);
 
-  // Poll combat from API
+  // Sync live via Supabase Realtime: il combattimento si aggiorna appena il
+  // DM lo modifica. Il polling resta come rete di sicurezza (15s).
   useEffect(() => {
     if (!sessionId) return;
     loadCombat();
-    const interval = setInterval(loadCombat, 3000);
-    return () => clearInterval(interval);
+    // combatants non ha session_id (è legato a combat_id): il fallback ogni
+    // 15s copre i suoi cambi, il canale realtime copre round/turno/stato attivo.
+    const unsubCombat = subscribeToTable("combat_encounters", sessionId, loadCombat);
+    const interval = setInterval(loadCombat, 15000);
+    return () => { unsubCombat(); clearInterval(interval); };
   }, [sessionId]);
 
   useEffect(() => {
@@ -212,7 +217,7 @@ function TableView() {
       </div>
 
       {/* Full-bleed scene background */}
-      {(() => {
+      {state?.display_mode === "scene" && (() => {
         const bgSrc = displayConfig.sceneImageUrl || (location || mapSelectedName ? `/locations/${slugify(location?.name || mapSelectedName || "")}.png` : null);
         return bgSrc ? (
           <img
@@ -224,8 +229,15 @@ function TableView() {
         ) : null;
       })()}
 
+      {/* RENDER BATTLE GRID DISPLAY */}
+      {state?.display_mode === "battle_grid" && (
+        <div className="relative z-10 w-full h-[calc(100vh-10rem)]">
+          <BattleGridDisplay sessionId={sessionId} />
+        </div>
+      )}
+
       {/* COMBAT FULL SCREEN */}
-      {activeCombat && !showMap && (
+      {state?.display_mode === "scene" && activeCombat && !showMap && (
         <div className="absolute inset-0 z-10 flex flex-col bg-black">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-red-500/15 bg-black/60 px-8 py-4">
@@ -332,7 +344,7 @@ function TableView() {
       )}
 
       {/* Main Content */}
-      {!showMap && !activeCombat ? (
+      {state?.display_mode === "scene" && !showMap && !activeCombat ? (
         <div className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center">
           {/* Countdown */}
           {countdownDisplay && (
@@ -349,8 +361,6 @@ function TableView() {
             <p className="mb-6 text-lg text-white/50">{displayConfig.subtitle}</p>
           )}
 
-
-
           {/* Anomalies */}
           {anomalies.filter((a: any) => a.active).length > 0 && (
             <div className="mt-8 flex flex-col gap-2">
@@ -364,7 +374,7 @@ function TableView() {
         </div>
       ) : null}
     </main>
-    {showMap && (
+    {(showMap || state?.display_mode === "world_map") && (
       <WorldMap
         sessionId={sessionId}
         onExitMap={(mapLoc) => {
