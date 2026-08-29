@@ -11,6 +11,7 @@ export type DmSection =
   | "campaign"
   | "session"
   | "assets"
+  | "gallery"
   | "settings";
 
 export type PlayerTab = "sheet" | "diary" | "rules";

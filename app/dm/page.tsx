@@ -11,6 +11,7 @@ import { ExportSystem, generateSessionReport } from "@/lib/mythos/exporter";
 import { NpcModule } from "@/components/dm/modules/NpcModule";
 import { LocationModule } from "@/components/dm/modules/LocationModule";
 import { ObjectsModule } from "@/components/dm/modules/ObjectsModule";
+import { GalleryModule } from "@/components/dm/modules/GalleryModule";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { GameEngineProvider, useGameEngine } from "@/lib/mythos/GameEngineContext";
 import { PartyStatusRail } from "@/components/dm/PartyStatusRail";
@@ -144,6 +145,7 @@ function DMPanelInner() {
         <div className={tab === "combat" ? "" : "hidden"}><CombatCards sessionId={sessionId} /></div>
         <div className={tab === "table" ? "" : "hidden"}><TableWorkspace sessionId={sessionId} /></div>
         <div className={tab === "assets" ? "" : "hidden"}><ObjectsModule sessionId={sessionId} /></div>
+        <div className={tab === "gallery" ? "" : "hidden"}><GalleryModule sessionId={sessionId} /></div>
         <div className={tab === "settings" ? "" : "hidden"}><SettingsPlaceholder /></div>
       </section>
 

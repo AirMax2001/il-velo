@@ -14,6 +14,27 @@ type SessionPack = {
 
 type SessionWorkspaceProps = { sessionId?: string; onNavigate?: (tab: DmSection) => void };
 
+function resizeImageForGallery(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      const maxDim = 1400;
+      if (w > maxDim || h > maxDim) {
+        const ratio = Math.min(maxDim / w, maxDim / h);
+        w = Math.round(w * ratio); h = Math.round(h * ratio);
+      }
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL("image/jpeg", 0.75));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProps) {
   const { engine } = useGameEngine();
   const [sessionPacks, setSessionPacks] = useState<SessionPack[]>([]);
@@ -23,6 +44,8 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   const [num, setNum] = useState("");
   const [error, setError] = useState("");
   const [notes, setNotes] = useState("");
+  const [uploadingPackId, setUploadingPackId] = useState<string | null>(null);
+  const [galleryCounts, setGalleryCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!activePackId) { setNotes(""); return; }
@@ -42,6 +65,31 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
     const packs = (d.items || []).sort((a: any, b: any) => (a.session_number || 0) - (b.session_number || 0));
     setSessionPacks(packs);
     setActivePackId(prev => prev || packs[packs.length - 1]?.id || null);
+    try {
+      const g = await fetch(`/api/gallery?sessionId=${sessionId}`).then(r=>r.json());
+      const counts: Record<string,number> = {};
+      for (const im of (g.items||[])) if (im.session_pack_id) counts[im.session_pack_id] = (counts[im.session_pack_id]||0)+1;
+      setGalleryCounts(counts);
+    } catch {}
+  }
+
+  async function uploadForPack(packId: string, files: FileList | null) {
+    if (!files || files.length===0) return;
+    setUploadingPackId(packId);
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      try {
+        const dataUrl = await resizeImageForGallery(file);
+        await fetch("/api/gallery", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ session_id: sessionId, session_pack_id: packId, image_url: dataUrl, caption: null }) });
+      } catch {}
+    }
+    setUploadingPackId(null);
+    try {
+      const g = await fetch(`/api/gallery?sessionId=${sessionId}`).then(r=>r.json());
+      const counts: Record<string,number> = {};
+      for (const im of (g.items||[])) if (im.session_pack_id) counts[im.session_pack_id] = (counts[im.session_pack_id]||0)+1;
+      setGalleryCounts(counts);
+    } catch {}
   }
 
   useEffect(() => {
@@ -148,9 +196,13 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                   ? "border-veil-gold/25 bg-veil-gold/[0.06]"
                   : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"
               }`}>
+                <label title="Carica foto per questa sessione" className={`shrink-0 flex h-8 w-8 items-center justify-center rounded-lg border text-sm cursor-pointer transition ${uploadingPackId===pack.id ? "border-veil-gold/20 bg-veil-gold/10 text-veil-gold/50" : "border-white/10 bg-black/30 text-white/40 hover:border-veil-gold/30 hover:text-veil-gold hover:bg-veil-gold/10"}`}>
+                  {uploadingPackId===pack.id ? "…" : <>📎{galleryCounts[pack.id] ? <span className="ml-0.5 text-[9px] text-veil-gold">{galleryCounts[pack.id]}</span> : null}</>}
+                  <input type="file" accept="image/*" multiple className="hidden" disabled={uploadingPackId===pack.id} onChange={e=>uploadForPack(pack.id, e.target.files)} />
+                </label>
                 <button onClick={() => reopen(pack)} className="flex-1 min-w-0 text-left">
                   <p className="text-sm font-medium text-white/80 truncate">{pack.title || `Sessione ${pack.session_number}`}</p>
-                  <p className="text-[10px] text-white/30">#{pack.session_number || "?"} · {new Date(pack.created_at).toLocaleDateString("it-IT")}</p>
+                  <p className="text-[10px] text-white/30">#{pack.session_number || "?"} · {new Date(pack.created_at).toLocaleDateString("it-IT")} {galleryCounts[pack.id] ? `· 🖼 ${galleryCounts[pack.id]}` : ""}</p>
                 </button>
                 {activePackId === pack.id && <span className="text-[9px] uppercase tracking-wider text-veil-gold/60">aperta</span>}
                 <button title="Riapri questa sessione" onClick={() => reopen(pack)}

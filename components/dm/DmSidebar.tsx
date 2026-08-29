@@ -17,6 +17,7 @@ const navItems: { id: DmSection; icon: string; label: string }[] = [
   { id: "combat", icon: "⚔", label: "Combat" },
   { id: "players", icon: "◆", label: "Players" },
   { id: "campaign", icon: "◇", label: "Campaign" },
+  { id: "gallery", icon: "🖼", label: "Galleria" },
   { id: "table", icon: "▤", label: "Table" },
   { id: "settings", icon: "⚙", label: "Settings" },
 ];
