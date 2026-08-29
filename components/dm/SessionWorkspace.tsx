@@ -212,12 +212,10 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                   >
                     <div className="px-3 py-1.5 border-b border-white/[0.06] bg-white/[0.03] text-[10px] text-white/40 text-center">{menu.word}</div>
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         const ww = menu.word;
                         setMenu(null);
-                        try {
-                          await fetch("/api/npcs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, name: ww.charAt(0) + ww.slice(1).toLowerCase(), description: `Creato da appunti sessione: ${ww}`, role: "NPC" }) });
-                        } catch {}
+                        localStorage.setItem("veil-pending-npc", ww.charAt(0) + ww.slice(1).toLowerCase());
                         onNavigate?.("npcs");
                       }}
                       className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
@@ -225,12 +223,10 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                       👤 NPC — crea {menu.word}
                     </button>
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         const ww = menu.word;
                         setMenu(null);
-                        try {
-                          await fetch("/api/inventory", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, name: ww.charAt(0) + ww.slice(1).toLowerCase(), description: `Creato da appunti sessione: ${ww}`, rarity: "common", item_type: "other", category: "general" }) });
-                        } catch {}
+                        localStorage.setItem("veil-pending-item", ww.charAt(0) + ww.slice(1).toLowerCase());
                         onNavigate?.("assets");
                       }}
                       className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"

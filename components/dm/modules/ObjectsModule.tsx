@@ -36,6 +36,15 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
   }, [sessionId]);
 
   useEffect(() => {
+    const pending = localStorage.getItem("veil-pending-item");
+    if (pending) {
+      setCreateForm(prev => ({ ...prev, name: pending }));
+      setShowCreate(true);
+      localStorage.removeItem("veil-pending-item");
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!noteKey) return;
     const saved = localStorage.getItem(noteKey);
     if (saved) setNote(saved); else setNote("");

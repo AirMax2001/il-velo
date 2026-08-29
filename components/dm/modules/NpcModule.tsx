@@ -8,8 +8,19 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
   const [filter, setFilter] = useState<"all" | "alive" | "dead">("all");
   const noteKey = selected ? `veil-npc-note-${selected.id}` : "";
   const [showDnd, setShowDnd] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" });
 
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
+
+  useEffect(() => {
+    const pending = localStorage.getItem("veil-pending-npc");
+    if (pending) {
+      setCreateForm(prev => ({ ...prev, name: pending }));
+      setShowCreate(true);
+      localStorage.removeItem("veil-pending-npc");
+    }
+  }, [sessionId]);
   async function load() {
     const d = await fetch(`/api/npcs?sessionId=${sessionId}`).then(r => r.json());
     setNpcs(d.items || []);
@@ -36,6 +47,16 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
     if (selected?.id === npc.id) setSelected(null);
   }
 
+  async function createNpc() {
+    if (!createForm.name.trim()) return;
+    const data:any = {};
+    for (const k of ["race","class","background","alignment","hp","ac","speed","resistances","immunities","vulnerabilities","languages","senses"]) if ((createForm as any)[k]) data[k]=(createForm as any)[k];
+    for (const ab of ["FOR","DES","COS","INT","SAG","CAR"]) if ((createForm as any)[ab]) data["ability_"+ab]=(createForm as any)[ab];
+    const res = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sessionId, name: createForm.name.trim(), role: createForm.role || null, description: createForm.description || "", data }) });
+    const j = await res.json();
+    if (j.item) { setNpcs(prev=>[j.item,...prev]); setSelected(j.item); setShowCreate(false); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); }
+  }
+
   if (!sessionId) return <p className="text-white/40 text-sm">Nessuna campagna attiva</p>;
 
   const filtered = filter === "all" ? npcs : npcs.filter(n => filter === "dead" ? n.is_dead : !n.is_dead);
@@ -45,11 +66,95 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">NPC</h2>
         <div className="flex gap-2">
+          <button onClick={() => setShowCreate(v=>!v)} className={`rounded-xl border px-4 py-1.5 text-xs font-medium transition ${showCreate ? "border-veil-gold/30 bg-veil-gold/15 text-veil-gold" : "border-emerald-500/30 bg-emerald-900/20 text-emerald-300 hover:bg-emerald-900/30"}`}>{showCreate ? "Annulla" : "+ Crea NPC"}</button>
           <button onClick={() => setFilter("all")} className={`rounded-xl border px-3 py-1.5 text-xs transition ${filter === "all" ? "border-white/20 bg-white/10 text-white" : "border-white/[0.06] bg-black/20 text-white/50"}`}>Tutti ({npcs.length})</button>
           <button onClick={() => setFilter("alive")} className={`rounded-xl border px-3 py-1.5 text-xs transition ${filter === "alive" ? "border-emerald-500/30 bg-emerald-900/20 text-emerald-300" : "border-white/[0.06] bg-black/20 text-white/50"}`}>Vivi ({npcs.filter(n => !n.is_dead).length})</button>
           <button onClick={() => setFilter("dead")} className={`rounded-xl border px-3 py-1.5 text-xs transition ${filter === "dead" ? "border-red-500/30 bg-red-900/20 text-red-300" : "border-white/[0.06] bg-black/20 text-white/50"}`}>Morti ({npcs.filter(n => n.is_dead).length})</button>
         </div>
       </div>
+
+      {showCreate && (
+        <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-950/10 p-5">
+          <h3 className="text-sm font-semibold text-emerald-300 mb-4">Nuovo NPC — dettagli D&D 5e</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Nome *</label>
+              <input value={createForm.name} onChange={e=>setCreateForm({...createForm, name:e.target.value})} placeholder="Es. GIULIO" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 placeholder:text-white/25" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Ruolo / Classe</label>
+              <input value={createForm.role} onChange={e=>setCreateForm({...createForm, role:e.target.value})} placeholder="Es. Mercante, Guerriero" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-sm text-white/70 placeholder:text-white/25" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Descrizione</label>
+              <textarea value={createForm.description} onChange={e=>setCreateForm({...createForm, description:e.target.value})} placeholder="Aspetto, personalità..." rows={2} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 placeholder:text-white/25 resize-none" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Razza</label>
+              <input value={createForm.race} onChange={e=>setCreateForm({...createForm, race:e.target.value})} placeholder="Umano, Elfo..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Classe</label>
+              <input value={createForm.class} onChange={e=>setCreateForm({...createForm, class:e.target.value})} placeholder="Guerriero, Mago..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Background</label>
+              <input value={createForm.background} onChange={e=>setCreateForm({...createForm, background:e.target.value})} placeholder="Soldato, Saggio..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Allineamento</label>
+              <input value={createForm.alignment} onChange={e=>setCreateForm({...createForm, alignment:e.target.value})} placeholder="LB, N, CM..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">PF</label>
+              <input value={createForm.hp} onChange={e=>setCreateForm({...createForm, hp:e.target.value})} placeholder="12" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70 text-center" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">CA</label>
+              <input value={createForm.ac} onChange={e=>setCreateForm({...createForm, ac:e.target.value})} placeholder="15" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70 text-center" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Velocità</label>
+              <input value={createForm.speed} onChange={e=>setCreateForm({...createForm, speed:e.target.value})} placeholder="9m" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70 text-center" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Caratteristiche FOR DES COS INT SAG CAR</label>
+              <div className="mt-1 grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {["FOR","DES","COS","INT","SAG","CAR"].map(ab=>(
+                  <div key={ab} className="text-center">
+                    <span className="text-[9px] text-white/30">{ab}</span>
+                    <input value={(createForm as any)[ab]} onChange={e=>setCreateForm({...createForm, [ab]: e.target.value} as any)} placeholder="10" className="mt-0.5 w-full rounded-lg border border-white/[0.06] bg-black/30 px-1 py-1.5 text-xs text-white/70 text-center" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Resistenze</label>
+              <input value={createForm.resistances} onChange={e=>setCreateForm({...createForm, resistances:e.target.value})} placeholder="fuoco, veleno..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Immunità</label>
+              <input value={createForm.immunities} onChange={e=>setCreateForm({...createForm, immunities:e.target.value})} placeholder="psichico..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Vulnerabilità</label>
+              <input value={createForm.vulnerabilities} onChange={e=>setCreateForm({...createForm, vulnerabilities:e.target.value})} placeholder="radioso..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Lingue</label>
+              <input value={createForm.languages} onChange={e=>setCreateForm({...createForm, languages:e.target.value})} placeholder="Comune, Elfico..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[10px] uppercase tracking-wider text-white/30">Sensi</label>
+              <input value={createForm.senses} onChange={e=>setCreateForm({...createForm, senses:e.target.value})} placeholder="Percezione passiva 12, scurovisione 18m" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button onClick={createNpc} disabled={!createForm.name.trim()} className="rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-5 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-40 transition">Salva NPC</button>
+            <button onClick={()=>setShowCreate(false)} className="rounded-xl border border-white/10 px-5 py-2 text-sm text-white/40 hover:text-white transition">Annulla</button>
+          </div>
+        </div>
+      )}
 
       {filtered.length === 0 && <p className="text-sm text-white/30">Nessun NPC.</p>}
 
