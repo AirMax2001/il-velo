@@ -46,12 +46,15 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   const [notes, setNotes] = useState("");
   const [uploadingPackId, setUploadingPackId] = useState<string | null>(null);
   const [galleryCounts, setGalleryCounts] = useState<Record<string, number>>({});
+  const [packImages, setPackImages] = useState<any[]>([]);
+  const [carouselLightbox, setCarouselLightbox] = useState<any>(null);
 
   useEffect(() => {
-    if (!activePackId) { setNotes(""); return; }
+    if (!activePackId) { setNotes(""); setPackImages([]); return; }
     const saved = localStorage.getItem(`veil-session-notes-${activePackId}`);
     setNotes(saved || "");
-  }, [activePackId]);
+    fetch(`/api/gallery?sessionId=${sessionId}&sessionPackId=${activePackId}`).then(r=>r.json()).then(d=> setPackImages(d.items||[])).catch(()=>setPackImages([]));
+  }, [activePackId, sessionId]);
 
   useEffect(() => {
     if (!activePackId) return;
@@ -89,7 +92,19 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
       const counts: Record<string,number> = {};
       for (const im of (g.items||[])) if (im.session_pack_id) counts[im.session_pack_id] = (counts[im.session_pack_id]||0)+1;
       setGalleryCounts(counts);
+      if (packId === activePackId) {
+        const pg = await fetch(`/api/gallery?sessionId=${sessionId}&sessionPackId=${packId}`).then(r=>r.json());
+        setPackImages(pg.items||[]);
+      }
     } catch {}
+  }
+
+  async function deleteCarouselImage(id: string) {
+    if (!window.confirm("Eliminare questa foto?")) return;
+    await fetch(`/api/gallery?id=${id}`, { method:"DELETE" });
+    setPackImages(prev=>prev.filter((i:any)=>i.id!==id));
+    setGalleryCounts(prev=>{ const n={...prev}; for(const k in n) if(activePackId===k) n[k]=Math.max(0,(n[k]||1)-1); return n; });
+    setCarouselLightbox(null);
   }
 
   useEffect(() => {
@@ -153,6 +168,39 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
           />
           {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente per questa sessione.</p>}
           {!activePack && <p className="mt-1 text-[10px] text-white/25">Ogni sessione ha i suoi appunti.</p>}
+
+          {/* Carosello foto della sessione attiva */}
+          {activePack && (
+            <div className="mt-4 border-t border-white/[0.06] pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-white/30">Foto sessione {packImages.length>0 && `· ${packImages.length}`}</p>
+                {packImages.length>0 && <span className="text-[10px] text-white/20">trascina per scorrere ↔</span>}
+              </div>
+              {packImages.length===0 ? (
+                <p className="text-xs text-white/25 text-center py-3 border border-dashed border-white/10 rounded-xl bg-black/10">Nessuna foto — usa la graffetta 📎 accanto alla sessione o carica in Galleria.</p>
+              ) : (
+                <div
+                  className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin"
+                  style={{ scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" as any }}
+                  onMouseDown={e=>{
+                    const el=e.currentTarget; let isDown=true, startX=e.pageX - el.offsetLeft, scrollLeft=el.scrollLeft;
+                    const move=(ev:MouseEvent)=>{ if(!isDown) return; ev.preventDefault(); const x=ev.pageX - el.offsetLeft; const walk=(x-startX)*1.2; el.scrollLeft=scrollLeft-walk; };
+                    const up=()=>{ isDown=false; window.removeEventListener("mousemove",move); window.removeEventListener("mouseup",up); };
+                    window.addEventListener("mousemove",move); window.addEventListener("mouseup",up);
+                  }}
+                >
+                  {packImages.map((img:any)=>(
+                    <div key={img.id} className="relative shrink-0 snap-start">
+                      <button onClick={()=>setCarouselLightbox(img)} className="block h-28 w-40 overflow-hidden rounded-xl border border-white/[0.06] bg-black/30 hover:border-veil-gold/30 transition">
+                        <img src={img.image_url} alt={img.caption||"foto"} className="h-full w-full object-cover" draggable={false} />
+                      </button>
+                      <button onClick={()=>deleteCarouselImage(img.id)} className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 border border-white/20 text-[10px] text-white/60 hover:text-red-300 hover:border-red-400/40">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sessioni */}
@@ -241,6 +289,15 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
           <span className="text-[11px] text-white/30">scheda, PF e comando live del party</span>
         </button>
       </div>
+
+      {carouselLightbox && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4" onClick={()=>setCarouselLightbox(null)}>
+          <div className="relative max-h-[90vh] max-w-4xl w-full" onClick={e=>e.stopPropagation()}>
+            <img src={carouselLightbox.image_url} alt="" className="max-h-[85vh] w-full object-contain rounded-2xl border border-white/10" />
+            <button onClick={()=>setCarouselLightbox(null)} className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">×</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
