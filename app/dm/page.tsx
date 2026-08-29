@@ -122,7 +122,10 @@ function DMPanelInner() {
 
   return (
     <main className="flex h-screen bg-[#0b0c10] text-white">
-      <PartyStatusRail sessionId={sessionId} onOpenPlayers={() => setTab("players")} />
+      <PartyStatusRail sessionId={sessionId} onOpenPlayers={() => {
+        setTab("session");
+        setTimeout(() => window.dispatchEvent(new CustomEvent("veil-set-central", { detail: "players" })), 50);
+      }} />
 
       <section className={`flex-1 overflow-y-auto ${tab === "session" ? "p-0" : "p-6"}`}>
         {tab !== "session" && (

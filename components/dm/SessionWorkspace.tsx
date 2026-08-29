@@ -45,6 +45,8 @@ function resizeImageForGallery(file: File): Promise<string> {
 export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: SessionWorkspaceProps) {
   const { engine } = useGameEngine();
   const [centralView, setCentralView] = useState<"scene" | DmSection>("scene");
+  const [showSessions, setShowSessions] = useState(true);
+  const [showPhotos, setShowPhotos] = useState(true);
   const [settingsTheme, setSettingsTheme] = useState("default");
   const [settingsMounted, setSettingsMounted] = useState(false);
   useEffect(() => {
@@ -58,6 +60,11 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
     localStorage.setItem("veil_theme", t);
     document.documentElement.setAttribute("data-theme", t);
   }
+  useEffect(() => {
+    const h = (e: any) => { if (e.detail) setCentralView(e.detail); };
+    window.addEventListener("veil-set-central" as any, h);
+    return () => window.removeEventListener("veil-set-central" as any, h);
+  }, []);
   const [sessionPacks, setSessionPacks] = useState<SessionPack[]>([]);
   const [activePackId, setActivePackId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -286,7 +293,7 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
             📝 Appunti sessione{activePack && <span className="text-white/40 font-normal"> — {activePack.title || `Sessione ${activePack.session_number}`}</span>}
           </h3>
           <textarea
-            className="w-full min-h-44 rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:border-veil-gold/30 focus:outline-none"
+            className="w-full min-h-72 rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:border-veil-gold/30 focus:outline-none"
             placeholder={activePack ? `Scrivi qui gli appunti della sessione "${activePack.title || activePack.session_number}"...` : "Apri una sessione dalla lista per scrivere i suoi appunti."}
             value={notes}
             onChange={e => setNotes(e.target.value)}
@@ -351,73 +358,81 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
           {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente per questa sessione.</p>}
           {!activePack && <p className="mt-1 text-[10px] text-white/25">Ogni sessione ha i suoi appunti.</p>}
 
-          {/* Carosello foto della sessione attiva */}
+          {/* Carosello foto della sessione attiva — a tendina */}
           {activePack && (
             <div className="mt-4 border-t border-white/[0.06] pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-white/30">Foto sessione {packImages.length>0 && `· ${packImages.length}`}</p>
-                {packImages.length>0 && <span className="text-[10px] text-white/20">trascina per scorrere ↔</span>}
-              </div>
-              {packImages.length===0 ? (
-                <p className="text-xs text-white/25 text-center py-3 border border-dashed border-white/10 rounded-xl bg-black/10">Nessuna foto — usa la graffetta 📎 accanto alla sessione o carica in Galleria.</p>
-              ) : (
-                <div
-                  className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin"
-                  style={{ scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" as any }}
-                  onMouseDown={e=>{
-                    const el=e.currentTarget; let isDown=true, startX=e.pageX - el.offsetLeft, scrollLeft=el.scrollLeft;
-                    const move=(ev:MouseEvent)=>{ if(!isDown) return; ev.preventDefault(); const x=ev.pageX - el.offsetLeft; const walk=(x-startX)*1.2; el.scrollLeft=scrollLeft-walk; };
-                    const up=()=>{ isDown=false; window.removeEventListener("mousemove",move); window.removeEventListener("mouseup",up); };
-                    window.addEventListener("mousemove",move); window.addEventListener("mouseup",up);
-                  }}
-                >
-                  {packImages.map((img:any)=>(
-                    <div key={img.id} className="relative shrink-0 snap-start">
-                      <button onClick={()=>setCarouselLightbox(img)} className="block h-28 w-40 overflow-hidden rounded-xl border border-white/[0.06] bg-black/30 hover:border-veil-gold/30 transition">
-                        <img src={img.image_url} alt={img.caption||"foto"} className="h-full w-full object-cover" draggable={false} />
-                      </button>
-                      <button onClick={()=>deleteCarouselImage(img.id)} className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 border border-white/20 text-[10px] text-white/60 hover:text-red-300 hover:border-red-400/40">×</button>
-                    </div>
-                  ))}
-                </div>
+              <button onClick={() => setShowPhotos(v=>!v)} className="flex items-center justify-between w-full mb-2">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-white/30 flex items-center gap-2">Foto sessione {packImages.length>0 && `· ${packImages.length}`} <span className={`text-white/30 text-xs transition ${showPhotos ? "" : "-rotate-90"}`}>▾</span></p>
+                {showPhotos && packImages.length>0 && <span className="text-[10px] text-white/20">trascina per scorrere ↔</span>}
+              </button>
+              {showPhotos && (
+                packImages.length===0 ? (
+                  <p className="text-xs text-white/25 text-center py-3 border border-dashed border-white/10 rounded-xl bg-black/10">Nessuna foto — usa la graffetta 📎 accanto alla sessione o carica in Galleria.</p>
+                ) : (
+                  <div
+                    className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin"
+                    style={{ scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" as any }}
+                    onMouseDown={e=>{
+                      const el=e.currentTarget; let isDown=true, startX=e.pageX - el.offsetLeft, scrollLeft=el.scrollLeft;
+                      const move=(ev:MouseEvent)=>{ if(!isDown) return; ev.preventDefault(); const x=ev.pageX - el.offsetLeft; const walk=(x-startX)*1.2; el.scrollLeft=scrollLeft-walk; };
+                      const up=()=>{ isDown=false; window.removeEventListener("mousemove",move); window.removeEventListener("mouseup",up); };
+                      window.addEventListener("mousemove",move); window.addEventListener("mouseup",up);
+                    }}
+                  >
+                    {packImages.map((img:any)=>(
+                      <div key={img.id} className="relative shrink-0 snap-start">
+                        <button onClick={()=>setCarouselLightbox(img)} className="block h-28 w-40 overflow-hidden rounded-xl border border-white/[0.06] bg-black/30 hover:border-veil-gold/30 transition">
+                          <img src={img.image_url} alt={img.caption||"foto"} className="h-full w-full object-cover" draggable={false} />
+                        </button>
+                        <button onClick={()=>deleteCarouselImage(img.id)} className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 border border-white/20 text-[10px] text-white/60 hover:text-red-300 hover:border-red-400/40">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           )}
         </div>
 
-        {/* Sessioni */}
+        {/* Sessioni — a tendina */}
         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm text-veil-gold/80 font-medium">🎞 Sessioni</h3>
-            <button onClick={() => { setShowForm(!showForm); setError(""); }}
+            <button onClick={() => setShowSessions(v=>!v)} className="flex items-center gap-2">
+              <h3 className="text-sm text-veil-gold/80 font-medium">🎞 Sessioni</h3>
+              <span className={`text-white/30 text-xs transition ${showSessions ? "" : "-rotate-90"}`}>▾</span>
+              <span className="text-[10px] text-white/30 ml-1">{sessionPacks.length}</span>
+            </button>
+            <button onClick={() => { setShowForm(!showForm); setError(""); setShowSessions(true); }}
               className="rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-xs text-veil-gold hover:bg-veil-gold/20 transition">
               + Aggiungi Sessione
             </button>
           </div>
 
-          {showForm && (
-            <div className="mb-4 rounded-xl border border-veil-gold/20 bg-veil-gold/[0.04] p-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.1em] text-white/30 block mb-1">Nome sessione</label>
-                  <input className="veil-input w-full" placeholder="Es. La miniera dimenticata" value={title} onChange={e => { setTitle(e.target.value); setError(""); }} autoFocus />
+          {showSessions && (
+            <>
+              {showForm && (
+                <div className="mb-4 rounded-xl border border-veil-gold/20 bg-veil-gold/[0.04] p-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.1em] text-white/30 block mb-1">Nome sessione</label>
+                      <input className="veil-input w-full" placeholder="Es. La miniera dimenticata" value={title} onChange={e => { setTitle(e.target.value); setError(""); }} autoFocus />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.1em] text-white/30 block mb-1">Numero progressivo</label>
+                      <input className="veil-input w-full" type="number" min="1" placeholder="Es. 12" value={num} onChange={e => { setNum(e.target.value); setError(""); }} onKeyDown={e => e.key === "Enter" && addSession()} />
+                    </div>
+                  </div>
+                  {error && <p className="mt-2 text-[11px] text-red-300">{error}</p>}
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={addSession} className="rounded-lg border border-veil-gold/40 bg-veil-gold/15 px-4 py-1.5 text-xs text-veil-gold hover:bg-veil-gold/25 transition">Salva sessione</button>
+                    <button onClick={() => { setShowForm(false); setError(""); }} className="rounded-lg border border-white/10 px-4 py-1.5 text-xs text-white/40 hover:text-white transition">Annulla</button>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-[0.1em] text-white/30 block mb-1">Numero progressivo</label>
-                  <input className="veil-input w-full" type="number" min="1" placeholder="Es. 12" value={num} onChange={e => { setNum(e.target.value); setError(""); }} onKeyDown={e => e.key === "Enter" && addSession()} />
-                </div>
-              </div>
-              {error && <p className="mt-2 text-[11px] text-red-300">{error}</p>}
-              <div className="mt-3 flex gap-2">
-                <button onClick={addSession} className="rounded-lg border border-veil-gold/40 bg-veil-gold/15 px-4 py-1.5 text-xs text-veil-gold hover:bg-veil-gold/25 transition">Salva sessione</button>
-                <button onClick={() => { setShowForm(false); setError(""); }} className="rounded-lg border border-white/10 px-4 py-1.5 text-xs text-white/40 hover:text-white transition">Annulla</button>
-              </div>
-            </div>
-          )}
+              )}
 
-          {sessionPacks.length === 0 && !showForm && (
-            <p className="text-xs text-white/30 text-center py-6">Nessuna sessione salvata. Clicca "+ Aggiungi Sessione" per crearne una.</p>
-          )}
+              {sessionPacks.length === 0 && !showForm && (
+                <p className="text-xs text-white/30 text-center py-6">Nessuna sessione salvata. Clicca "+ Aggiungi Sessione" per crearne una.</p>
+              )}
 
           <div className="space-y-1.5">
             {sessionPacks.map(pack => (
@@ -446,7 +461,9 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
               </div>
             ))}
           </div>
-          </div>
+            </>
+          )}
+        </div>
           </>
         )}
       </div>
