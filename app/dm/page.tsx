@@ -125,17 +125,17 @@ function DMPanelInner() {
       <PartyStatusRail sessionId={sessionId} onOpenPlayers={() => setTab("players")} />
 
       <section className={`flex-1 overflow-y-auto ${tab === "session" ? "p-0" : "p-6"}`}>
-        <div className={`flex items-center gap-2 ${tab === "session" ? "p-4 pb-0" : "mb-4"}`}>
-          {tab !== "session" && (
+        {tab !== "session" && (
+          <div className="flex items-center gap-2 p-4 pb-0">
             <button onClick={() => setTab("session")} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50 hover:text-white hover:border-white/15">← Scene</button>
-          )}
-          <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => setShowGlobalSearch(true)} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-white">⌕ Cerca</button>
-            <button onClick={logout} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-red-300">⊘ Esci</button>
+            <div className="ml-auto flex items-center gap-2">
+              <button onClick={() => setShowGlobalSearch(true)} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-white">⌕ Cerca</button>
+              <button onClick={logout} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-red-300">⊘ Esci</button>
+            </div>
           </div>
-        </div>
+        )}
         <div className={tab === "campaign" ? "" : "hidden"}><CampaignWorkspace session={session} campaigns={campaigns} onSelect={(s: any) => { localStorage.setItem("veil_session", JSON.stringify(s)); setSession(s); }} /></div>
-        <div className={tab === "session" ? "" : "hidden"}><SessionWorkspace sessionId={sessionId} onNavigate={setTab} /></div>
+        <div className={tab === "session" ? "" : "hidden"}><SessionWorkspace sessionId={sessionId} onNavigate={setTab} onSearch={() => setShowGlobalSearch(true)} onLogout={logout} /></div>
         <div className={tab === "players" ? "" : "hidden"}><PlayerCards sessionId={sessionId} /></div>
         <div className={tab === "npcs" ? "" : "hidden"}><NpcModule sessionId={sessionId} /></div>
         <div className={tab === "locations" ? "" : "hidden"}><LocationModule sessionId={sessionId} /></div>
