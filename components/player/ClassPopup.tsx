@@ -47,13 +47,13 @@ export function ClassPopup({ clsKey, clsData, level, cd, onClose, onPickArchetyp
             <button onClick={onClose} className="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/50 hover:border-white/20 hover:text-white/80 transition">✕ Chiudi</button>
           </div>
 
-          {/* Archetipo */}
-          {arch && level >= arch.level && (
+          {/* Archetipo - sempre visibile, ma picker bloccato fino al livello richiesto */}
+          {arch && (
             <div className="mb-5">
-              <h3 className="text-sm text-veil-gold font-medium mb-2">🎭 Archetipo</h3>
+              <h3 className="text-sm text-veil-gold font-medium mb-2">🎭 Archetipo <span className="text-[10px] text-white/30 font-normal">({arch.label} — livello {arch.level})</span></h3>
               {pickedOpt ? (
                 <div className="rounded-xl border border-emerald-400/20 bg-emerald-900/[0.08] p-4">
-                  <p className="text-sm text-emerald-300/90 font-medium">{pickedOpt.name} <span className="text-[10px] text-white/30">(sceglio al {arch.level}° livello)</span></p>
+                  <p className="text-sm text-emerald-300/90 font-medium">{pickedOpt.name} <span className="text-[10px] text-white/30">(scelto al {arch.level}° livello)</span></p>
                   <p className="text-[11px] text-white/50 mt-1">{pickedOpt.description}</p>
                   {(() => {
                     const acts = getArchetypeAbilities(picked);
@@ -99,7 +99,36 @@ export function ClassPopup({ clsKey, clsData, level, cd, onClose, onPickArchetyp
                   })}
                 </div>
               ) : (
-                <p className="text-[11px] text-white/35">Scegli al {arch.level}° livello.</p>
+                <div className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-3">
+                  <p className="text-[11px] text-amber-300/80 font-medium">🔒 Bloccato fino al livello {arch.level}</p>
+                  <p className="text-[10px] text-white/40 mt-1">Sceglierai il tuo {arch.label} al raggiungimento del livello {arch.level}. Ecco un'anteprima (non selezionabile ora):</p>
+                  <div className="space-y-2 mt-3 opacity-60">
+                    {arch.options.map(o => {
+                      const acts = getArchetypeAbilities(o.key);
+                      const cast = getArchetypeCasting(o.key);
+                      return (
+                        <div key={o.key} className="rounded-xl border border-white/[0.04] bg-black/20 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-white/60 font-medium">{o.name}</p>
+                            {cast && (
+                              <span className="flex-shrink-0 rounded-full border px-2 py-0.5 text-[8px] text-violet-300/60 border-violet-400/15 bg-violet-500/5">
+                                {cast.ki ? "✨ magie in Ki" : "✨ sblocca la magia"}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-white/35 mt-1 leading-snug">{o.description}</p>
+                          {acts.length > 0 && (
+                            <p className="text-[10px] text-white/25 mt-1.5">
+                              Cosa cambia: {acts.map(a => a.name).join(" · ")}
+                              {cast ? ` · ${cast.label}` : ""}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[9px] text-white/25 mt-2">Raggiungi il livello {arch.level} per sbloccare la scelta (via popup classe o level-up).</p>
+                </div>
               )}
             </div>
           )}

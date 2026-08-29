@@ -8,6 +8,7 @@ import races from "@/lib/data/races";
 import { getRaceData, findRaceKey, getSubRaceData } from "@/lib/data/races";
 import { levelFromXp, xpForLevel } from "@/lib/data/leveling";
 import { getClassData } from "@/lib/data/classes";
+import { getArchetypeForClass } from "@/lib/data/classAbilities";
 import { getModifier, ALL_ABILITIES, ALL_SKILLS, ALL_SAVES, SKILL_ABILITY, SAVE_ABILITY, ABILITY_SHORT, SKILL_LABELS, SAVE_LABELS } from "@/lib/characterEngine";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
 import { RacePopup } from "@/components/player/RacePopup";
@@ -360,7 +361,12 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
             level={level}
             cd={cd}
             onClose={() => setShowClassPopup(false)}
-            onPickArchetype={(key) => { updCd("archetype", key); save({ archetype: key }); }}
+            onPickArchetype={(key) => {
+              const arch = clsKey ? getArchetypeForClass(clsKey) : null;
+              const req = arch?.level ?? 999;
+              if (level < req) return;
+              updCd("archetype", key); save({ archetype: key });
+            }}
           />
         )}
 

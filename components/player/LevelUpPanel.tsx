@@ -152,7 +152,7 @@ export function LevelUpPanel({ player, onApply }: Props){
     }
     // costruisci aggiornamenti per character_data SPREADATI nel payload (save li mette in body.character_data)
     const cdUpdates: Record<string,any> = { ...asiUpdates };
-    if(archChoice) cdUpdates.archetype = archChoice;
+    if(archChoice && needsArch) cdUpdates.archetype = archChoice;
     if(newCantrips.length>0) cdUpdates.cantrips = [...(cd.cantrips||[]), ...newCantrips];
     if(newSpells.length>0){
       const tmp: Record<string,string[]> = {};
@@ -176,7 +176,7 @@ export function LevelUpPanel({ player, onApply }: Props){
     cdUpdates.spellSlots = newSlotObj;
     if(hitDie) cdUpdates.hitDiceTotal = `${derivedLevel}d${hitDie}`;
     Object.assign(updates, cdUpdates);
-    if(archChoice) updates.archetype = archChoice;
+    if(archChoice && needsArch) updates.archetype = archChoice;
     // anche salva max hp separato
     onApply(updates);
     setShow(false);
