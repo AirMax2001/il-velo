@@ -56,6 +56,7 @@ export function GalleryModule({ sessionId }: { sessionId: string }) {
   async function handleFiles(files: FileList | null, packId: string | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    let hadError = "";
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) continue;
       try {
@@ -70,13 +71,16 @@ export function GalleryModule({ sessionId }: { sessionId: string }) {
             caption: caption.trim() || null,
           }),
         });
-        const d = await res.json();
-        if (d.item) setImages(prev => [d.item, ...prev]);
-      } catch {}
+        const d = await res.json().catch(()=>({}));
+        if (!res.ok) hadError = (d as any).error || "Errore upload";
+        else if ((d as any).item) setImages(prev => [(d as any).item, ...prev]);
+        else if ((d as any).error) hadError = (d as any).error;
+      } catch (e:any) { hadError = e?.message || "Errore upload"; }
     }
     setUploading(false);
     setCaption("");
     if (fileRef.current) fileRef.current.value = "";
+    if (hadError) alert(hadError.includes("session_gallery") ? "Tabella galleria mancante — esegui supabase/gallery.sql nel SQL Editor di Supabase." : hadError);
   }
 
   async function del(id: string) {

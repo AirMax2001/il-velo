@@ -38,7 +38,12 @@ export async function POST(req: NextRequest) {
     image_url,
     caption: caption || null,
   }).select("*, session_packs(title, session_number)").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.message.includes("does not exist") || error.message.includes("schema cache") || error.message.includes("relation")) {
+      return NextResponse.json({ error: "Tabella session_gallery mancante — esegui supabase/gallery.sql nel SQL Editor di Supabase e riprova." }, { status: 500 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ item: {
     id: data.id,
     session_id: data.session_id,

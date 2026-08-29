@@ -79,14 +79,21 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   async function uploadForPack(packId: string, files: FileList | null) {
     if (!files || files.length===0) return;
     setUploadingPackId(packId);
+    let hadError = "";
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) continue;
       try {
         const dataUrl = await resizeImageForGallery(file);
-        await fetch("/api/gallery", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ session_id: sessionId, session_pack_id: packId, image_url: dataUrl, caption: null }) });
-      } catch {}
+        const res = await fetch("/api/gallery", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ session_id: sessionId, session_pack_id: packId, image_url: dataUrl, caption: null }) });
+        const j = await res.json().catch(()=>({}));
+        if (!res.ok) hadError = j.error || "Errore upload";
+      } catch (e:any) { hadError = e?.message || "Errore upload"; }
     }
     setUploadingPackId(null);
+    if (hadError) {
+      alert(hadError.includes("session_gallery") ? "Tabella galleria mancante — esegui supabase/gallery.sql nel SQL Editor di Supabase." : hadError);
+      return;
+    }
     try {
       const g = await fetch(`/api/gallery?sessionId=${sessionId}`).then(r=>r.json());
       const counts: Record<string,number> = {};
