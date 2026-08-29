@@ -5,6 +5,50 @@ import classes from "@/lib/data/classes";
 import backgrounds from "@/lib/data/backgrounds";
 import { getModifier, STANDARD_ARRAY, ALL_ABILITIES, ABILITY_SHORT } from "@/lib/characterEngine";
 
+const DAMAGE_TYPES = ["acido","contundente","freddo","fuoco","forza","fulmine","necrotico","perforante","psichico","radioso","tagliente","tonante","veleno"];
+
+function DamageMultiSelect({ label, value, onChange }: { label: string; value: string; onChange: (v: string)=>void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useMemo(() => ({ current: null as any }), []);
+  // chiudi fuori click
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => {
+      const el = document.getElementById(`dmg-${label.replace(/\s/g,"")}`);
+      if (el && !el.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open, label]);
+  const selected = value ? value.split(",").map(s=>s.trim()).filter(Boolean) : [];
+  return (
+    <div id={`dmg-${label.replace(/\s/g,"")}`} className="relative">
+      <label className="text-[9px] uppercase tracking-wider text-white/30">{label}</label>
+      <button type="button" onClick={()=>setOpen(v=>!v)} className="mt-1 w-full flex items-center justify-between rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+        <span className="truncate">{selected.length ? selected.join(", ") : "— Nessuna"}</span>
+        <span className="text-white/30 text-xs ml-2">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-white/[0.08] bg-[#0f1015] p-2 shadow-2xl">
+          {DAMAGE_TYPES.map(t=> {
+            const checked = selected.includes(t);
+            return (
+              <label key={t} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04] cursor-pointer">
+                <input type="checkbox" checked={checked} onChange={e=>{
+                  const next = e.target.checked ? [...selected, t] : selected.filter((x:string)=>x!==t);
+                  onChange(next.join(", "));
+                }} className="accent-emerald-500" />
+                <span className="text-xs text-white/70 capitalize">{t}</span>
+              </label>
+            );
+          })}
+          <button onClick={()=>setOpen(false)} className="mt-1 w-full rounded-lg bg-white/[0.06] py-1 text-[10px] text-white/50 hover:bg-white/[0.10]">Chiudi</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function NpcModule({ sessionId }: { sessionId: string }) {
   const [npcs, setNpcs] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
@@ -76,10 +120,10 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
       if (res.length) next.resistances = res.join(", ");
       else {
         const m = race.traits.map((t:any)=>t.description).join(" ").match(/Resistenza al danno da ([a-zàèéìòù]+)/i);
-        next.resistances = m ? m[1] : "Nessuna";
+        next.resistances = m ? m[1] : "";
       }
-      next.immunities = "Nessuna";
-      next.vulnerabilities = "Nessuna";
+      next.immunities = "";
+      next.vulnerabilities = "";
       // se la razza ha tratto immunità esplicito, sovrascrivi
       const immTrait = race.traits.find((t:any)=>t.name.toLowerCase().includes("immunità") || t.description.toLowerCase().includes("immunità"));
       if (immTrait) {
@@ -233,18 +277,9 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
                 ))}
               </div>
             </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/30">Resistenze</label>
-              <input value={createForm.resistances} onChange={e=>setCreateForm({...createForm, resistances:e.target.value})} placeholder="fuoco, veleno..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/30">Immunità</label>
-              <input value={createForm.immunities} onChange={e=>setCreateForm({...createForm, immunities:e.target.value})} placeholder="psichico..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/30">Vulnerabilità</label>
-              <input value={createForm.vulnerabilities} onChange={e=>setCreateForm({...createForm, vulnerabilities:e.target.value})} placeholder="radioso..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
-            </div>
+            <DamageMultiSelect label="Resistenze" value={createForm.resistances} onChange={v=>setCreateForm({...createForm, resistances: v})} />
+            <DamageMultiSelect label="Immunità" value={createForm.immunities} onChange={v=>setCreateForm({...createForm, immunities: v})} />
+            <DamageMultiSelect label="Vulnerabilità" value={createForm.vulnerabilities} onChange={v=>setCreateForm({...createForm, vulnerabilities: v})} />
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Lingue</label>
               <input value={createForm.languages} onChange={e=>setCreateForm({...createForm, languages:e.target.value})} placeholder="Comune, Elfico..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
@@ -432,10 +467,10 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
                       </div>
                     </div>
                     <div className="grid gap-2">
+                      <DamageMultiSelect label="Resistenze" value={selected.data?.resistances || ""} onChange={v=>{ const nd={...(selected.data||{}), resistances: v}; setSelected((p:any)=>({...p, data: nd})); fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: nd })}); setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: nd} : n)); }} />
+                      <DamageMultiSelect label="Immunità" value={selected.data?.immunities || ""} onChange={v=>{ const nd={...(selected.data||{}), immunities: v}; setSelected((p:any)=>({...p, data: nd})); fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: nd })}); setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: nd} : n)); }} />
+                      <DamageMultiSelect label="Vulnerabilità" value={selected.data?.vulnerabilities || ""} onChange={v=>{ const nd={...(selected.data||{}), vulnerabilities: v}; setSelected((p:any)=>({...p, data: nd})); fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: nd })}); setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: nd} : n)); }} />
                       {[
-                        ["resistances","Resistenze","fuoco, veleno..."],
-                        ["immunities","Immunità","psichico, charme..."],
-                        ["vulnerabilities","Vulnerabilità","radioso..."],
                         ["senses","Sensi","Percezione passiva 12, scurovisione 18m"],
                         ["languages","Lingue","Comune, Elfico..."],
                       ].map(([k,label,ph])=>(
