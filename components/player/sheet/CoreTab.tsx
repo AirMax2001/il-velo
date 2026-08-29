@@ -6,13 +6,13 @@ import { SKILL_DESCRIPTIONS } from "@/components/shared/AbilityReferenceTables";
 import { PlayerAvatar } from "@/components/shared/PlayerAvatar";
 import races from "@/lib/data/races";
 import { getRaceData, findRaceKey, getSubRaceData } from "@/lib/data/races";
-import { getFeaturesAtLevel, levelFromXp, xpForLevel } from "@/lib/data/leveling";
-import { CLASS_ABILITIES, getArchetypeForClass, getArchetypeAbilities, getArchetypeCasting } from "@/lib/data/classAbilities";
-import classes from "@/lib/data/classes";
-import { getClassData, findClassKey } from "@/lib/data/classes";
+import { levelFromXp, xpForLevel } from "@/lib/data/leveling";
+import { getClassData } from "@/lib/data/classes";
 import { getModifier, ALL_ABILITIES, ALL_SKILLS, ALL_SAVES, SKILL_ABILITY, SAVE_ABILITY, ABILITY_SHORT, SKILL_LABELS, SAVE_LABELS } from "@/lib/characterEngine";
 import { LevelUpPanel } from "@/components/player/LevelUpPanel";
-import { StatBox, CollapseSection } from "./ui";
+import { RacePopup } from "@/components/player/RacePopup";
+import { ClassPopup } from "@/components/player/ClassPopup";
+import { StatBox, SuggestField, CollapseSection } from "./ui";
 import type { SheetCtx } from "./types";
 
 const ABILITY_KEYS = ALL_ABILITIES;
@@ -42,10 +42,11 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
   const [xpAdd, setXpAdd] = useState("");
   const [xpError, setXpError] = useState("");
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showRacePopup, setShowRacePopup] = useState(false);
+  const [showClassPopup, setShowClassPopup] = useState(false);
+  const [showCharPopup, setShowCharPopup] = useState(false);
   const [saveInfoOpen, setSaveInfoOpen] = useState(false);
   const [abilityInfoOpen, setAbilityInfoOpen] = useState(false);
-  const [traitInfoOpen, setTraitInfoOpen] = useState<Record<string, boolean>>({});
-  const [classFeatInfoOpen, setClassFeatInfoOpen] = useState<Record<string, boolean>>({});
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
     setIsDesktop(mq.matches);
@@ -76,17 +77,69 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
   }
 
   const subRaceKey = cd.subRaceKey || "";
-  const subRace = subRaceKey && raceData?.subRaces
-    ? raceData.subRaces.find(sr => sr.key === subRaceKey)
-    : undefined;
 
   return (
     <div className="space-y-4">
-      {/* Avatar + Info principale - compatto */}
+      {/* Avatar + Info principale */}
       <div className="veil-panel p-3">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-center gap-1">
-            <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="lg" />
+        {/* Mobile: vertical layout */}
+        <div className="flex flex-col gap-3 sm:hidden">
+          {/* Avatar top-left, name+book and race/class to the right */}
+          <div className="flex items-start gap-3">
+            <div className="flex flex-col items-center gap-1 -mt-1">
+              <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="xl" />
+              <label className="cursor-pointer rounded border border-veil-gold/20 px-1.5 py-0.5 text-[9px] text-veil-gold/50 hover:bg-veil-gold/10 hover:text-veil-gold transition text-center">
+                {form?.avatar_url ? "Modifica" : "Immagine"}
+                <input type="file" accept="image/*" className="hidden" onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  resizeImage(file, 200, 0.6, dataUrl => {
+                    upd("avatar_url", dataUrl);
+                    save({ avatar_url: dataUrl });
+                  });
+                }} />
+              </label>
+              {form?.avatar_url && (
+                <button onClick={() => { upd("avatar_url", ""); save({ avatar_url: "" }); }} className="text-[9px] text-red-300/40 hover:text-red-300">Rimuovi</button>
+              )}
+            </div>
+            <div className="flex-1 flex flex-col gap-2 min-w-0 pt-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-white truncate">{form?.character_name || "—"}</h2>
+                <button onClick={() => setShowCharPopup(true)} className="shrink-0 rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[12px] text-veil-gold hover:bg-veil-gold/20 transition cursor-pointer font-medium" title="Personaggio" aria-label="Personaggio">📖</button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => { const rk = findRaceKey(form?.race || ""); if(rk) setShowRacePopup(true); }} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[12px] text-veil-gold hover:bg-veil-gold/20 hover:border-veil-gold/50 transition cursor-pointer shrink-0 font-medium">
+                  {form?.race || "—"}
+                </button>
+                <button type="button" onClick={() => setShowClassPopup(true)} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[12px] text-veil-gold hover:bg-veil-gold/20 hover:border-veil-gold/50 transition cursor-pointer shrink-0 font-medium">
+                  {form?.class || "—"}
+                </button>
+                {canLevel && <button onClick={()=>setShowLevelUp(true)} className="rounded-full bg-emerald-500/15 border border-emerald-400/30 px-3 py-1.5 text-[12px] text-emerald-300 font-medium animate-pulse shrink-0">⚡ Lv {derivedLevel} pronto!</button>}
+              </div>
+            </div>
+          </div>
+          {/* EXP row */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-white">Lv {level}</span>
+              <span className="text-sm font-bold text-veil-gold">{Number(form?.xp||0).toLocaleString("it-IT")} XP</span>
+              <span className="text-[10px] text-white/30">{canLevel ? <span className="text-emerald-300">pronto al passaggio</span> : ` / ${nextXp.toLocaleString("it-IT")} al Lv ${level+1}`}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input type="number" min={1} placeholder="+XP" className="veil-input w-16 min-w-0 text-xs !py-1 !px-2" value={xpAdd} onChange={e=>{setXpAdd(e.target.value); setXpError("");}} onKeyDown={e=> e.key==="Enter" && applyXp(1)} />
+              {dmMode && <button onClick={()=>applyXp(-1)} className="shrink-0 rounded-lg border border-red-400/30 bg-red-900/10 px-2 py-1 text-[11px] text-red-300/80 hover:bg-red-900/20 transition" title="Solo DM">−</button>}
+              <button onClick={()=>applyXp(1)} className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-2 py-1 text-[11px] text-veil-gold hover:bg-veil-gold/20 transition">+ Aggiungi</button>
+              {canLevel && <button onClick={()=>setShowLevelUp(true)} className="shrink-0 rounded-lg border border-veil-gold/30 bg-veil-gold/15 px-2.5 py-1 text-[11px] text-veil-gold font-medium">📜 Avanza</button>}
+            </div>
+            {xpError && <p className="w-full text-[11px] text-red-300">{xpError}</p>}
+          </div>
+        </div>
+
+        {/* Desktop: original horizontal layout */}
+        <div className="hidden sm:flex items-center gap-3">
+          <div className="flex flex-col items-center gap-1 -mt-1">
+            <PlayerAvatar url={form?.avatar_url} name={form?.character_name} size="xl" />
             <label className="cursor-pointer rounded border border-veil-gold/20 px-1.5 py-0.5 text-[9px] text-veil-gold/50 hover:bg-veil-gold/10 hover:text-veil-gold transition text-center">
               {form?.avatar_url ? "Modifica" : "Immagine"}
               <input type="file" accept="image/*" className="hidden" onChange={e => {
@@ -103,13 +156,23 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 flex-wrap">
+            <div className="flex items-center gap-3">
               <h2 className="text-base font-bold text-white truncate">{form?.character_name || "—"}</h2>
-              <span className="rounded-full bg-veil-gold/10 border border-veil-gold/20 px-2 py-0.5 text-[10px] text-veil-gold shrink-0">Lv {level}</span>
-              <span className="text-xs text-white/40 truncate">{form?.race || "—"} · {form?.class || "—"}</span>
-              {canLevel && <button onClick={()=>setShowLevelUp(true)} className="ml-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-1 text-[11px] text-emerald-300 font-medium animate-pulse shrink-0">⚡ Lv {derivedLevel} pronto!</button>}
+              <div className="flex-1 flex justify-center">
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => { const rk = findRaceKey(form?.race || ""); if(rk) setShowRacePopup(true); }} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[12px] text-veil-gold hover:bg-veil-gold/20 hover:border-veil-gold/50 transition cursor-pointer shrink-0 font-medium">
+                    {form?.race || "—"}
+                  </button>
+                  <button type="button" onClick={() => setShowClassPopup(true)} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[12px] text-veil-gold hover:bg-veil-gold/20 hover:border-veil-gold/50 transition cursor-pointer shrink-0 font-medium">
+                    {form?.class || "—"}
+                  </button>
+                  {canLevel && <button onClick={()=>setShowLevelUp(true)} className="rounded-full bg-emerald-500/15 border border-emerald-400/30 px-3 py-1.5 text-[12px] text-emerald-300 font-medium animate-pulse shrink-0">⚡ Lv {derivedLevel} pronto!</button>}
+                </div>
+              </div>
+              <button onClick={() => setShowCharPopup(true)} className="shrink-0 rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-[12px] text-veil-gold hover:bg-veil-gold/20 transition cursor-pointer font-medium" title="Personaggio" aria-label="Personaggio">📖</button>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex items-center gap-2 overflow-hidden">
+              <span className="text-sm font-bold text-white">Lv {level}</span>
               <span className="text-sm font-bold text-veil-gold">{Number(form?.xp||0).toLocaleString("it-IT")} XP</span>
               <span className="text-[10px] text-white/30">{canLevel ? <span className="text-emerald-300">pronto al passaggio</span> : ` / ${nextXp.toLocaleString("it-IT")} al Lv ${level+1}`}</span>
               <div className="ml-auto flex items-center gap-1.5">
@@ -283,182 +346,186 @@ export function CoreTab({ ctx }: { ctx: SheetCtx }) {
         })()}
       </div>
 
-      {/* Razza e Tratti */}
-      {raceData && (
-        <CollapseSection
-          title="Razza e Tratti"
-          defaultOpen={isDesktop}
-          right={
-            <span className="text-[10px] text-white/35">{raceData.name}{subRace ? ` — ${subRace.name}` : ""}</span>
-          }>
-          {raceData.subRaces && raceData.subRaces.length > 0 && subRaceKey && (
-            <div className="mb-3">
-              <p className="text-[10px] text-white/35">Sottorazza</p>
-              <div className="veil-input w-full pointer-events-none opacity-60 bg-black/20 text-white/60">{subRace?.name || (cd as any).subRaceName || subRaceKey}</div>
-              <p className="text-[9px] text-white/20 mt-1">Scelta alla creazione, non modificabile.</p>
-            </div>
-          )}
+        {showRacePopup && (
+          <RacePopup
+            raceKey={findRaceKey(form?.race || "") || ""}
+            subRaceKey={cd.subRaceKey}
+            onClose={() => setShowRacePopup(false)}
+          />
+        )}
+        {showClassPopup && (
+          <ClassPopup
+            clsKey={clsKey}
+            clsData={clsData}
+            level={level}
+            cd={cd}
+            onClose={() => setShowClassPopup(false)}
+            onPickArchetype={(key) => { updCd("archetype", key); save({ archetype: key }); }}
+          />
+        )}
 
-          <div className="flex flex-wrap gap-1 mb-2">
-            {Object.entries(raceData.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
-              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
-                {ABILITY_SHORT[k] || k}+{v} <span className="text-[8px] opacity-60">già incluso</span>
-              </span>
-            ))}
-            {subRace?.abilityBonuses && Object.entries(subRace.abilityBonuses).filter(([, v]) => v > 0).map(([k, v]) => (
-              <span key={k} className="rounded bg-veil-gold/10 px-1.5 py-0.5 text-[10px] text-veil-gold/70">
-                {ABILITY_SHORT[k] || k}+{v} (sottorazza) <span className="text-[8px] opacity-60">già incluso</span>
-              </span>
-            ))}
-          </div>
-          <p className="text-[9px] text-white/20 mb-2">I bonus sopra sono già sommati nei punteggi di Caratteristiche — non aggiungerli di nuovo.</p>
+        {/* Popup Personaggio — tratti, storia, aspetto, background, lingue */}
+        {showCharPopup && (
+          <div className="fixed inset-0 z-[80] bg-[#05070d]/90 backdrop-blur-md overflow-y-auto" onClick={() => setShowCharPopup(false)}>
+            <div className="mx-auto max-w-2xl px-4 py-6" onClick={e => e.stopPropagation()}>
+              <div className="veil-panel p-5 border-veil-gold/40 shadow-[0_0_40px_rgba(218,180,113,0.15)]">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h2 className="text-lg text-veil-gold font-bold">📖 Personaggio</h2>
+                  <button onClick={() => setShowCharPopup(false)} className="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/50 hover:border-white/20 hover:text-white/80 transition">✕ Chiudi</button>
+                </div>
 
-          {(raceData.resistances || []).length > 0 && (
-            <div className="space-y-2 mb-2">
-              {(raceData.resistances || []).map((r: string) => {
-                const key=`resist-${r}`;
-                const open=!!traitInfoOpen[key];
-                return (
-                  <div key={r} className="rounded-lg bg-black/20 p-2 border border-red-500/10">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-red-300/70 font-medium">✦ Resistenza: {r} <span className="text-[9px] text-white/20">(razza)</span></p>
-                      <button onClick={()=>setTraitInfoOpen(o=>({...o,[key]:!o[key]}))} className="w-5 h-5 rounded-full border border-red-400/20 bg-red-900/15 flex items-center justify-center text-[10px] text-red-300/60 hover:bg-red-900/25 transition">i</button>
+                {/* Tratti di personalità */}
+                <div className="mb-4">
+                  <h3 className="text-sm text-veil-gold/80 font-medium mb-2">
+                    Tratti {bgData && <span className="text-[10px] text-white/30 font-normal ml-1">Background: {bgData.name}</span>}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <SuggestField label="Tratti di Personalità" fieldKey="personalityTraits" value={cd.personalityTraits || ""} suggestions={bgData?.personalityTraits || []}
+                      onChange={v => updCd("personalityTraits", v)} onPick={v => save({ personalityTraits: v })}
+                      onBlur={() => save({ personalityTraits: ctx.formRef.current?.character_data?.personalityTraits })} />
+                    <SuggestField label="Ideali" fieldKey="ideals" value={cd.ideals || ""} suggestions={bgData?.ideals || []}
+                      onChange={v => updCd("ideals", v)} onPick={v => save({ ideals: v })}
+                      onBlur={() => save({ ideals: ctx.formRef.current?.character_data?.ideals })} />
+                    <SuggestField label="Legami" fieldKey="bonds" value={cd.bonds || ""} suggestions={bgData?.bonds || []} isTop
+                      onChange={v => updCd("bonds", v)} onPick={v => save({ bonds: v })}
+                      onBlur={() => save({ bonds: ctx.formRef.current?.character_data?.bonds })} />
+                    <SuggestField label="Difetti" fieldKey="flaws" value={cd.flaws || ""} suggestions={bgData?.flaws || []} isTop
+                      onChange={v => updCd("flaws", v)} onPick={v => save({ flaws: v })}
+                      onBlur={() => save({ flaws: ctx.formRef.current?.character_data?.flaws })} />
+                  </div>
+                </div>
+
+                <div className="h-px bg-white/[0.06] mb-4" />
+
+                {/* Storia e Motivazioni */}
+                <div className="mb-4">
+                  <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Storia e Motivazioni</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <LabelWithGuide fieldKey="history" label="Storia del Personaggio" />
+                      <textarea className="veil-input mt-1 w-full min-h-[80px] text-sm"
+                        value={form?.history || ""}
+                        onChange={e => upd("history", e.target.value)}
+                        onBlur={() => save({ history: ctx.formRef.current?.history })} />
                     </div>
-                    {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">Hai resistenza ai danni da {r} (danni dimezzati) e vantaggio ai tiri salvezza contro l'avvelenamento se è veleno.</p>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {raceData.traits.map(t => {
-              const key=`race-${t.name}`;
-              const open=!!traitInfoOpen[key];
-              return (
-                <div key={t.name} className="rounded-lg bg-black/20 p-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(razza)</span></p>
-                    <button onClick={()=>setTraitInfoOpen(o=>({...o, [key]: !o[key]}))} className="w-5 h-5 rounded-full border border-emerald-400/20 bg-emerald-900/15 flex items-center justify-center text-[10px] text-emerald-300/60 hover:bg-emerald-900/25 transition" title="Mostra descrizione">i</button>
-                  </div>
-                  {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">{t.description}</p>}
-                </div>
-              );
-            })}
-            {(subRace?.traits || []).map(t => {
-              const key=`sub-${t.name}`;
-              const open=!!traitInfoOpen[key];
-              return (
-                <div key={t.name} className="rounded-lg bg-black/20 p-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-emerald-400/70 font-medium">✦ {t.name} <span className="text-[9px] text-white/20">(sottorazza)</span></p>
-                    <button onClick={()=>setTraitInfoOpen(o=>({...o, [key]: !o[key]}))} className="w-5 h-5 rounded-full border border-emerald-400/20 bg-emerald-900/15 flex items-center justify-center text-[10px] text-emerald-300/60 hover:bg-emerald-900/25 transition" title="Mostra descrizione">i</button>
-                  </div>
-                  {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">{t.description}</p>}
-                </div>
-              );
-            })}
-          </div>
-        </CollapseSection>
-      )}
-
-      {/* Caratteristiche di Classe per livello */}
-      {clsKey && (
-        <CollapseSection
-          title="Caratteristiche di Classe"
-          defaultOpen={isDesktop}
-          right={<span className="text-[10px] text-white/35">{level} livelli</span>}>
-
-          {(() => {
-            const arch = getArchetypeForClass(clsKey);
-            if (!arch || level < arch.level) return null;
-            const picked = cd.archetype || "";
-            const pickedOpt = arch.options.find(o => o.key === picked);
-            return (
-              <div className="rounded-lg bg-black/20 p-3 mb-3 border border-white/[0.06]">
-                <p className="text-xs text-veil-gold/70 font-medium mb-1">🎭 {arch.label} <span className="text-[10px] text-white/30">(sceglila al {arch.level}° livello)</span></p>
-                {picked ? (
-                  <div className="rounded-xl border border-emerald-400/20 bg-emerald-900/[0.08] p-3">
-                    <p className="text-sm text-emerald-300/90 font-medium">{pickedOpt?.name}</p>
-                    <p className="text-[11px] text-white/50 mt-1">{pickedOpt?.description}</p>
-                    {(() => {
-                      const acts = getArchetypeAbilities(picked);
-                      const cast = getArchetypeCasting(picked);
-                      const changes: string[] = [
-                        ...(cast ? [cast.label] : []),
-                        ...acts.map(a => `${a.name} (${a.effect})`),
-                      ];
-                      if (changes.length === 0) return null;
-                      return (
-                        <div className="mt-2 space-y-1">
-                          {changes.map(c => (
-                            <p key={c} className="text-[10px] text-indigo-300/60 leading-snug">✨ {c}</p>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                    <p className="text-[9px] text-white/20 mt-2">Scelto al {arch.level}° livello — non modificabile.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 mt-2">
-                    {arch.options.map(o => {
-                      const acts = getArchetypeAbilities(o.key);
-                      const cast = getArchetypeCasting(o.key);
-                      return (
-                        <button key={o.key} type="button"
-                          onClick={() => { updCd("archetype", o.key); save({ archetype: o.key }); }}
-                          className="w-full text-left rounded-xl border border-white/[0.06] bg-black/30 hover:border-veil-gold/30 hover:bg-white/[0.02] p-3 transition">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs text-white/80 font-medium">{o.name}</p>
-                            {cast && (
-                              <span className="flex-shrink-0 rounded-full border px-2 py-0.5 text-[9px] text-violet-300/80 border-violet-400/25 bg-violet-500/10">
-                                {cast.ki ? "✨ magie in Ki" : "✨ sblocca la magia"}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-white/45 mt-1 leading-snug">{o.description}</p>
-                          {acts.length > 0 && (
-                            <p className="text-[10px] text-indigo-300/50 mt-1.5">
-                              Cosa cambia: {acts.map(a => a.name).join(" · ")}
-                              {cast ? ` · ${cast.label}` : ""}
-                            </p>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          <div className="space-y-3">
-            {Array.from({ length: level }, (_, i) => i + 1).map(lv => {
-              const feats = getFeaturesAtLevel(clsKey, lv);
-              if (feats.length === 0) return null;
-              return (
-                <div key={lv} className="mb-1">
-                  <p className="text-xs text-white/30 mb-1">Livello {lv}</p>
-                  {feats.map(f => {
-                    const key=`feat-${lv}-${f.name}`;
-                    const open=!!classFeatInfoOpen[key];
-                    return (
-                      <div key={f.name} className="rounded-lg bg-black/20 p-2 mb-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs text-veil-gold/70 font-medium">✦ {f.name}</p>
-                          <button onClick={()=>setClassFeatInfoOpen(o=>({...o,[key]:!o[key]}))} className="w-5 h-5 rounded-full border border-veil-gold/20 bg-veil-gold/10 flex items-center justify-center text-[10px] text-veil-gold/60 hover:bg-veil-gold/20 transition" title="Mostra descrizione">i</button>
-                        </div>
-                        {open && <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed border-t border-white/[0.06] pt-1.5">{f.description}</p>}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <LabelWithGuide fieldKey="goals" label="Obiettivo" />
+                        <textarea className="veil-input mt-1 w-full min-h-[50px] text-sm"
+                          value={form?.goals || ""}
+                          onChange={e => upd("goals", e.target.value)}
+                          onBlur={() => save({ goals: ctx.formRef.current?.goals })} />
                       </div>
-                    );
-                  })}
+                      <div>
+                        <LabelWithGuide fieldKey="fear" label="Paura" />
+                        <input type="text" className="veil-input mt-1 w-full text-sm"
+                          value={form?.fear || ""}
+                          onChange={e => upd("fear", e.target.value)}
+                          onBlur={() => save({ fear: ctx.formRef.current?.fear })} />
+                      </div>
+                      <div>
+                        <LabelWithGuide fieldKey="important_person" label="Persona Importante" />
+                        <input type="text" className="veil-input mt-1 w-full text-sm"
+                          value={form?.important_person || ""}
+                          onChange={e => upd("important_person", e.target.value)}
+                          onBlur={() => save({ important_person: ctx.formRef.current?.important_person })} />
+                      </div>
+                      <div>
+                        <LabelWithGuide fieldKey="secret" label="Segreto" />
+                        <textarea className="veil-input mt-1 w-full min-h-[50px] text-sm"
+                          value={form?.secret || ""}
+                          onChange={e => upd("secret", e.target.value)}
+                          onBlur={() => save({ secret: ctx.formRef.current?.secret })} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </CollapseSection>
-      )}
 
+                <div className="h-px bg-white/[0.06] mb-4" />
+
+                {/* Aspetto Fisico */}
+                <div className="mb-4">
+                  <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Aspetto Fisico</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                      <LabelWithGuide fieldKey="age" label="Età" />
+                      <input type="text" className="veil-input mt-1 w-full text-sm"
+                        value={form?.age || ""}
+                        onChange={e => upd("age", e.target.value)}
+                        onBlur={() => save({ age: ctx.formRef.current?.age })} />
+                    </div>
+                    <div>
+                      <LabelWithGuide fieldKey="height" label="Altezza" />
+                      <input type="text" className="veil-input mt-1 w-full text-sm"
+                        value={cd.height || ""} placeholder="180cm"
+                        onChange={e => updCd("height", e.target.value)}
+                        onBlur={() => save({ height: ctx.formRef.current?.character_data?.height })} />
+                    </div>
+                    <div>
+                      <LabelWithGuide fieldKey="weight" label="Peso" />
+                      <input type="text" className="veil-input mt-1 w-full text-sm"
+                        value={cd.weight || ""} placeholder="80kg"
+                        onChange={e => updCd("weight", e.target.value)}
+                        onBlur={() => save({ weight: ctx.formRef.current?.character_data?.weight })} />
+                    </div>
+                    <div>
+                      <LabelWithGuide fieldKey="eyes" label="Occhi" />
+                      <input type="text" className="veil-input mt-1 w-full text-sm"
+                        value={cd.eyes || ""} placeholder="Azzurri"
+                        onChange={e => updCd("eyes", e.target.value)}
+                        onBlur={() => save({ eyes: ctx.formRef.current?.character_data?.eyes })} />
+                    </div>
+                    <div>
+                      <LabelWithGuide fieldKey="skin" label="Carnagione" />
+                      <input type="text" className="veil-input mt-1 w-full text-sm"
+                        value={cd.skin || ""} placeholder="Olivastra"
+                        onChange={e => updCd("skin", e.target.value)}
+                        onBlur={() => save({ skin: ctx.formRef.current?.character_data?.skin })} />
+                    </div>
+                    <div>
+                      <LabelWithGuide fieldKey="hair" label="Capelli" />
+                      <input type="text" className="veil-input mt-1 w-full text-sm"
+                        value={cd.hair || ""} placeholder="Corvino, lungo"
+                        onChange={e => updCd("hair", e.target.value)}
+                        onBlur={() => save({ hair: ctx.formRef.current?.character_data?.hair })} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-px bg-white/[0.06] mb-4" />
+
+                {/* Caratteristiche dal Background */}
+                <div className="mb-4">
+                  <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Caratteristiche dal Background</h3>
+                  {bgData ? (
+                    <div className="rounded-lg bg-black/20 border border-white/[0.06] p-3">
+                      <p className="text-xs text-blue-400/70 font-medium">{bgData.feature.name}</p>
+                      <p className="text-[11px] text-white/40 mt-0.5">{bgData.feature.description}</p>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-white/30">Nessun background selezionato.</p>
+                  )}
+                </div>
+
+                <div className="h-px bg-white/[0.06] mb-4" />
+
+                {/* Lingue */}
+                <div>
+                  <h3 className="text-sm text-veil-gold/80 font-medium mb-2">Lingue</h3>
+                  <p className="text-[10px] text-white/30 mb-1">
+                    {raceData ? `Lingua/e dalla razza: ${raceData.languages.join(", ")}` : ""}
+                    {bgData?.languages ? ` · ${bgData.languages} extra dal background` : ""}
+                  </p>
+                  <textarea className="veil-input w-full min-h-[60px] text-sm"
+                    placeholder="Comune, Nanico, Elfico..."
+                    value={cd.languages || raceData?.languages.join(", ") || ""}
+                    onChange={e => updCd("languages", e.target.value)}
+                    onBlur={() => save({ languages: ctx.formRef.current?.character_data?.languages })} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

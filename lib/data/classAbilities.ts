@@ -87,9 +87,19 @@ export const CLASS_ABILITIES: Record<string, ClassAbility[]> = {
       effect: "Compi un'azione di Scatto o Disimpegno e la distanza del tuo salto raddoppia per il turno.",
     },
     {
+      key: "monk_deflessione_missili", name: "Deflessione Missili", level: 3, action: "reazione",
+      uses: "senza limite",
+      effect: "Reazione: riduci il danno di un attacco a distanza con arma di 1d10 + mod DES + livello da monaco. Se lo riduci a 0, il proiettile si schianta a terra.",
+    },
+    {
       key: "monk_colpo_stordente", name: "Colpo Stordente", level: 5, action: "dopo un colpo in mischia",
       uses: "1 Ki per colpo",
       effect: "Il bersaglio deve superare un TS COS o essere stordito fino alla fine del tuo prossimo turno.",
+    },
+    {
+      key: "monk_evasione", name: "Evasione", level: 7, action: "passiva",
+      uses: "senza limite",
+      effect: "Un TS di DES riuscito = nessun danno; fallito = metà danno.",
     },
   ],
   paladin: [
@@ -127,6 +137,41 @@ export const CLASS_ABILITIES: Record<string, ClassAbility[]> = {
       uses: "punti = livello da stregone, recupero dopo riposo lungo",
       effect: "Crei punti stregoneria e li spendi per la Metamagia (es. Incantesimo Ritardato, Duplicazione, Raddoppio) o per creare slot incantesimo.",
     },
+    {
+      key: "sorcerer_meta_incantamento_distant", name: "Meta: Incantamento a Distanza", level: 2, action: "quando lanci un incantesimo",
+      uses: "1 Punto Stregoneria",
+      effect: "L'incantesimo ha 9m di portata in più, o diventa a distanza.",
+    },
+    {
+      key: "sorcerer_meta_incantamento_empowered", name: "Meta: Incantamento Potenziato", level: 2, action: "quando lanci un incantesimo",
+      uses: "1 Punto Stregoneria per dado",
+      effect: "Ri-tiri uno o più dadi di danno dell'incantesimo e scegli i nuovi risultati.",
+    },
+    {
+      key: "sorcerer_meta_incantamento_extended", name: "Meta: Incantamento Esteso", level: 2, action: "quando lanci un incantesimo",
+      uses: "1 Punto Stregoneria",
+      effect: "La durata dell'incantesimo raddoppia (massimo 24h).",
+    },
+    {
+      key: "sorcerer_meta_incantamento_heightened", name: "Meta: Incantamento Amplificato", level: 2, action: "quando lanci un incantesimo",
+      uses: "3 Punti Stregoneria",
+      effect: "Il primo TS per resistere all'incantesimo ha svantaggio.",
+    },
+    {
+      key: "sorcerer_meta_incantamento_quickened", name: "Meta: Incantamento Rapido", level: 2, action: "quando lanci un incantesimo",
+      uses: "2 Punti Stregoneria",
+      effect: "Un incantesimo che richiede un'azione diventa azione bonus.",
+    },
+    {
+      key: "sorcerer_meta_incantamento_subtle", name: "Meta: Incantamento Sottile", level: 2, action: "quando lanci un incantesimo",
+      uses: "1 Punto Stregoneria",
+      effect: "L'incantesimo non richiede componenti verbali o somatiche (lanciato in segreto).",
+    },
+    {
+      key: "sorcerer_meta_incantamento_twinned", name: "Meta: Incantamento Doppio", level: 2, action: "quando lanci un incantesimo",
+      uses: "punti = livello dell'incantesimo",
+      effect: "L'incantesimo bersaglia una seconda creatura aggiuntiva.",
+    },
   ],
   warlock: [
     {
@@ -142,7 +187,23 @@ export const CLASS_ABILITIES: Record<string, ClassAbility[]> = {
       effect: "Recuperi slot incantesimo spesi per un totale pari a metà del tuo livello da mago (arrotondato per eccesso), massimo 5° livello.",
     },
   ],
-  ranger: [],
+  ranger: [
+    {
+      key: "ranger_nemico_prescelto", name: "Nemico Prescelto", level: 1, action: "passiva",
+      uses: "senza limite",
+      effect: "Scegli un tipo di nemico: vantaggio su prove di SAG per ricordare info su di esso, +2 danni.",
+    },
+    {
+      key: "ranger_esploratore_nativo", name: "Esploratore Nativo", level: 1, action: "passiva",
+      uses: "senza limite",
+      effect: "Scegli un terreno: vantaggio su iniziativa e alcune prove mentre viaggi in quel terreno.",
+    },
+    {
+      key: "ranger_azione_aggigliata", name: "Azione Aggigliata", level: 2, action: "azione bonus",
+      uses: "senza limite",
+      effect: "Se il tuo Nemico Prescelto è entro 9m, puoi usare l'azione bonus per un attacco extra con arma.",
+    },
+  ],
 };
 
 /* ── Archetipi (scelte di specializzazione per classe) ──────── */
@@ -289,8 +350,10 @@ export const ARCHETYPE_ABILITIES: Record<string, ClassAbility[]> = {
       uses: "1 uso di Ispirazione Bardica", effect: "Un alleato entro 18m può aggiungere il dado a un attacco o a un danno." },
   ],
   spade: [
-    { key: "spade_stile_duello", name: "Stile con due Armi", level: 3, action: "passiva",
-      uses: "senza limite", effect: "Combatti con un'arma in ogni mano: attacco bonus con l'arma secondaria (senza modificatore al danno)." },
+    { key: "spade_stile_duello", name: "Stile di Combattimento con due Armi", level: 3, action: "passiva",
+      uses: "senza limite", effect: "Quando fai un attacco con l'arma secondaria, aggiungi il tuo mod DES al danno." },
+    { key: "spade_bravura", name: "Bravura", level: 3, action: "azione bonus dopo un attacco", die: "d6",
+      uses: "1 uso di Ispirazione Bardica", effect: "Spendi un dado ispirazione: aggiungilo al danno, o ottieni bonus CA pari al dado fino al tuo prossimo turno, o respingi un attacco." },
   ],
   vita: [
     { key: "vita_preservare_vita", name: "Preservare Vita", level: 1, action: "azione",

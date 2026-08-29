@@ -225,11 +225,11 @@ export function CharacterWizard({ player, onComplete, onClose }: Props) {
         cd.cantrips = data.selectedSpells.filter(s => {
           const sp = getSpellsForClass(data.classKey, 0).find(sp => sp.name === s);
           return !!sp;
-        });
+        }).slice(0, cls.spellcasting.cantripsKnown);
         cd.spells1 = data.selectedSpells.filter(s => {
           const sp = getSpellsForClass(data.classKey, 1).find(sp => sp.name === s);
           return !!sp;
-        });
+        }).slice(0, cls.spellcasting.spellsKnown);
         cd.spellSlots = { 1: { total: cls.spellcasting.spellSlots[1] || 0, expended: 0 } };
       }
 

@@ -23,7 +23,7 @@ export function MagicTab({ ctx }: { ctx: SheetCtx }) {
   const canEdit = hasSpellcasting && !!ctx.dmMode; // matita solo per DM su tutti gli incantesimi/trucchetti — i giocatori vedono solo i selezionati
   const [editingCantrips, setEditingCantrips] = useState(false);
   const [editingSpells, setEditingSpells] = useState(false);
-  const cantrips = (cd.cantrips||[]) as string[];
+  const cantrips = ((cd.cantrips||[]) as string[]).slice(0, cantripLimit || undefined);
   const spellAbilityLabel = spellAbility ? (ABILITY_SHORT[spellAbility] || spellAbility) : null;
 
   const spellDesc = (name:string)=> getSpellsForClass(listKey,0).find(s=>s.name===name) || [1,2,3,4,5,6,7,8,9].flatMap(lv=> getSpellsForClass(listKey, lv)).find(s=>s.name===name);

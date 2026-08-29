@@ -11,19 +11,16 @@ import { getArchetypeCasting, getArchetypeSlotsAtLevel } from "@/lib/data/classA
 import { CoreTab } from "@/components/player/sheet/CoreTab";
 import { SpellTab } from "@/components/player/sheet/SpellTab";
 import { GearTab } from "@/components/player/sheet/GearTab";
-import { PersonalityTab } from "@/components/player/sheet/PersonalityTab";
-import { ExtraTab } from "@/components/player/sheet/ExtraTab";
 import { PartyTab } from "@/components/player/sheet/PartyTab";
 import type { SheetCtx } from "./sheet/types";
 
 type Props = { player: Player; onUpdate: (p: Player) => void; onExit?: () => void; onSaveStateChange?: (s: "idle" | "saving" | "saved" | "error") => void; sessionId?: string; dmMode?: boolean };
-type SheetTab = "core" | "combat" | "gear" | "personality" | "party";
+type SheetTab = "core" | "combat" | "gear" | "party";
 
 const TABS: { id: SheetTab; label: string; short: string; icon: string }[] = [
   { id: "core", label: "Nucleo", short: "Nucleo", icon: "⚡" },
-  { id: "combat", label: "Combattimento", short: "Combatt.", icon: "⚔️" },
-  { id: "gear", label: "Equipaggiamento", short: "Equip.", icon: "🎒" },
-  { id: "personality", label: "Personalità", short: "Pers.", icon: "📖" },
+  { id: "combat", label: "Combattimento", short: "Combattimento", icon: "⚔️" },
+  { id: "gear", label: "Equipaggiamento", short: "Equipaggiamento", icon: "🎒" },
   { id: "party", label: "Party", short: "Party", icon: "👥" },
 ];
 
@@ -204,13 +201,6 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
     core: () => <CoreTab ctx={ctx} />,
     combat: () => <SpellTab ctx={ctx} />,
     gear: () => <GearTab ctx={ctx} />,
-    personality: () => (
-      <>
-        <PersonalityTab ctx={ctx} />
-        <div className="h-3" />
-        <ExtraTab ctx={ctx} />
-      </>
-    ),
     party: () => <PartyTab ctx={ctx} sessionId={sessionId} onExit={onExit} />,
   };
 
@@ -224,15 +214,15 @@ export function CharacterSheet({ player, onUpdate, onExit, onSaveStateChange, se
 
       {/* Bottom nav: sempre visibile, bloccata in basso */}
       <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-veil-gold/20 bg-[#10141b]/95 backdrop-blur-md">
-        <div className="flex overflow-x-auto">
+        <div className="flex">
           {TABS.map(t => {
             const active = activeTab === t.id;
             return (
               <button key={t.id} onClick={() => setActiveTab(t.id)}
-                className={`flex-1 min-w-[54px] flex flex-col items-center gap-0.5 py-2.5 px-1 transition ${active ? "text-veil-gold" : "text-white/40 hover:text-white/70"}`}>
-                <span className="text-base leading-none">{t.icon}</span>
-                <span className="text-[9px] leading-none">{t.short}</span>
-                {active && <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-veil-gold/70" />}
+                className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 transition ${active ? "text-veil-gold" : "text-white/40 hover:text-white/70"}`}>
+                <span className="text-xl leading-none">{t.icon}</span>
+                <span className="text-[11px] leading-tight font-medium whitespace-nowrap">{t.short}</span>
+                {active && <span className="absolute bottom-0 h-0.5 w-10 rounded-full bg-veil-gold/70" />}
               </button>
             );
           })}

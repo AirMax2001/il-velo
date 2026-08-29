@@ -190,8 +190,11 @@ export function calculateACFromLoadout(classKey: string, scores: AbilityScores, 
 }
 
 export function calculateHP(classData: ClassData, conScore: number, level: number): number {
+  const conMod = getModifier(conScore);
   const hitDieAvg = Math.ceil(classData.hitDie / 2) + 1;
-  return hitDieAvg + getModifier(conScore) + (level - 1) * (hitDieAvg + getModifier(conScore));
+  const lv1 = classData.hitDie + conMod;
+  if (level <= 1) return lv1;
+  return lv1 + (level - 1) * (hitDieAvg + conMod);
 }
 
 export function calculateInitiative(dexScore: number): number {

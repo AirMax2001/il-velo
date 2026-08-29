@@ -151,6 +151,9 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ name: "", weight: "", quantity: "1", rarity: "common", value: "" });
+  const [addError, setAddError] = useState("");
   const seedingRef = useRef(false);
 
   const totalWeight = items.reduce((s, i) => s + (Number(i.weight) || 0) * (Number(i.quantity) || 1), 0);
@@ -243,6 +246,35 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
     if (!window.confirm("Scartare questo oggetto? Verrà rimosso dall'inventario.")) return;
     await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
     setSelected(null);
+    loadItems();
+  }
+
+  async function addItem() {
+    setAddError("");
+    const name = addForm.name.trim();
+    const weight = Number(addForm.weight);
+    if (!name) { setAddError("Inserisci il nome dell'oggetto."); return; }
+    if (!addForm.weight || isNaN(weight) || weight <= 0) { setAddError("Inserisci il peso dell'oggetto (kg)."); return; }
+    if (full) { setAddError("Zaino pieno!"); return; }
+    const cat = itemCategory(name);
+    const res = await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: player.session_id,
+        player_id: player.id,
+        name,
+        quantity: Math.max(1, Number(addForm.quantity) || 1),
+        weight,
+        value: addForm.value ? Number(addForm.value) : 0,
+        rarity: addForm.rarity,
+        category: cat === "gear" ? "general" : cat,
+        item_type: cat === "weapon" ? "weapon" : cat === "armor" || cat === "shield" ? "armor" : "other",
+      }),
+    });
+    if (!res.ok) { setAddError("Errore di salvataggio."); return; }
+    setAddForm({ name: "", weight: "", quantity: "1", rarity: "common", value: "" });
+    setShowAdd(false);
     loadItems();
   }
 
@@ -357,18 +389,18 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
           </span>
         </div>
 
-        <div className="grid grid-cols-9 gap-1.5">
+        <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 sm:gap-1.5">
           {Array.from({ length: CAPACITY }, (_, i) => {
             const it = items[i];
             const r = RARITY[it?.rarity] || RARITY.common;
             return (
-              <button key={i} onClick={() => it && setSelected(it)}
-                title={it?.name}
-                className={`relative flex aspect-square items-center justify-center rounded-lg border text-lg transition select-none
+              <button key={i} onClick={() => it ? setSelected(it) : setShowAdd(true)}
+                title={it?.name || "Aggiungi oggetto"}
+                className={`relative flex aspect-square items-center justify-center rounded-lg border text-lg sm:text-lg transition select-none
                   ${it
                     ? `${r.border} ${r.bg} cursor-pointer hover:scale-105 hover:border-veil-gold/50 ${it.equipped ? "ring-2 ring-veil-gold/70" : ""}`
-                    : "border-white/[0.05] bg-white/[0.02] text-white/10"}`}>
-                {it ? itemEmoji(it) : "·"}
+                    : "border-white/[0.05] bg-white/[0.02] text-white/10 hover:border-veil-gold/30 hover:bg-veil-gold/5 hover:text-veil-gold/30 cursor-pointer"}`}>
+                {it ? itemEmoji(it) : "+"}
                 {it && it.equipped && (
                   <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full bg-veil-gold text-[9px] text-black shadow-md w-4 h-4">⚔</span>
                 )}
@@ -489,6 +521,74 @@ export function MinecraftInventory({ player, cd, level, pb, onAddAttack, save, u
               <button onClick={() => setSelected(null)}
                 className="ml-auto rounded-lg border border-white/10 px-4 py-2 text-xs text-white/60 hover:text-white transition">
                 Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Aggiungi Oggetto */}
+      {showAdd && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center" onClick={() => setShowAdd(false)}>
+          <div className="w-full max-w-sm rounded-2xl border border-veil-gold/40 bg-[#10141b] p-5 shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg text-veil-gold font-bold">➕ Nuovo Oggetto</h2>
+              <button onClick={() => setShowAdd(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[9px] uppercase tracking-[0.15em] text-white/30">Nome *</label>
+                <input className="veil-input mt-1 w-full text-sm" placeholder="Es. anello d'oro"
+                  value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] uppercase tracking-[0.15em] text-white/30">Peso (kg) *</label>
+                  <input type="number" step="0.1" min="0.1" className="veil-input mt-1 w-full text-sm"
+                    placeholder="0.5" value={addForm.weight}
+                    onChange={e => setAddForm({ ...addForm, weight: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-[0.15em] text-white/30">Quantità</label>
+                  <input type="number" min="1" className="veil-input mt-1 w-full text-sm"
+                    value={addForm.quantity} onChange={e => setAddForm({ ...addForm, quantity: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] uppercase tracking-[0.15em] text-white/30">Rarità</label>
+                  <select className="veil-input mt-1 w-full text-sm" value={addForm.rarity}
+                    onChange={e => setAddForm({ ...addForm, rarity: e.target.value })}>
+                    <option value="common">Comune</option>
+                    <option value="rare">Raro</option>
+                    <option value="epic">Epico</option>
+                    <option value="legendary">Leggendario</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-[0.15em] text-white/30">Valore (mo)</label>
+                  <input type="number" min="0" step="0.1" className="veil-input mt-1 w-full text-sm"
+                    placeholder="0" value={addForm.value}
+                    onChange={e => setAddForm({ ...addForm, value: e.target.value })} />
+                </div>
+              </div>
+            </div>
+
+            {addError && <p className="mt-3 text-xs text-red-300">{addError}</p>}
+            {full && !addError && (
+              <p className="mt-3 text-xs text-red-300">Zaino pieno ({items.length}/{CAPACITY}).</p>
+            )}
+
+            <div className="flex gap-2 mt-4">
+              <button onClick={addItem} disabled={full}
+                className="flex-1 rounded-lg border border-veil-gold/30 bg-veil-gold/10 px-4 py-2.5 text-sm text-veil-gold hover:bg-veil-gold/20 transition font-medium disabled:opacity-40">
+                + Aggiungi
+              </button>
+              <button onClick={() => setShowAdd(false)}
+                className="rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/50 hover:text-white transition">
+                Annulla
               </button>
             </div>
           </div>

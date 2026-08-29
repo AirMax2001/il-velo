@@ -35,8 +35,10 @@ export function Step7Spells({ ctx }: { ctx: WizardCtx }) {
     setData(prev => {
       const sel = prev.selectedSpells;
       if (sel.includes(name)) return { ...prev, selectedSpells: sel.filter(s => s !== name) };
-      if (level === 0 && cantripsSelected >= maxCantrips) return prev;
-      if (level === 1 && spellsSelected >= maxSpells) return prev;
+      const currentCantCount = sel.filter(s => getSpellsForClass(data.classKey, 0).some(sp => sp.name === s)).length;
+      const currentSpellCount = sel.filter(s => getSpellsForClass(data.classKey, 1).some(sp => sp.name === s)).length;
+      if (level === 0 && currentCantCount >= maxCantrips) return prev;
+      if (level === 1 && currentSpellCount >= maxSpells) return prev;
       return { ...prev, selectedSpells: [...sel, name] };
     });
   }

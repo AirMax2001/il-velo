@@ -129,7 +129,6 @@ export const CLASS_FEATURES: Record<string, ClassFeature[]> = {
   bard: [
     { level: 1, name: "Incantesimi", description: "Lanci incantesimi usando CAR come caratteristica da incantatore." },
     { level: 1, name: "Ispirazione Bardica (d6)", description: "Azione bonus: concedi a un alleato un d6 da aggiungere a una prova, tiro salvezza o attacco entro 10 minuti." },
-    { level: 2, name: "Ispirazione di Taglio (d6)", description: "Rispondi alla canzone: quando un alleato attacca, può aggiungere il dado al danno; quando è colpito, può ridurre il danno." },
     { level: 2, name: "Padronanza", description: "Aggiungi metà del bonus di competenza (arrotondato per difetto) a tutte le prove con abilità in cui non sei competente." },
     { level: 2, name: "Canto del Riposo", description: "Durante un riposo breve puoi suonare per alleati: ciascuno può tirare un dado extra (d6) per recuperare PF." },
     { level: 3, name: "Collegio Bardico", description: "Scegli un collegio (archetipo) che ti dà nuove capacità." },

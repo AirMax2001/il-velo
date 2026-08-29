@@ -70,9 +70,16 @@ export function LevelUpPanel({ player, onApply }: Props){
   const oldCant = getCantripsKnown(clsKey||"", currentLevel);
   const newCant = getCantripsKnown(clsKey||"", derivedLevel);
   const cantDelta = Math.max(0, newCant - oldCant);
-  const oldKnown = getSpellsKnownLimit(clsKey||"", currentLevel);
-  const newKnown = getSpellsKnownLimit(clsKey||"", derivedLevel);
-  const knownDelta = Math.max(0, newKnown - oldKnown);
+
+  const isPreparedCaster = clsKey && ["cleric", "druid", "wizard", "paladin"].includes(clsKey);
+  const isKnownCaster = clsKey && ["bard", "ranger", "sorcerer", "warlock"].includes(clsKey);
+
+  const oldKnown = isKnownCaster ? getSpellsKnownLimit(clsKey||"", currentLevel) : 0;
+  const newKnown = isKnownCaster ? getSpellsKnownLimit(clsKey||"", derivedLevel) : 0;
+  const knownDelta = isKnownCaster ? Math.max(0, newKnown - oldKnown) : 0;
+
+  // For wizard: 2 spells added to spellbook per level
+  const wizardSpellbookDelta = clsKey === "wizard" ? (derivedLevel - currentLevel) * 2 : 0;
 
   const slotOld = getSpellSlotsAtLevel(clsKey||"", currentLevel);
   const slotNew = getSpellSlotsAtLevel(clsKey||"", derivedLevel);
@@ -98,6 +105,11 @@ export function LevelUpPanel({ player, onApply }: Props){
       ...([1,2,3,4,5,6,7,8,9] as const).flatMap(lv=> (cd[`spells${lv}`]||[]) as string[])
     ]);
     const all: typeof availableCantrips = [];
+    // For prepared casters (cleric, druid, paladin), they automatically know all spells
+    // For wizard, they can choose 2 spells per level to add to spellbook
+    // For known casters, they choose from their class list up to knownDelta
+    const effectiveDelta = isPreparedCaster ? (clsKey === "wizard" ? wizardSpellbookDelta : 0) : knownDelta;
+    if (effectiveDelta === 0) return all;
     for(let lv=1; lv<=maxLv; lv++){
       for(const s of getSpellsForClass(clsKey, lv)) if(!owned.has(s.name)) all.push(s as any);
     }
@@ -106,13 +118,14 @@ export function LevelUpPanel({ player, onApply }: Props){
       for(let lv=1; lv<=maxLv; lv++) for(const s of getSpellsForClass(archCast.list, lv)) if(!owned.has(s.name)) all.push(s as any);
     }
     return all;
-  },[clsKey, slotNew, cd, archCast]);
+  },[clsKey, slotNew, cd, archCast, isPreparedCaster, knownDelta, wizardSpellbookDelta]);
 
   const toggleCantrip = (name:string)=>{
     setNewCantrips(prev=> prev.includes(name) ? prev.filter(x=>x!==name) : (prev.length < cantDelta ? [...prev, name] : prev));
   };
   const toggleSpell = (name:string)=>{
-    setNewSpells(prev=> prev.includes(name) ? prev.filter(x=>x!==name) : (prev.length < knownDelta ? [...prev, name] : prev));
+    const effectiveDelta = isPreparedCaster ? (clsKey === "wizard" ? wizardSpellbookDelta : 0) : knownDelta;
+    setNewSpells(prev=> prev.includes(name) ? prev.filter(x=>x!==name) : (prev.length < effectiveDelta ? [...prev, name] : prev));
   };
 
   const nextXp = xpForLevel(currentLevel+1);
@@ -341,10 +354,24 @@ export function LevelUpPanel({ player, onApply }: Props){
           </div>
 
           {/* Scelta incantesimi nuovi globali */}
-          {(cantDelta>0 || knownDelta>0) && (
+          {(cantDelta > 0 || knownDelta > 0 || (clsKey === "wizard" && wizardSpellbookDelta > 0)) && (
             <div className="mt-4 rounded-xl border border-blue-500/20 bg-blue-950/10 p-4">
               <h3 className="text-sm text-blue-200 font-medium">🔮 Nuovi Incantesimi da scegliere</h3>
-              <p className="text-[11px] text-white/35 mt-1">Manuale PHB: al livello {derivedLevel} ottieni {cantDelta>0? `${cantDelta} trucchetto${cantDelta>1?"i":""}`:""} {cantDelta>0 && knownDelta>0? "e":""} {knownDelta>0? `${knownDelta} incantesimo${knownDelta>1?"i":""} nuovo${knownDelta>1?"i":""}`:""}. Selezionali qui sotto.</p>
+              {isPreparedCaster && clsKey !== "wizard" && (
+                <p className="text-[11px] text-emerald-300/80 mt-1">
+                  {clsKey === "cleric" && "🙏 Chierico: conosci automaticamente TUTTI gli incantesimi da chierico per i livelli di slot che hai."}
+                  {clsKey === "druid" && "🌿 Druido: conosci automaticamente TUTTI gli incantesimi da druido per i livelli di slot che hai."}
+                  {clsKey === "paladin" && "⚔️ Paladino: conosci automaticamente TUTTI gli incantesimi da paladino per i livelli di slot che hai."}
+                </p>
+              )}
+              {clsKey === "wizard" && wizardSpellbookDelta > 0 && (
+                <p className="text-[11px] text-indigo-300/80 mt-1">
+                  📖 Mago: aggiungi <strong>{wizardSpellbookDelta}</strong> incantesimi a tua scelta al tuo libro degli incantesimi (di livello per cui hai slot).
+                </p>
+              )}
+              {!isPreparedCaster && (
+                <p className="text-[11px] text-white/35 mt-1">Manuale PHB: al livello {derivedLevel} ottieni {cantDelta>0? `${cantDelta} trucchetto${cantDelta>1?"i":""}`:""} {cantDelta>0 && knownDelta>0? "e":""} {knownDelta>0? `${knownDelta} incantesimo${knownDelta>1?"i":""} nuovo${knownDelta>1?"i":""}`:""}. Selezionali qui sotto.</p>
+              )}
 
               {cantDelta>0 && (
                 <div className="mt-3">
@@ -373,9 +400,14 @@ export function LevelUpPanel({ player, onApply }: Props){
                   </div>
                 </div>
               )}
-              {knownDelta>0 && (
+              {(knownDelta>0 || (clsKey === "wizard" && wizardSpellbookDelta > 0)) && (
                 <div className="mt-4">
-                  <p className="text-xs text-white/70 mb-1.5">Incantesimi ({newSpells.length}/{knownDelta}) — fino a {Math.max(...Object.keys(slotNew).map(n=>Number(n)),1)}° livello — clicca la carta per selezionare</p>
+                  <p className="text-xs text-white/70 mb-1.5">
+                    {clsKey === "wizard"
+                      ? `Incantesimi per il libro ({newSpells.length}/{wizardSpellbookDelta}) — fino a {Math.max(...Object.keys(slotNew).map(n=>Number(n)),1)}° livello`
+                      : `Incantesimi ({newSpells.length}/{knownDelta}) — fino a {Math.max(...Object.keys(slotNew).map(n=>Number(n)),1)}° livello — clicca la carta per selezionare`
+                    }
+                  </p>
                   <div className="grid gap-2 max-h-[520px] overflow-y-auto pr-1">
                     {availableSpells.slice(0,80).map(s=>{
                       const sel = newSpells.includes(s.name);
