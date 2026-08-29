@@ -14,12 +14,20 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
 
   useEffect(() => {
-    const pending = localStorage.getItem("veil-pending-npc");
-    if (pending) {
-      setCreateForm(prev => ({ ...prev, name: pending }));
-      setShowCreate(true);
-      localStorage.removeItem("veil-pending-npc");
-    }
+    const checkPending = () => {
+      const pending = localStorage.getItem("veil-pending-npc");
+      if (pending) {
+        setCreateForm(prev => ({ ...prev, name: pending }));
+        setShowCreate(true);
+        localStorage.removeItem("veil-pending-npc");
+      }
+    };
+    checkPending();
+    window.addEventListener("focus", checkPending);
+    const id = setInterval(checkPending, 600);
+    const onStorage = (e: StorageEvent) => { if (e.key === "veil-pending-npc") checkPending(); };
+    window.addEventListener("storage", onStorage);
+    return () => { window.removeEventListener("focus", checkPending); window.removeEventListener("storage", onStorage); clearInterval(id); };
   }, [sessionId]);
   async function load() {
     const d = await fetch(`/api/npcs?sessionId=${sessionId}`).then(r => r.json());

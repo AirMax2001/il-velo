@@ -36,12 +36,20 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
   }, [sessionId]);
 
   useEffect(() => {
-    const pending = localStorage.getItem("veil-pending-item");
-    if (pending) {
-      setCreateForm(prev => ({ ...prev, name: pending }));
-      setShowCreate(true);
-      localStorage.removeItem("veil-pending-item");
-    }
+    const checkPending = () => {
+      const pending = localStorage.getItem("veil-pending-item");
+      if (pending) {
+        setCreateForm(prev => ({ ...prev, name: pending }));
+        setShowCreate(true);
+        localStorage.removeItem("veil-pending-item");
+      }
+    };
+    checkPending();
+    window.addEventListener("focus", checkPending);
+    const id = setInterval(checkPending, 600);
+    const onStorage = (e: StorageEvent) => { if (e.key === "veil-pending-item") checkPending(); };
+    window.addEventListener("storage", onStorage);
+    return () => { window.removeEventListener("focus", checkPending); window.removeEventListener("storage", onStorage); clearInterval(id); };
   }, [sessionId]);
 
   useEffect(() => {
