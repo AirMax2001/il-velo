@@ -470,7 +470,6 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
 
       {/* Colonne destra: navigazione rapida — cambia solo il centro, fissa */}
       <div className="w-72 shrink-0 space-y-2 overflow-y-auto h-[calc(100vh-1rem)] sticky top-4 pr-1">
-        <p className="text-[10px] uppercase tracking-[0.15em] text-white/30">Vai a</p>
         <button onClick={() => setCentralView("scene")}
           className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-4 transition ${centralView==="scene" ? "border-veil-gold/30 bg-veil-gold/10" : "border-white/[0.06] bg-black/25 hover:border-veil-gold/20"}`}>
           <span className="text-2xl transition-transform group-hover:scale-110">🎬</span>
