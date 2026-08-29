@@ -1,5 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import races from "@/lib/data/races";
+import classes from "@/lib/data/classes";
+import backgrounds from "@/lib/data/backgrounds";
+import { getModifier, STANDARD_ARRAY, ALL_ABILITIES, ABILITY_SHORT } from "@/lib/characterEngine";
 
 export function NpcModule({ sessionId }: { sessionId: string }) {
   const [npcs, setNpcs] = useState<any[]>([]);
@@ -55,13 +59,74 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
     if (selected?.id === npc.id) setSelected(null);
   }
 
+  // Helper: caratteristiche consigliate in base a classe + razza (come in giocatore)
+  function applyRecommended(next: typeof createForm, raceKey?: string, classKey?: string) {
+    const cls = classKey ? (classes as any)[classKey] : null;
+    const race = raceKey ? (races as any)[raceKey] : null;
+    // speed e lingue da razza
+    if (race) {
+      if (!next.speed) next.speed = String(race.speed || 9) + "m";
+      if (!next.languages && race.languages) next.languages = race.languages.join(", ");
+    }
+    // background di default se non scelto
+    if (!next.background && classKey) {
+      // suggerisci background legato alla classe: prendi il primo disponibile
+      const bgs = Object.values(backgrounds as any) as any[];
+      if (bgs[0]) next.background = bgs[0].name;
+    }
+    // Caratteristiche consigliate: STANDARD_ARRAY assegnato alle primaryAbility della classe
+    if (cls && (!next.FOR && !next.DES && !next.COS && !next.INT && !next.SAG && !next.CAR)) {
+      const order: string[] = [...ALL_ABILITIES];
+      const primary = (cls.primaryAbility || []) as string[];
+      // porta le primary in testa
+      const sorted = [...primary, ...order.filter(a => !primary.includes(a))];
+      const mapShort: Record<string,string> = { strength:"FOR", dexterity:"DES", constitution:"COS", intelligence:"INT", wisdom:"SAG", charisma:"CAR" };
+      sorted.forEach((ab, idx) => {
+        const short = mapShort[ab];
+        if (short) (next as any)[short] = String(STANDARD_ARRAY[idx] ?? 10);
+      });
+      // applica bonus razziali se presenti
+      if (race?.abilityBonuses) {
+        for (const [k,v] of Object.entries(race.abilityBonuses as Record<string,number>)) {
+          if (v) {
+            const short = mapShort[k];
+            if (short) (next as any)[short] = String(Math.min(20, Number((next as any)[short]||10) + v));
+          }
+        }
+      }
+      // calcola PF consigliato: dado vita + mod COS
+      const con = Number((next as any)["COS"] || 10);
+      const conMod = getModifier(con);
+      const hd = cls.hitDie || 8;
+      if (!next.hp) next.hp = String(hd + conMod);
+      if (!next.ac) {
+        // CA base: 10 + DES mod se senza armatura, altrimenti lascia vuoto
+        const desMod = getModifier(Number((next as any)["DES"]||10));
+        next.ac = String(10 + desMod);
+      }
+    }
+    return next;
+  }
+
   async function createNpc() {
     if (!createForm.name.trim()) return;
     const data:any = {};
     for (const k of ["race","class","background","alignment","hp","ac","speed","resistances","immunities","vulnerabilities","languages","senses"]) if ((createForm as any)[k]) data[k]=(createForm as any)[k];
     for (const ab of ["FOR","DES","COS","INT","SAG","CAR"]) if ((createForm as any)[ab]) data["ability_"+ab]=(createForm as any)[ab];
-    const res = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sessionId, name: createForm.name.trim(), role: createForm.role || null, description: createForm.description || "", data }) });
+    const res = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sessionId, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "", data }) });
     const j = await res.json();
+    if (!res.ok || j.error) {
+      const msg = j.error || "Errore salvataggio";
+      if (msg.includes("data") || msg.includes("column") || msg.includes("schema cache")) {
+        alert("Tabella NPC non aggiornata — esegui supabase/npcs_dnd.sql nel SQL Editor di Supabase, poi riprova. Salvo comunque i dati base.");
+        // fallback senza data
+        const r2 = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sessionId, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "" }) });
+        const j2 = await r2.json();
+        if (j2.item) { setNpcs(prev=>[j2.item,...prev]); setSelected(j2.item); setShowCreate(false); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); return; }
+      }
+      alert("Errore: " + msg);
+      return;
+    }
     if (j.item) { setNpcs(prev=>[j.item,...prev]); setSelected(j.item); setShowCreate(false); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); }
   }
 
@@ -99,20 +164,33 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Razza</label>
-              <input value={createForm.race} onChange={e=>setCreateForm({...createForm, race:e.target.value})} placeholder="Umano, Elfo..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+              <select value={createForm.race} onChange={e=>{ const v=e.target.value; let next={...createForm, race: (races as any)[v]?.name || v}; next=applyRecommended(next, v, (classes as any)[createForm.class] ? Object.keys(classes as any).find(k=>(classes as any)[k].name===createForm.class) || "" : ""); setCreateForm(next); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+                <option value="">— Seleziona razza —</option>
+                {Object.entries(races as any).map(([k,r]:any)=><option key={k} value={k}>{r.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Classe</label>
-              <input value={createForm.class} onChange={e=>setCreateForm({...createForm, class:e.target.value})} placeholder="Guerriero, Mago..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+              <select value={Object.keys(classes as any).find(k=>(classes as any)[k].name===createForm.class) || createForm.class} onChange={e=>{ const v=e.target.value; const clsName=(classes as any)[v]?.name || v; let next={...createForm, class: clsName, role: clsName}; const raceKey=Object.keys(races as any).find(k=>(races as any)[k].name===createForm.race) || createForm.race; next=applyRecommended(next, raceKey, v); setCreateForm(next); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+                <option value="">— Seleziona classe —</option>
+                {Object.entries(classes as any).map(([k,c]:any)=><option key={k} value={k}>{c.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Background</label>
-              <input value={createForm.background} onChange={e=>setCreateForm({...createForm, background:e.target.value})} placeholder="Soldato, Saggio..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+              <select value={Object.keys(backgrounds as any).find(k=>(backgrounds as any)[k].name===createForm.background) || createForm.background} onChange={e=>{ const v=e.target.value; const bgName=(backgrounds as any)[v]?.name || v; setCreateForm({...createForm, background: bgName}); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+                <option value="">— Seleziona background —</option>
+                {Object.entries(backgrounds as any).map(([k,b]:any)=><option key={k} value={k}>{b.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Allineamento</label>
-              <input value={createForm.alignment} onChange={e=>setCreateForm({...createForm, alignment:e.target.value})} placeholder="LB, N, CM..." className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70" />
+              <select value={createForm.alignment} onChange={e=>setCreateForm({...createForm, alignment:e.target.value})} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+                <option value="">—</option>
+                {["LB","NB","CB","LN","N","CN","LM","NM","CM"].map(a=><option key={a} value={a}>{a}</option>)}
+              </select>
             </div>
+            <div className="sm:col-span-2"><p className="text-[9px] text-emerald-300/60">Come in giocatore: razza/classe compilano movimento, lingue e caratteristiche consigliate (modificabili).</p></div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">PF</label>
               <input value={createForm.hp} onChange={e=>setCreateForm({...createForm, hp:e.target.value})} placeholder="12" className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70 text-center" />
