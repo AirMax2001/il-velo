@@ -65,28 +65,28 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
     const race = raceKey ? (races as any)[raceKey] : null;
     const subRace = race && next.race ? (race.subRaces || []).find((sr:any)=> sr.name===next.race || sr.key===next.race) : null;
     const effRace = subRace || race;
-    // speed, lingue, sensi, resistenze da razza
+    // speed, lingue, sensi, resistenze da razza — popola sempre quando selezioni razza
     if (race) {
-      if (!next.speed) next.speed = String(race.speed || 30) + "m";
-      if (!next.languages && race.languages) next.languages = race.languages.join(", ");
-      if (!next.senses && race.darkvision) next.senses = `Scurovisione ${race.darkvision}m` + (race.traits?.some((t:any)=>t.name.includes("Percezione")) ? ", Percezione passiva 12" : "");
-      if (!next.resistances) {
-        const res = (race.resistances || []).concat(subRace?.resistances || []);
-        if (res.length) next.resistances = res.join(", ");
-        else if (race.traits?.some((t:any)=>t.name.toLowerCase().includes("resistenza") || t.description.toLowerCase().includes("resistenza al danno"))) {
-          // estrai da descrizione: cerca "Resistenza al danno da X"
-          const m = race.traits.map((t:any)=>t.description).join(" ").match(/Resistenza al danno da ([a-z]+)/i);
-          if (m) next.resistances = m[1];
-        }
+      next.speed = String(race.speed || 30) + "m";
+      next.languages = race.languages.join(", ");
+      const dark = (subRace as any)?.darkvision ?? race.darkvision;
+      if (dark) next.senses = `Scurovisione ${dark}m`;
+      else next.senses = "Nessuno";
+      const res = (race.resistances || []).concat((subRace as any)?.resistances || []);
+      if (res.length) next.resistances = res.join(", ");
+      else {
+        const m = race.traits.map((t:any)=>t.description).join(" ").match(/Resistenza al danno da ([a-zàèéìòù]+)/i);
+        next.resistances = m ? m[1] : "Nessuna";
       }
-      if (!next.immunities && race.traits?.some((t:any)=>t.name.toLowerCase().includes("immunità"))) {
-        next.immunities = "—";
+      next.immunities = "Nessuna";
+      next.vulnerabilities = "Nessuna";
+      // se la razza ha tratto immunità esplicito, sovrascrivi
+      const immTrait = race.traits.find((t:any)=>t.name.toLowerCase().includes("immunità") || t.description.toLowerCase().includes("immunità"));
+      if (immTrait) {
+        const mm = immTrait.description.match(/immunità[^a-z]*([a-z, ]+)/i);
+        if (mm) next.immunities = mm[1].trim();
       }
-      // vulnerabilità di base vuota
-      if (!next.vulnerabilities) next.vulnerabilities = "";
     }
-    // sottorazza: sovrascrivi sensi se ha darkvision diversa
-    if (subRace?.resistances && !next.resistances) next.resistances = subRace.resistances.join(", ");
     // background di default se non scelto
     if (!next.background && classKey) {
       // suggerisci background legato alla classe: prendi il primo disponibile
@@ -167,7 +167,7 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
 
       {showCreate && (
         <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-950/10 p-5">
-          <h3 className="text-sm font-semibold text-emerald-300 mb-4">Nuovo NPC — dettagli D&D 5e</h3>
+          <h3 className="text-sm font-semibold text-emerald-300 mb-4">Nuovo NPC</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Nome *</label>
