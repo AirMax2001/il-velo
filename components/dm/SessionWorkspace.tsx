@@ -367,37 +367,49 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
       </div>
 
       {/* Colonne destra: navigazione rapida */}
-      <div className="w-72 shrink-0 space-y-3">
+      <div className="w-72 shrink-0 space-y-2">
         <p className="text-[10px] uppercase tracking-[0.15em] text-white/30">Vai a</p>
+        <button onClick={() => onNavigate?.("campaign")}
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-4 transition hover:border-veil-gold/30 hover:bg-veil-gold/[0.04]">
+          <span className="text-2xl transition-transform group-hover:scale-110">◇</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Campagna</span>
+          <span className="text-[10px] text-white/30">mondo e lore</span>
+        </button>
         <button onClick={() => onNavigate?.("locations")}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-6 transition hover:border-teal-400/40 hover:bg-teal-900/[0.06]">
-          <span className="text-3xl transition-transform group-hover:scale-110">🧭</span>
-          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-teal-300 transition">Passa alle Locations</span>
-          <span className="text-[11px] text-white/30">mappa e luoghi della campagna</span>
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-teal-400/40 hover:bg-teal-900/[0.06]">
+          <span className="text-2xl transition-transform group-hover:scale-110">🧭</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-teal-300 transition">Passa alle Locations</span>
+          <span className="text-[10px] text-white/30">mappa e luoghi</span>
         </button>
         <button onClick={() => onNavigate?.("assets")}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-6 transition hover:border-veil-gold/40 hover:bg-veil-gold/[0.05]">
-          <span className="text-3xl transition-transform group-hover:scale-110">📦</span>
-          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Passa agli Item</span>
-          <span className="text-[11px] text-white/30">oggetti e risorse della campagna</span>
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-veil-gold/40 hover:bg-veil-gold/[0.05]">
+          <span className="text-2xl transition-transform group-hover:scale-110">📦</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Passa agli Item</span>
+          <span className="text-[10px] text-white/30">oggetti e risorse</span>
+        </button>
+        <button onClick={() => onNavigate?.("gallery")}
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-pink-400/30 hover:bg-pink-900/[0.06]">
+          <span className="text-2xl transition-transform group-hover:scale-110">🖼</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-pink-300 transition">Galleria</span>
+          <span className="text-[10px] text-white/30">foto sessioni</span>
         </button>
         <button onClick={() => onNavigate?.("combat")}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-6 transition hover:border-red-400/40 hover:bg-red-900/[0.06]">
-          <span className="text-3xl transition-transform group-hover:scale-110">⚔️</span>
-          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-red-300 transition">Passa al Combattimento</span>
-          <span className="text-[11px] text-white/30">gestisci iniziativa e PF in battaglia</span>
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-red-400/40 hover:bg-red-900/[0.06]">
+          <span className="text-2xl transition-transform group-hover:scale-110">⚔️</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-red-300 transition">Passa al Combattimento</span>
+          <span className="text-[10px] text-white/30">iniziativa e PF</span>
         </button>
         <button onClick={() => onNavigate?.("players")}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-6 transition hover:border-emerald-400/40 hover:bg-emerald-900/[0.06]">
-          <span className="text-3xl transition-transform group-hover:scale-110">🧝</span>
-          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-emerald-300 transition">Passa ai Giocatori</span>
-          <span className="text-[11px] text-white/30">scheda, PF e comando live del party</span>
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-emerald-400/40 hover:bg-emerald-900/[0.06]">
+          <span className="text-2xl transition-transform group-hover:scale-110">🧝</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-emerald-300 transition">Passa ai Giocatori</span>
+          <span className="text-[10px] text-white/30">scheda party</span>
         </button>
         <button onClick={() => onNavigate?.("npcs")}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-6 transition hover:border-violet-400/40 hover:bg-violet-900/[0.06]">
-          <span className="text-3xl transition-transform group-hover:scale-110">👤</span>
-          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-violet-300 transition">Passa agli NPC</span>
-          <span className="text-[11px] text-white/30">personaggi e dialoghi della campagna</span>
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-violet-400/40 hover:bg-violet-900/[0.06]">
+          <span className="text-2xl transition-transform group-hover:scale-110">👤</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-violet-300 transition">Passa agli NPC</span>
+          <span className="text-[10px] text-white/30">personaggi</span>
         </button>
         <button onClick={() => onNavigate?.("table")}
           className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-white/20 hover:bg-white/[0.04]">
