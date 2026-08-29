@@ -50,6 +50,8 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   const [carouselLightbox, setCarouselLightbox] = useState<any>(null);
   const [menu, setMenu] = useState<{ word: string; x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!activePackId) { setNotes(""); setPackImages([]); return; }
@@ -172,63 +174,88 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
     <div className="flex h-full gap-6">
       {/* Colonne sinistra: note + sessioni */}
       <div className="flex-1 min-w-0 space-y-5">
-        {/* Casella di testo per scrivere la sessione */}
+        {/* Casella di testo per scrivere la sessione — overlay cliccabile diretto */}
         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-4">
           <h3 className="text-sm text-veil-gold/80 font-medium mb-3">
             📝 Appunti sessione{activePack && <span className="text-white/40 font-normal"> — {activePack.title || `Sessione ${activePack.session_number}`}</span>}
           </h3>
-          <textarea
-            className="w-full min-h-44 rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/70 resize-none focus:border-veil-gold/30 focus:outline-none"
-            placeholder={activePack ? `Scrivi qui gli appunti della sessione "${activePack.title || activePack.session_number}"...` : "Apri una sessione dalla lista per scrivere i suoi appunti."}
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-          />
-          {/* Preview cliccabile per parole in maiuscolo */}
-          {notes && /[A-ZÀÈÉÌÒÙ]{2,}/.test(notes) && (
-            <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-3 relative">
-              <p className="text-[10px] uppercase tracking-[0.1em] text-white/25 mb-1.5">Anteprima cliccabile — parole in MAIUSCOLO</p>
-              <p className="text-sm leading-relaxed text-white/70 whitespace-pre-wrap break-words">
-                {notes.split(/(\b[A-ZÀÈÉÌÒÙ]{2,}\b)/g).map((part, i) =>
-                  /^[A-ZÀÈÉÌÒÙ]{2,}$/.test(part) ? (
-                    <button
-                      key={i}
-                      onClick={(e) => {
-                        const rect = (e.target as HTMLElement).getBoundingClientRect();
-                        setMenu({ word: part, x: rect.left + rect.width / 2, y: rect.bottom + 8 });
-                      }}
-                      className="inline-flex items-center rounded-md border border-veil-gold/30 bg-veil-gold/15 px-1.5 py-0.5 text-xs font-bold text-veil-gold hover:bg-veil-gold/25 transition mx-0.5"
-                    >
-                      {part}
-                    </button>
-                  ) : (
-                    <span key={i}>{part}</span>
+          <div className="relative rounded-xl border border-white/[0.06] bg-black/30 overflow-hidden">
+            {/* Overlay con parole cliccabili */}
+            <div
+              ref={overlayRef}
+              className="absolute inset-0 p-3 text-sm leading-6 whitespace-pre-wrap break-words overflow-auto pointer-events-none text-white/70"
+              style={{ fontFamily: "inherit" }}
+              aria-hidden
+            >
+              {notes
+                ? notes.split(/(\b[A-ZÀÈÉÌÒÙ]{2,}\b)/g).map((part, i) =>
+                    /^[A-ZÀÈÉÌÒÙ]{2,}$/.test(part) ? (
+                      <span
+                        key={i}
+                        onClick={(e) => {
+                          const rect = (e.target as HTMLElement).getBoundingClientRect();
+                          setMenu({ word: part, x: rect.left + rect.width / 2, y: rect.bottom + 8 });
+                        }}
+                        className="inline-flex items-center rounded-md border border-veil-gold/30 bg-veil-gold/15 px-1 py-0.5 text-xs font-bold text-veil-gold pointer-events-auto cursor-pointer hover:bg-veil-gold/25 transition mx-0.5 align-baseline"
+                      >
+                        {part}
+                      </span>
+                    ) : (
+                      <span key={i}>{part}</span>
+                    )
                   )
-                )}
-              </p>
-              {menu && (
-                <div
-                  ref={menuRef}
-                  style={{ left: menu.x, top: menu.y }}
-                  className="fixed z-[80] -translate-x-1/2 rounded-xl border border-white/[0.08] bg-[#0f1015] shadow-2xl overflow-hidden"
-                >
-                  <div className="px-3 py-1.5 border-b border-white/[0.06] bg-white/[0.03] text-[10px] text-white/40 text-center">{menu.word}</div>
-                  <button
-                    onClick={() => { setMenu(null); onNavigate?.("npcs"); }}
-                    className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
-                  >
-                    👤 NPC
-                  </button>
-                  <button
-                    onClick={() => { setMenu(null); onNavigate?.("assets"); }}
-                    className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
-                  >
-                    📦 Oggetto
-                  </button>
-                </div>
-              )}
+                : null}
+              {/* placeholder quando vuoto */}
+              {!notes && <span className="text-white/25 pointer-events-none">{activePack ? `Scrivi qui gli appunti della sessione "${activePack.title || activePack.session_number}"...` : "Apri una sessione dalla lista per scrivere i suoi appunti."}</span>}
+            </div>
+            <textarea
+              ref={textareaRef}
+              className="relative w-full min-h-44 p-3 text-sm leading-6 whitespace-pre-wrap break-words bg-transparent resize-none focus:outline-none placeholder:text-white/25"
+              style={{ color: "transparent", caretColor: "white" }}
+              placeholder={activePack ? `Scrivi qui gli appunti della sessione "${activePack.title || activePack.session_number}"...` : "Apri una sessione dalla lista per scrivere i suoi appunti."}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              onScroll={e => {
+                if (overlayRef.current) overlayRef.current.scrollTop = (e.target as HTMLTextAreaElement).scrollTop;
+              }}
+            />
+          </div>
+          {menu && (
+            <div
+              ref={menuRef}
+              style={{ left: menu.x, top: menu.y }}
+              className="fixed z-[80] -translate-x-1/2 rounded-xl border border-white/[0.08] bg-[#0f1015] shadow-2xl overflow-hidden"
+            >
+              <div className="px-3 py-1.5 border-b border-white/[0.06] bg-white/[0.03] text-[10px] text-white/40 text-center">{menu.word}</div>
+              <button
+                onClick={async () => {
+                  const w = menu.word;
+                  setMenu(null);
+                  try {
+                    await fetch("/api/npcs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, name: w.charAt(0) + w.slice(1).toLowerCase(), description: `Creato da appunti sessione: ${w}`, role: "NPC" }) });
+                  } catch {}
+                  onNavigate?.("npcs");
+                }}
+                className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
+              >
+                👤 NPC — crea {menu.word}
+              </button>
+              <button
+                onClick={async () => {
+                  const w = menu.word;
+                  setMenu(null);
+                  try {
+                    await fetch("/api/inventory", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, name: w.charAt(0) + w.slice(1).toLowerCase(), description: `Creato da appunti sessione: ${w}`, rarity: "common", item_type: "other", category: "general" }) });
+                  } catch {}
+                  onNavigate?.("assets");
+                }}
+                className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
+              >
+                📦 Oggetto — crea {menu.word}
+              </button>
             </div>
           )}
-          {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente per questa sessione. Scrivi un nome in MAIUSCOLO (es. GIULIO) per renderlo cliccabile.</p>}
+          {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente. Parole in MAIUSCOLO (es. GIULIO) sono cliccabili direttamente nel testo.</p>}
           {!activePack && <p className="mt-1 text-[10px] text-white/25">Ogni sessione ha i suoi appunti.</p>}
 
           {/* Carosello foto della sessione attiva */}

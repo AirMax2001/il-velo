@@ -7,6 +7,7 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "alive" | "dead">("all");
   const noteKey = selected ? `veil-npc-note-${selected.id}` : "";
+  const [showDnd, setShowDnd] = useState(true);
 
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
   async function load() {
@@ -136,6 +137,120 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
                   ))}
                 </div>
               )}
+
+              {/* Scheda D&D dettagliata */}
+              <div className="rounded-xl border border-white/[0.06] bg-black/20">
+                <button onClick={()=>setShowDnd(v=>!v)} className="w-full flex items-center justify-between px-3 py-2.5 text-left">
+                  <span className="text-xs font-medium text-veil-gold">📜 Scheda D&D — caratteristiche, vita, resistenze, background</span>
+                  <span className={`text-white/30 text-xs transition ${showDnd ? "" : "rotate-180"}`}>▾</span>
+                </button>
+                {showDnd && (
+                  <div className="px-3 pb-3 space-y-3 border-t border-white/[0.06] pt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        ["race","Razza","Elfo, Umano..."],
+                        ["class","Classe","Guerriero, Mago..."],
+                        ["background","Background","Soldato, Saggio..."],
+                        ["alignment","Allineamento","LB, N, CM..."],
+                      ].map(([k,label,ph])=>(
+                        <div key={k}>
+                          <label className="text-[9px] uppercase tracking-wider text-white/30">{label}</label>
+                          <input
+                            className="mt-1 w-full rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70"
+                            placeholder={ph}
+                            value={selected.data?.[k] || ""}
+                            onChange={e=>{
+                              const nd={...(selected.data||{}), [k]: e.target.value};
+                              setSelected((p:any)=>({...p, data: nd}));
+                            }}
+                            onBlur={()=>{
+                              fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: selected.data })});
+                              setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: selected.data} : n));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        ["hp","PF","12"],
+                        ["ac","CA","15"],
+                        ["speed","Velocità","9m"],
+                      ].map(([k,label,ph])=>(
+                        <div key={k}>
+                          <label className="text-[9px] uppercase tracking-wider text-white/30">{label}</label>
+                          <input
+                            className="mt-1 w-full rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70 text-center"
+                            placeholder={ph}
+                            value={selected.data?.[k] || ""}
+                            onChange={e=>{
+                              const nd={...(selected.data||{}), [k]: e.target.value};
+                              setSelected((p:any)=>({...p, data: nd}));
+                            }}
+                            onBlur={()=>{
+                              fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: selected.data })});
+                              setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: selected.data} : n));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <label className="text-[9px] uppercase tracking-wider text-white/30">Caratteristiche (FOR DES COS INT SAG CAR)</label>
+                      <div className="mt-1 grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                        {["FOR","DES","COS","INT","SAG","CAR"].map(ab=>{
+                          const key="ability_"+ab;
+                          return (
+                            <div key={ab} className="text-center">
+                              <span className="text-[9px] text-white/30">{ab}</span>
+                              <input
+                                className="mt-0.5 w-full rounded-lg border border-white/[0.06] bg-black/30 px-1 py-1 text-xs text-white/70 text-center"
+                                placeholder="10"
+                                value={selected.data?.[key] || ""}
+                                onChange={e=>{
+                                  const nd={...(selected.data||{}), [key]: e.target.value};
+                                  setSelected((p:any)=>({...p, data: nd}));
+                                }}
+                                onBlur={()=>{
+                                  fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: selected.data })});
+                                  setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: selected.data} : n));
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      {[
+                        ["resistances","Resistenze","fuoco, veleno..."],
+                        ["immunities","Immunità","psichico, charme..."],
+                        ["vulnerabilities","Vulnerabilità","radioso..."],
+                        ["senses","Sensi","Percezione passiva 12, scurovisione 18m"],
+                        ["languages","Lingue","Comune, Elfico..."],
+                      ].map(([k,label,ph])=>(
+                        <div key={k}>
+                          <label className="text-[9px] uppercase tracking-wider text-white/30">{label}</label>
+                          <input
+                            className="mt-1 w-full rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70"
+                            placeholder={ph}
+                            value={selected.data?.[k] || ""}
+                            onChange={e=>{
+                              const nd={...(selected.data||{}), [k]: e.target.value};
+                              setSelected((p:any)=>({...p, data: nd}));
+                            }}
+                            onBlur={()=>{
+                              fetch("/api/npcs",{method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: selected.id, data: selected.data })});
+                              setNpcs(prev=>prev.map(n=> n.id===selected.id ? {...n, data: selected.data} : n));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-white/20">Salvataggio automatico al cambio campo (dati in `data` JSON).</p>
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Note DM</p>
