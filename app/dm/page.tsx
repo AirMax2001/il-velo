@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { DmSidebar } from "@/components/dm/DmSidebar";
 import { ControlCenter } from "@/components/dm/ControlCenter";
 import { SessionWorkspace } from "@/components/dm/SessionWorkspace";
 import { PlayerCards } from "@/components/dm/PlayerCards";
@@ -124,10 +123,18 @@ function DMPanelInner() {
 
   return (
     <main className="flex h-screen bg-[#0b0c10] text-white">
-      <DmSidebar activeTab={tab} onTabChange={setTab} onLogout={logout} onSearch={() => setShowGlobalSearch(true)} />
       <PartyStatusRail sessionId={sessionId} onOpenPlayers={() => setTab("players")} />
 
       <section className="flex-1 overflow-y-auto p-6">
+        <div className="mb-4 flex items-center gap-2">
+          {tab !== "session" && tab !== "home" && (
+            <button onClick={() => setTab("session")} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50 hover:text-white hover:border-white/15">← Scene</button>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <button onClick={() => setShowGlobalSearch(true)} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-white">⌕ Cerca</button>
+            <button onClick={logout} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-red-300">⊘ Esci</button>
+          </div>
+        </div>
         <div className={tab === "home" ? "" : "hidden"}>
           <ControlCenter
             sessionId={sessionId}
@@ -146,7 +153,7 @@ function DMPanelInner() {
         <div className={tab === "table" ? "" : "hidden"}><TableWorkspace sessionId={sessionId} /></div>
         <div className={tab === "assets" ? "" : "hidden"}><ObjectsModule sessionId={sessionId} /></div>
         <div className={tab === "gallery" ? "" : "hidden"}><GalleryModule sessionId={sessionId} /></div>
-        <div className={tab === "settings" ? "" : "hidden"}><SettingsPlaceholder /></div>
+        <div className={tab === "settings" ? "" : "hidden"}><SettingsPlaceholder sessionId={sessionId} /></div>
       </section>
 
       {showImportModal && (
@@ -337,7 +344,7 @@ function ExportBtn({ label, desc, onClick, accent }: { label: string; desc: stri
   );
 }
 
-function SettingsPlaceholder() {
+function SettingsPlaceholder({ sessionId }: { sessionId: string }) {
   const [theme, setTheme] = useState("default");
   const [mounted, setMounted] = useState(false);
 
@@ -367,6 +374,12 @@ function SettingsPlaceholder() {
 
   if (!mounted) return null;
 
+  async function clearChat() {
+    if (!sessionId) return;
+    if (!window.confirm("Eliminare tutti i messaggi della chat di gruppo?")) return;
+    await fetch(`/api/roleplay?sessionId=${sessionId}`, { method: "DELETE" });
+  }
+
   return (
     <div className="mx-auto max-w-7xl">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Impostazioni</h2>
@@ -387,6 +400,13 @@ function SettingsPlaceholder() {
             {theme === t.id && <span className="mt-2 inline-block text-xs text-veil-gold">✓ Attivo</span>}
           </button>
         ))}
+      </div>
+      <div className="mt-8 rounded-2xl border border-white/[0.06] bg-black/20 p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium text-white/70">Pulisci chat</p>
+          <p className="text-[11px] text-white/30">Elimina tutti i messaggi di gruppo</p>
+        </div>
+        <button onClick={clearChat} className="rounded-xl border border-red-500/20 bg-red-900/20 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/30">✕ Pulisci</button>
       </div>
     </div>
   );

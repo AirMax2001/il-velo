@@ -399,6 +399,18 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
           <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-violet-300 transition">Passa agli NPC</span>
           <span className="text-[11px] text-white/30">personaggi e dialoghi della campagna</span>
         </button>
+        <button onClick={() => onNavigate?.("table")}
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-white/20 hover:bg-white/[0.04]">
+          <span className="text-2xl transition-transform group-hover:scale-110">▤</span>
+          <span className="text-sm font-semibold tracking-[0.08em] text-white/80 group-hover:text-white transition">Tavolo</span>
+          <span className="text-[11px] text-white/30">schermo tavolo</span>
+        </button>
+        <button onClick={() => onNavigate?.("settings")}
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/20 px-6 py-4 transition hover:border-white/15 hover:bg-white/[0.03]">
+          <span className="text-xl transition-transform group-hover:scale-110">⚙</span>
+          <span className="text-xs font-semibold tracking-[0.08em] text-white/60 group-hover:text-white/80 transition">Impostazioni</span>
+          <span className="text-[10px] text-white/25">tema, pulisci chat</span>
+        </button>
       </div>
 
       {carouselLightbox && (
