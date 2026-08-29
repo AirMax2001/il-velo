@@ -63,11 +63,30 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
   function applyRecommended(next: typeof createForm, raceKey?: string, classKey?: string) {
     const cls = classKey ? (classes as any)[classKey] : null;
     const race = raceKey ? (races as any)[raceKey] : null;
-    // speed e lingue da razza
+    const subRace = race && next.race ? (race.subRaces || []).find((sr:any)=> sr.name===next.race || sr.key===next.race) : null;
+    const effRace = subRace || race;
+    // speed, lingue, sensi, resistenze da razza
     if (race) {
-      if (!next.speed) next.speed = String(race.speed || 9) + "m";
+      if (!next.speed) next.speed = String(race.speed || 30) + "m";
       if (!next.languages && race.languages) next.languages = race.languages.join(", ");
+      if (!next.senses && race.darkvision) next.senses = `Scurovisione ${race.darkvision}m` + (race.traits?.some((t:any)=>t.name.includes("Percezione")) ? ", Percezione passiva 12" : "");
+      if (!next.resistances) {
+        const res = (race.resistances || []).concat(subRace?.resistances || []);
+        if (res.length) next.resistances = res.join(", ");
+        else if (race.traits?.some((t:any)=>t.name.toLowerCase().includes("resistenza") || t.description.toLowerCase().includes("resistenza al danno"))) {
+          // estrai da descrizione: cerca "Resistenza al danno da X"
+          const m = race.traits.map((t:any)=>t.description).join(" ").match(/Resistenza al danno da ([a-z]+)/i);
+          if (m) next.resistances = m[1];
+        }
+      }
+      if (!next.immunities && race.traits?.some((t:any)=>t.name.toLowerCase().includes("immunità"))) {
+        next.immunities = "—";
+      }
+      // vulnerabilità di base vuota
+      if (!next.vulnerabilities) next.vulnerabilities = "";
     }
+    // sottorazza: sovrascrivi sensi se ha darkvision diversa
+    if (subRace?.resistances && !next.resistances) next.resistances = subRace.resistances.join(", ");
     // background di default se non scelto
     if (!next.background && classKey) {
       // suggerisci background legato alla classe: prendi il primo disponibile
