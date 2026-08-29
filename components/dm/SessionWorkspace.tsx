@@ -2,6 +2,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useGameEngine } from "@/lib/mythos/GameEngineContext";
 import type { DmSection } from "@/types/campaign";
+import { LocationModule } from "@/components/dm/modules/LocationModule";
+import { ObjectsModule } from "@/components/dm/modules/ObjectsModule";
+import { GalleryModule } from "@/components/dm/modules/GalleryModule";
+import { CombatCards } from "@/components/dm/CombatCards";
+import { PlayerCards } from "@/components/dm/PlayerCards";
+import { NpcModule } from "@/components/dm/modules/NpcModule";
+import { TableWorkspace } from "@/components/dm/TableWorkspace";
 
 type SessionPack = {
   id: string;
@@ -37,6 +44,7 @@ function resizeImageForGallery(file: File): Promise<string> {
 
 export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProps) {
   const { engine } = useGameEngine();
+  const [centralView, setCentralView] = useState<"scene" | DmSection>("scene");
   const [sessionPacks, setSessionPacks] = useState<SessionPack[]>([]);
   const [activePackId, setActivePackId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -184,10 +192,38 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
 
   const activePack = sessionPacks.find(p => p.id === activePackId) || null;
 
+  // blocco colonne fisse: sinistra giocatori a sinistra (PartyStatusRail) + centro + destra bottoni
   return (
-    <div className="flex h-full gap-6">
-      {/* Colonne sinistra: note + sessioni */}
-      <div className="flex-1 min-w-0 space-y-5">
+    <div className="flex gap-6 p-6 pt-2 h-[calc(100vh-56px)]">
+      {/* Colonna centrale: cambia solo qui */}
+      <div className="flex-1 min-w-0 space-y-5 overflow-y-auto pr-2">
+        {centralView !== "scene" ? (
+          <div className="min-h-full">
+            {centralView === "locations" && <LocationModule sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "assets" && <ObjectsModule sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "gallery" && <GalleryModule sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "combat" && <CombatCards sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "players" && <PlayerCards sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "npcs" && <NpcModule sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "table" && <TableWorkspace sessionId={viewSessionId || sessionId || ""} />}
+            {centralView === "settings" && (
+              <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-6">
+                <h3 className="text-sm text-veil-gold font-medium mb-3">Impostazioni</h3>
+                <p className="text-xs text-white/40">Tema e pulisci chat sono in Impostazioni globali (tab Settings).</p>
+                <button onClick={() => setCentralView("scene")} className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50">← Torna a Scene</button>
+              </div>
+            )}
+            {centralView === "campaign" && (
+              <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-6">
+                <h3 className="text-sm text-veil-gold font-medium mb-3">Campagna</h3>
+                <p className="text-xs text-white/40">Gestisci la campagna dal selettore sopra gli appunti di Scene.</p>
+                <button onClick={() => setCentralView("scene")} className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50">← Torna a Scene</button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Selettore campagna + appunti + sessioni — vista Scene */}
         {/* Selettore campagna */}
         <div className="rounded-2xl border border-veil-gold/15 bg-veil-gold/[0.03] p-3 flex items-center gap-3">
           <span className="text-xs font-medium text-veil-gold/70">📜 Campagna</span>
@@ -242,7 +278,7 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                         setMenu(null);
                         const sid = viewSessionId || sessionId;
                         localStorage.setItem("veil-pending-npc", JSON.stringify({ name: ww.charAt(0) + ww.slice(1).toLowerCase(), sessionId: sid }));
-                        onNavigate?.("npcs");
+                        setCentralView("npcs");
                       }}
                       className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
                     >
@@ -254,7 +290,7 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                         setMenu(null);
                         const sid = viewSessionId || sessionId;
                         localStorage.setItem("veil-pending-item", JSON.stringify({ name: ww.charAt(0) + ww.slice(1).toLowerCase(), sessionId: sid }));
-                        onNavigate?.("assets");
+                        setCentralView("assets");
                       }}
                       className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
                     >
@@ -363,64 +399,60 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
               </div>
             ))}
           </div>
-        </div>
+          </div>
+          </>
+        )}
       </div>
 
-      {/* Colonne destra: navigazione rapida */}
-      <div className="w-72 shrink-0 space-y-2">
+      {/* Colonne destra: navigazione rapida — cambia solo il centro, fissa */}
+      <div className="w-72 shrink-0 space-y-2 overflow-y-auto h-[calc(100vh-56px)] sticky top-2 pr-1">
         <p className="text-[10px] uppercase tracking-[0.15em] text-white/30">Vai a</p>
-        <button onClick={() => onNavigate?.("campaign")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-4 transition hover:border-veil-gold/30 hover:bg-veil-gold/[0.04]">
-          <span className="text-2xl transition-transform group-hover:scale-110">◇</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Campagna</span>
-          <span className="text-[10px] text-white/30">mondo e lore</span>
+        <button onClick={() => setCentralView("scene")}
+          className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-4 transition ${centralView==="scene" ? "border-veil-gold/30 bg-veil-gold/10" : "border-white/[0.06] bg-black/25 hover:border-veil-gold/20"}`}>
+          <span className="text-2xl transition-transform group-hover:scale-110">🎬</span>
+          <span className={`text-sm font-semibold tracking-[0.08em] transition ${centralView==="scene" ? "text-veil-gold" : "text-white group-hover:text-veil-gold"}`}>Scene</span>
+          <span className="text-[10px] text-white/30">torna agli appunti</span>
         </button>
-        <button onClick={() => onNavigate?.("locations")}
+        <button onClick={() => setCentralView("locations")}
           className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-teal-400/40 hover:bg-teal-900/[0.06]">
           <span className="text-2xl transition-transform group-hover:scale-110">🧭</span>
           <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-teal-300 transition">Passa alle Locations</span>
           <span className="text-[10px] text-white/30">mappa e luoghi</span>
         </button>
-        <button onClick={() => onNavigate?.("assets")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-veil-gold/40 hover:bg-veil-gold/[0.05]">
+        <button onClick={() => setCentralView("assets")}
+          className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-5 transition ${centralView==="assets" ? "border-veil-gold/30 bg-veil-gold/10" : "border-white/[0.06] bg-black/25 hover:border-veil-gold/30"}`}>
           <span className="text-2xl transition-transform group-hover:scale-110">📦</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Passa agli Item</span>
+          <span className={`text-sm font-semibold tracking-[0.08em] transition ${centralView==="assets" ? "text-veil-gold" : "text-white group-hover:text-veil-gold"}`}>Passa agli Item</span>
           <span className="text-[10px] text-white/30">oggetti e risorse</span>
         </button>
-        <button onClick={() => onNavigate?.("gallery")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-pink-400/30 hover:bg-pink-900/[0.06]">
-          <span className="text-2xl transition-transform group-hover:scale-110">🖼</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-pink-300 transition">Galleria</span>
-          <span className="text-[10px] text-white/30">foto sessioni</span>
-        </button>
-        <button onClick={() => onNavigate?.("combat")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-red-400/40 hover:bg-red-900/[0.06]">
+        <button onClick={() => setCentralView("combat")}
+          className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-5 transition ${centralView==="combat" ? "border-red-400/30 bg-red-900/15" : "border-white/[0.06] bg-black/25 hover:border-red-400/30"}`}>
           <span className="text-2xl transition-transform group-hover:scale-110">⚔️</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-red-300 transition">Passa al Combattimento</span>
+          <span className={`text-sm font-semibold tracking-[0.08em] transition ${centralView==="combat" ? "text-red-300" : "text-white group-hover:text-red-300"}`}>Passa al Combattimento</span>
           <span className="text-[10px] text-white/30">iniziativa e PF</span>
         </button>
-        <button onClick={() => onNavigate?.("players")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-emerald-400/40 hover:bg-emerald-900/[0.06]">
+        <button onClick={() => setCentralView("players")}
+          className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-5 transition ${centralView==="players" ? "border-emerald-400/30 bg-emerald-900/15" : "border-white/[0.06] bg-black/25 hover:border-emerald-400/30"}`}>
           <span className="text-2xl transition-transform group-hover:scale-110">🧝</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-emerald-300 transition">Passa ai Giocatori</span>
+          <span className={`text-sm font-semibold tracking-[0.08em] transition ${centralView==="players" ? "text-emerald-300" : "text-white group-hover:text-emerald-300"}`}>Passa ai Giocatori</span>
           <span className="text-[10px] text-white/30">scheda party</span>
         </button>
-        <button onClick={() => onNavigate?.("npcs")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-violet-400/40 hover:bg-violet-900/[0.06]">
+        <button onClick={() => setCentralView("npcs")}
+          className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-5 transition ${centralView==="npcs" ? "border-violet-400/30 bg-violet-900/15" : "border-white/[0.06] bg-black/25 hover:border-violet-400/30"}`}>
           <span className="text-2xl transition-transform group-hover:scale-110">👤</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white group-hover:text-violet-300 transition">Passa agli NPC</span>
+          <span className={`text-sm font-semibold tracking-[0.08em] transition ${centralView==="npcs" ? "text-violet-300" : "text-white group-hover:text-violet-300"}`}>Passa agli NPC</span>
           <span className="text-[10px] text-white/30">personaggi</span>
         </button>
-        <button onClick={() => onNavigate?.("table")}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-5 transition hover:border-white/20 hover:bg-white/[0.04]">
+        <button onClick={() => setCentralView("table")}
+          className={`group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border px-6 py-5 transition ${centralView==="table" ? "border-white/20 bg-white/[0.06]" : "border-white/[0.06] bg-black/25 hover:border-white/20"}`}>
           <span className="text-2xl transition-transform group-hover:scale-110">▤</span>
-          <span className="text-sm font-semibold tracking-[0.08em] text-white/80 group-hover:text-white transition">Tavolo</span>
+          <span className={`text-sm font-semibold tracking-[0.08em] transition ${centralView==="table" ? "text-white" : "text-white/80 group-hover:text-white"}`}>Tavolo</span>
           <span className="text-[11px] text-white/30">schermo tavolo</span>
         </button>
-        <button onClick={() => onNavigate?.("settings")}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border border-white/[0.06] bg-black/20 px-6 py-4 transition hover:border-white/15 hover:bg-white/[0.03]">
+        <button onClick={() => setCentralView("settings")}
+          className={`group flex w-full flex-col items-center justify-center gap-1 rounded-3xl border px-6 py-4 transition ${centralView==="settings" ? "border-white/20 bg-white/[0.06]" : "border-white/[0.06] bg-black/20 hover:border-white/15"}`}>
           <span className="text-xl transition-transform group-hover:scale-110">⚙</span>
-          <span className="text-xs font-semibold tracking-[0.08em] text-white/60 group-hover:text-white/80 transition">Impostazioni</span>
+          <span className={`text-xs font-semibold tracking-[0.08em] transition ${centralView==="settings" ? "text-white" : "text-white/60 group-hover:text-white/80"}`}>Impostazioni</span>
           <span className="text-[10px] text-white/25">tema, pulisci chat</span>
         </button>
       </div>

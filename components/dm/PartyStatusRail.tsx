@@ -27,7 +27,7 @@ export function PartyStatusRail({ sessionId, onOpenPlayers }: { sessionId: strin
   if (!sessionId) return null;
 
   return (
-    <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-2 border-r border-white/[0.06] bg-black/20 p-3 overflow-y-auto">
+    <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-2 border-r border-white/[0.06] bg-black/20 p-3 overflow-y-auto h-screen sticky top-0">
       <button onClick={onOpenPlayers}
         className="text-[10px] uppercase tracking-wider text-veil-gold/60 hover:text-veil-gold text-left mb-1">
         Party ({players.length})

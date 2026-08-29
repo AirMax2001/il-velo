@@ -124,8 +124,8 @@ function DMPanelInner() {
     <main className="flex h-screen bg-[#0b0c10] text-white">
       <PartyStatusRail sessionId={sessionId} onOpenPlayers={() => setTab("players")} />
 
-      <section className="flex-1 overflow-y-auto p-6">
-        <div className="mb-4 flex items-center gap-2">
+      <section className={`flex-1 overflow-y-auto ${tab === "session" ? "p-0" : "p-6"}`}>
+        <div className={`flex items-center gap-2 ${tab === "session" ? "p-4 pb-0" : "mb-4"}`}>
           {tab !== "session" && (
             <button onClick={() => setTab("session")} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50 hover:text-white hover:border-white/15">← Scene</button>
           )}
