@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useGameEngine } from "@/lib/mythos/GameEngineContext";
 import type { DmSection } from "@/types/campaign";
 
@@ -48,6 +48,8 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   const [galleryCounts, setGalleryCounts] = useState<Record<string, number>>({});
   const [packImages, setPackImages] = useState<any[]>([]);
   const [carouselLightbox, setCarouselLightbox] = useState<any>(null);
+  const [menu, setMenu] = useState<{ word: string; x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!activePackId) { setNotes(""); setPackImages([]); return; }
@@ -115,6 +117,14 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   }
 
   useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(null);
+    };
+    if (menu) document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menu]);
+
+  useEffect(() => {
     loadPacks();
   }, [sessionId]);
 
@@ -173,7 +183,52 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
             value={notes}
             onChange={e => setNotes(e.target.value)}
           />
-          {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente per questa sessione.</p>}
+          {/* Preview cliccabile per parole in maiuscolo */}
+          {notes && /[A-ZÀÈÉÌÒÙ]{2,}/.test(notes) && (
+            <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-3 relative">
+              <p className="text-[10px] uppercase tracking-[0.1em] text-white/25 mb-1.5">Anteprima cliccabile — parole in MAIUSCOLO</p>
+              <p className="text-sm leading-relaxed text-white/70 whitespace-pre-wrap break-words">
+                {notes.split(/(\b[A-ZÀÈÉÌÒÙ]{2,}\b)/g).map((part, i) =>
+                  /^[A-ZÀÈÉÌÒÙ]{2,}$/.test(part) ? (
+                    <button
+                      key={i}
+                      onClick={(e) => {
+                        const rect = (e.target as HTMLElement).getBoundingClientRect();
+                        setMenu({ word: part, x: rect.left + rect.width / 2, y: rect.bottom + 8 });
+                      }}
+                      className="inline-flex items-center rounded-md border border-veil-gold/30 bg-veil-gold/15 px-1.5 py-0.5 text-xs font-bold text-veil-gold hover:bg-veil-gold/25 transition mx-0.5"
+                    >
+                      {part}
+                    </button>
+                  ) : (
+                    <span key={i}>{part}</span>
+                  )
+                )}
+              </p>
+              {menu && (
+                <div
+                  ref={menuRef}
+                  style={{ left: menu.x, top: menu.y }}
+                  className="fixed z-[80] -translate-x-1/2 rounded-xl border border-white/[0.08] bg-[#0f1015] shadow-2xl overflow-hidden"
+                >
+                  <div className="px-3 py-1.5 border-b border-white/[0.06] bg-white/[0.03] text-[10px] text-white/40 text-center">{menu.word}</div>
+                  <button
+                    onClick={() => { setMenu(null); onNavigate?.("npcs"); }}
+                    className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
+                  >
+                    👤 NPC
+                  </button>
+                  <button
+                    onClick={() => { setMenu(null); onNavigate?.("assets"); }}
+                    className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
+                  >
+                    📦 Oggetto
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          {notes.length > 0 && <p className="mt-1 text-[10px] text-white/25">Salvati automaticamente per questa sessione. Scrivi un nome in MAIUSCOLO (es. GIULIO) per renderlo cliccabile.</p>}
           {!activePack && <p className="mt-1 text-[10px] text-white/25">Ogni sessione ha i suoi appunti.</p>}
 
           {/* Carosello foto della sessione attiva */}
@@ -275,25 +330,31 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
       </div>
 
       {/* Colonne destra: navigazione rapida */}
-      <div className="w-72 shrink-0 space-y-4">
+      <div className="w-72 shrink-0 space-y-3">
         <p className="text-[10px] uppercase tracking-[0.15em] text-white/30">Vai a</p>
         <button onClick={() => onNavigate?.("assets")}
-          className="group flex w-full flex-col items-center justify-center gap-2 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-10 transition hover:border-veil-gold/40 hover:bg-veil-gold/[0.05]">
-          <span className="text-4xl transition-transform group-hover:scale-110">📦</span>
-          <span className="text-lg font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Passa agli Item</span>
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-7 transition hover:border-veil-gold/40 hover:bg-veil-gold/[0.05]">
+          <span className="text-3xl transition-transform group-hover:scale-110">📦</span>
+          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-veil-gold transition">Passa agli Item</span>
           <span className="text-[11px] text-white/30">oggetti e risorse della campagna</span>
         </button>
         <button onClick={() => onNavigate?.("combat")}
-          className="group flex w-full flex-col items-center justify-center gap-2 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-10 transition hover:border-red-400/40 hover:bg-red-900/[0.06]">
-          <span className="text-4xl transition-transform group-hover:scale-110">⚔️</span>
-          <span className="text-lg font-semibold tracking-[0.08em] text-white group-hover:text-red-300 transition">Passa al Combattimento</span>
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-7 transition hover:border-red-400/40 hover:bg-red-900/[0.06]">
+          <span className="text-3xl transition-transform group-hover:scale-110">⚔️</span>
+          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-red-300 transition">Passa al Combattimento</span>
           <span className="text-[11px] text-white/30">gestisci iniziativa e PF in battaglia</span>
         </button>
         <button onClick={() => onNavigate?.("players")}
-          className="group flex w-full flex-col items-center justify-center gap-2 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-10 transition hover:border-emerald-400/40 hover:bg-emerald-900/[0.06]">
-          <span className="text-4xl transition-transform group-hover:scale-110">🧝</span>
-          <span className="text-lg font-semibold tracking-[0.08em] text-white group-hover:text-emerald-300 transition">Passa ai Giocatori</span>
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-7 transition hover:border-emerald-400/40 hover:bg-emerald-900/[0.06]">
+          <span className="text-3xl transition-transform group-hover:scale-110">🧝</span>
+          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-emerald-300 transition">Passa ai Giocatori</span>
           <span className="text-[11px] text-white/30">scheda, PF e comando live del party</span>
+        </button>
+        <button onClick={() => onNavigate?.("npcs")}
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl border border-white/[0.06] bg-black/25 px-6 py-7 transition hover:border-violet-400/40 hover:bg-violet-900/[0.06]">
+          <span className="text-3xl transition-transform group-hover:scale-110">👤</span>
+          <span className="text-base font-semibold tracking-[0.08em] text-white group-hover:text-violet-300 transition">Passa agli NPC</span>
+          <span className="text-[11px] text-white/30">personaggi e dialoghi della campagna</span>
         </button>
       </div>
 
