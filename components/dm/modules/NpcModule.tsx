@@ -58,17 +58,27 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
   const [showDnd, setShowDnd] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" });
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
 
   useEffect(() => { if (sessionId) load(); }, [sessionId]);
 
   useEffect(() => {
     const checkPending = () => {
-      const pending = localStorage.getItem("veil-pending-npc");
-      if (pending) {
-        setCreateForm(prev => ({ ...prev, name: pending }));
-        setShowCreate(true);
-        localStorage.removeItem("veil-pending-npc");
+      const raw = localStorage.getItem("veil-pending-npc");
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && parsed.name) {
+          setCreateForm(prev => ({ ...prev, name: parsed.name }));
+          if (parsed.sessionId) setPendingSessionId(parsed.sessionId);
+        } else {
+          setCreateForm(prev => ({ ...prev, name: raw }));
+        }
+      } catch {
+        setCreateForm(prev => ({ ...prev, name: raw }));
       }
+      setShowCreate(true);
+      localStorage.removeItem("veil-pending-npc");
     };
     checkPending();
     window.addEventListener("focus", checkPending);
@@ -173,24 +183,25 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
 
   async function createNpc() {
     if (!createForm.name.trim()) return;
+    const sid = pendingSessionId || sessionId;
     const data:any = {};
     for (const k of ["race","class","background","alignment","hp","ac","speed","resistances","immunities","vulnerabilities","languages","senses"]) if ((createForm as any)[k]) data[k]=(createForm as any)[k];
     for (const ab of ["FOR","DES","COS","INT","SAG","CAR"]) if ((createForm as any)[ab]) data["ability_"+ab]=(createForm as any)[ab];
-    const res = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sessionId, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "", data }) });
+    const res = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sid, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "", data }) });
     const j = await res.json();
     if (!res.ok || j.error) {
       const msg = j.error || "Errore salvataggio";
       if (msg.includes("data") || msg.includes("column") || msg.includes("schema cache")) {
         alert("Tabella NPC non aggiornata — esegui supabase/npcs_dnd.sql nel SQL Editor di Supabase, poi riprova. Salvo comunque i dati base.");
         // fallback senza data
-        const r2 = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sessionId, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "" }) });
+        const r2 = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sid, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "" }) });
         const j2 = await r2.json();
-        if (j2.item) { setNpcs(prev=>[j2.item,...prev]); setSelected(j2.item); setShowCreate(false); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); return; }
+        if (j2.item) { setNpcs(prev=>[j2.item,...prev]); setSelected(j2.item); setShowCreate(false); setPendingSessionId(null); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); return; }
       }
       alert("Errore: " + msg);
       return;
     }
-    if (j.item) { setNpcs(prev=>[j.item,...prev]); setSelected(j.item); setShowCreate(false); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); }
+    if (j.item) { setNpcs(prev=>[j.item,...prev]); setSelected(j.item); setShowCreate(false); setPendingSessionId(null); setCreateForm({ name:"", role:"", description:"", race:"", class:"", background:"", alignment:"", hp:"", ac:"", speed:"", FOR:"", DES:"", COS:"", INT:"", SAG:"", CAR:"", resistances:"", immunities:"", vulnerabilities:"", languages:"", senses:"" }); }
   }
 
   if (!sessionId) return <p className="text-white/40 text-sm">Nessuna campagna attiva</p>;

@@ -48,15 +48,23 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   const [galleryCounts, setGalleryCounts] = useState<Record<string, number>>({});
   const [packImages, setPackImages] = useState<any[]>([]);
   const [carouselLightbox, setCarouselLightbox] = useState<any>(null);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [viewSessionId, setViewSessionId] = useState<string>(sessionId || "");
   const [menu, setMenu] = useState<{ word: string; x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setViewSessionId(sessionId || ""); }, [sessionId]);
+
+  useEffect(() => {
+    fetch("/api/session?list=1").then(r=>r.json()).then(d=> setCampaigns(d.sessions || [])).catch(()=>{});
+  }, []);
 
   useEffect(() => {
     if (!activePackId) { setNotes(""); setPackImages([]); return; }
     const saved = localStorage.getItem(`veil-session-notes-${activePackId}`);
     setNotes(saved || "");
-    fetch(`/api/gallery?sessionId=${sessionId}&sessionPackId=${activePackId}`).then(r=>r.json()).then(d=> setPackImages(d.items||[])).catch(()=>setPackImages([]));
-  }, [activePackId, sessionId]);
+    fetch(`/api/gallery?sessionId=${viewSessionId}&sessionPackId=${activePackId}`).then(r=>r.json()).then(d=> setPackImages(d.items||[])).catch(()=>setPackImages([]));
+  }, [activePackId, viewSessionId]);
 
   useEffect(() => {
     if (!activePackId) return;
@@ -65,13 +73,17 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   }, [notes, activePackId]);
 
   async function loadPacks() {
-    if (!sessionId) return;
-    const d = await fetch(`/api/session-packs?sessionId=${sessionId}`).then(r => r.json());
+    const sid = viewSessionId || sessionId;
+    if (!sid) return;
+    const d = await fetch(`/api/session-packs?sessionId=${sid}`).then(r => r.json());
     const packs = (d.items || []).sort((a: any, b: any) => (a.session_number || 0) - (b.session_number || 0));
     setSessionPacks(packs);
-    setActivePackId(prev => prev || packs[packs.length - 1]?.id || null);
+    setActivePackId(prev => {
+      const exists = packs.some((p:any)=>p.id===prev);
+      return exists ? prev : packs[packs.length - 1]?.id || null;
+    });
     try {
-      const g = await fetch(`/api/gallery?sessionId=${sessionId}`).then(r=>r.json());
+      const g = await fetch(`/api/gallery?sessionId=${sid}`).then(r=>r.json());
       const counts: Record<string,number> = {};
       for (const im of (g.items||[])) if (im.session_pack_id) counts[im.session_pack_id] = (counts[im.session_pack_id]||0)+1;
       setGalleryCounts(counts);
@@ -79,6 +91,7 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
   }
 
   async function uploadForPack(packId: string, files: FileList | null) {
+    const sid = viewSessionId || sessionId;
     if (!files || files.length===0) return;
     setUploadingPackId(packId);
     let hadError = "";
@@ -86,7 +99,7 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
       if (!file.type.startsWith("image/")) continue;
       try {
         const dataUrl = await resizeImageForGallery(file);
-        const res = await fetch("/api/gallery", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ session_id: sessionId, session_pack_id: packId, image_url: dataUrl, caption: null }) });
+        const res = await fetch("/api/gallery", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ session_id: sid, session_pack_id: packId, image_url: dataUrl, caption: null }) });
         const j = await res.json().catch(()=>({}));
         if (!res.ok) hadError = j.error || "Errore upload";
       } catch (e:any) { hadError = e?.message || "Errore upload"; }
@@ -97,12 +110,12 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
       return;
     }
     try {
-      const g = await fetch(`/api/gallery?sessionId=${sessionId}`).then(r=>r.json());
+      const g = await fetch(`/api/gallery?sessionId=${sid}`).then(r=>r.json());
       const counts: Record<string,number> = {};
       for (const im of (g.items||[])) if (im.session_pack_id) counts[im.session_pack_id] = (counts[im.session_pack_id]||0)+1;
       setGalleryCounts(counts);
       if (packId === activePackId) {
-        const pg = await fetch(`/api/gallery?sessionId=${sessionId}&sessionPackId=${packId}`).then(r=>r.json());
+        const pg = await fetch(`/api/gallery?sessionId=${sid}&sessionPackId=${packId}`).then(r=>r.json());
         setPackImages(pg.items||[]);
       }
     } catch {}
@@ -126,9 +139,11 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
 
   useEffect(() => {
     loadPacks();
-  }, [sessionId]);
+  }, [viewSessionId]);
 
   async function addSession() {
+    const sid = viewSessionId || sessionId;
+    if (!sid) { setError("Seleziona prima una campagna."); return; }
     setError("");
     if (!title.trim()) { setError("Inserisci il nome della sessione."); return; }
     const n = num.trim() === "" ? null : Number(num);
@@ -136,7 +151,7 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
     const res = await fetch("/api/session-packs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, title: title.trim(), session_number: n, data: {} }),
+      body: JSON.stringify({ session_id: sid, title: title.trim(), session_number: n, data: {} }),
     });
     if (!res.ok) { setError("Errore durante il salvataggio."); return; }
     setTitle("");
@@ -162,7 +177,8 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
     }
   }
 
-  if (!sessionId) {
+  const effectiveSessionId = viewSessionId || sessionId;
+  if (!effectiveSessionId) {
     return <div className="flex h-full items-center justify-center"><p className="text-sm text-white/20">Nessuna campagna attiva.</p></div>;
   }
 
@@ -172,6 +188,15 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
     <div className="flex h-full gap-6">
       {/* Colonne sinistra: note + sessioni */}
       <div className="flex-1 min-w-0 space-y-5">
+        {/* Selettore campagna */}
+        <div className="rounded-2xl border border-veil-gold/15 bg-veil-gold/[0.03] p-3 flex items-center gap-3">
+          <span className="text-xs font-medium text-veil-gold/70">📜 Campagna</span>
+          <select value={viewSessionId} onChange={e=>{ setViewSessionId(e.target.value); setActivePackId(null); }} className="flex-1 rounded-xl border border-white/[0.06] bg-black/40 px-3 py-2 text-sm text-white/80">
+            <option value="">— Seleziona campagna —</option>
+            {campaigns.map((c:any)=><option key={c.id} value={c.id}>{c.name} — {c.code}</option>)}
+          </select>
+          {campaigns.length===0 && <span className="text-[10px] text-white/30">nessuna</span>}
+        </div>
         {/* Casella di testo per scrivere la sessione */}
         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-4">
           <h3 className="text-sm text-veil-gold/80 font-medium mb-3">
@@ -215,7 +240,8 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                       onClick={() => {
                         const ww = menu.word;
                         setMenu(null);
-                        localStorage.setItem("veil-pending-npc", ww.charAt(0) + ww.slice(1).toLowerCase());
+                        const sid = viewSessionId || sessionId;
+                        localStorage.setItem("veil-pending-npc", JSON.stringify({ name: ww.charAt(0) + ww.slice(1).toLowerCase(), sessionId: sid }));
                         onNavigate?.("npcs");
                       }}
                       className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"
@@ -226,7 +252,8 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
                       onClick={() => {
                         const ww = menu.word;
                         setMenu(null);
-                        localStorage.setItem("veil-pending-item", ww.charAt(0) + ww.slice(1).toLowerCase());
+                        const sid = viewSessionId || sessionId;
+                        localStorage.setItem("veil-pending-item", JSON.stringify({ name: ww.charAt(0) + ww.slice(1).toLowerCase(), sessionId: sid }));
                         onNavigate?.("assets");
                       }}
                       className="block w-full px-5 py-2.5 text-left text-sm text-white/80 hover:bg-white/[0.06] hover:text-white transition"

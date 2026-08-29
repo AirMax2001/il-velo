@@ -23,6 +23,7 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const noteKey = selected ? `veil-object-note-${selected.id}` : "";
   const [createForm, setCreateForm] = useState({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -37,12 +38,21 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     const checkPending = () => {
-      const pending = localStorage.getItem("veil-pending-item");
-      if (pending) {
-        setCreateForm(prev => ({ ...prev, name: pending }));
-        setShowCreate(true);
-        localStorage.removeItem("veil-pending-item");
+      const raw = localStorage.getItem("veil-pending-item");
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && parsed.name) {
+          setCreateForm(prev => ({ ...prev, name: parsed.name }));
+          if (parsed.sessionId) setPendingSessionId(parsed.sessionId);
+        } else {
+          setCreateForm(prev => ({ ...prev, name: raw }));
+        }
+      } catch {
+        setCreateForm(prev => ({ ...prev, name: raw }));
       }
+      setShowCreate(true);
+      localStorage.removeItem("veil-pending-item");
     };
     checkPending();
     window.addEventListener("focus", checkPending);
@@ -61,14 +71,16 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
 
   async function createItem() {
     if (!createForm.name.trim()) return;
+    const sid = pendingSessionId || sessionId;
     const res = await fetch("/api/inventory", {
       method: "POST",
-      body: JSON.stringify({ session_id: sessionId, ...createForm, weight: createForm.weight ? Number(createForm.weight) : 0, value: createForm.value ? Number(createForm.value) : 0 })
+      body: JSON.stringify({ session_id: sid, ...createForm, weight: createForm.weight ? Number(createForm.weight) : 0, value: createForm.value ? Number(createForm.value) : 0 })
     });
     const data = await res.json();
     if (data.item) {
       setItems(prev => [data.item, ...prev]);
       setCreateForm({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
+      setPendingSessionId(null);
       setShowCreate(false);
     }
   }
