@@ -27,12 +27,12 @@ export function PartyStatusRail({ sessionId, onOpenPlayers }: { sessionId: strin
   if (!sessionId) return null;
 
   return (
-    <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-2 border-r border-white/[0.06] bg-black/20 p-3 overflow-y-auto h-screen sticky top-0">
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col gap-3 border-r border-white/[0.06] bg-black/20 p-3 overflow-y-auto h-screen sticky top-0">
       <button onClick={onOpenPlayers}
-        className="text-[10px] uppercase tracking-wider text-veil-gold/60 hover:text-veil-gold text-left mb-1">
+        className="text-xs uppercase tracking-wider text-veil-gold/70 hover:text-veil-gold text-left mb-1">
         Party ({players.length})
       </button>
-      {players.length === 0 && <p className="text-[10px] text-white/25">Nessun giocatore ancora.</p>}
+      {players.length === 0 && <p className="text-xs text-white/30">Nessun giocatore ancora.</p>}
       {players.map(p => {
         const hpMax = Number(p.hp_max) || 0;
         const hpCur = Number(p.hp_current) || 0;
@@ -41,28 +41,28 @@ export function PartyStatusRail({ sessionId, onOpenPlayers }: { sessionId: strin
         const down = hpCur <= 0;
         return (
           <button key={p.id} onClick={onOpenPlayers}
-            className={`rounded-xl border p-2 text-left transition ${down ? "border-red-500/40 bg-red-500/[0.06]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]"}`}>
-            <div className="flex items-center gap-2">
-              <PlayerAvatar url={p.avatar_url} name={p.character_name} size="sm" />
+            className={`group flex flex-col gap-2 rounded-3xl border p-4 text-left transition ${down ? "border-red-500/30 bg-red-900/10" : "border-white/[0.06] bg-black/25 hover:border-white/15 hover:bg-white/[0.04]"}`}>
+            <div className="flex items-center gap-3">
+              <PlayerAvatar url={p.avatar_url} name={p.character_name} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-white/85 truncate">{p.character_name}</p>
-                <p className="text-[9px] text-white/30 truncate">{p.class} · lv {p.level || 1}</p>
+                <p className="text-sm font-medium text-white truncate group-hover:text-veil-gold transition">{p.character_name}</p>
+                <p className="text-xs text-white/40 truncate">{p.class} · lv {p.level || 1}</p>
               </div>
             </div>
-            <div className="mt-1.5">
-              <div className="flex items-center justify-between text-[9px] text-white/40">
+            <div className="mt-1">
+              <div className="flex items-center justify-between text-xs text-white/50">
                 <span>{hpCur}/{hpMax} PF</span>
-                {down && <span className="text-red-400">⚠</span>}
+                {down && <span className="text-red-400">⚠ Incapacitato</span>}
               </div>
-              <div className="h-1 rounded-full bg-white/10 overflow-hidden mt-0.5">
+              <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-1">
                 <div className={`h-full rounded-full ${pct > 50 ? "bg-emerald-500" : pct > 25 ? "bg-yellow-500" : "bg-red-500"}`}
                   style={{ width: `${pct}%` }} />
               </div>
             </div>
             {conditions.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1.5">
+              <div className="flex flex-wrap gap-1.5 mt-1">
                 {conditions.slice(0, 3).map(c => (
-                  <span key={c} className="rounded-full border border-red-400/25 bg-red-400/10 px-1.5 py-0.5 text-[8px] text-red-300/80">{c}</span>
+                  <span key={c} className="rounded-full border border-red-400/25 bg-red-400/10 px-2 py-0.5 text-[10px] text-red-300/80">{c}</span>
                 ))}
               </div>
             )}

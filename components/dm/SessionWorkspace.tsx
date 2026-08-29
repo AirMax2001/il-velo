@@ -45,6 +45,19 @@ function resizeImageForGallery(file: File): Promise<string> {
 export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProps) {
   const { engine } = useGameEngine();
   const [centralView, setCentralView] = useState<"scene" | DmSection>("scene");
+  const [settingsTheme, setSettingsTheme] = useState("default");
+  const [settingsMounted, setSettingsMounted] = useState(false);
+  useEffect(() => {
+    const saved = localStorage.getItem("veil_theme") || "default";
+    setSettingsTheme(saved);
+    document.documentElement.setAttribute("data-theme", saved);
+    setSettingsMounted(true);
+  }, []);
+  function changeSettingsTheme(t: string) {
+    setSettingsTheme(t);
+    localStorage.setItem("veil_theme", t);
+    document.documentElement.setAttribute("data-theme", t);
+  }
   const [sessionPacks, setSessionPacks] = useState<SessionPack[]>([]);
   const [activePackId, setActivePackId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -207,10 +220,42 @@ export function SessionWorkspace({ sessionId, onNavigate }: SessionWorkspaceProp
             {centralView === "npcs" && <NpcModule sessionId={viewSessionId || sessionId || ""} />}
             {centralView === "table" && <TableWorkspace sessionId={viewSessionId || sessionId || ""} />}
             {centralView === "settings" && (
-              <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-6">
-                <h3 className="text-sm text-veil-gold font-medium mb-3">Impostazioni</h3>
-                <p className="text-xs text-white/40">Tema e pulisci chat sono in Impostazioni globali (tab Settings).</p>
-                <button onClick={() => setCentralView("scene")} className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50">← Torna a Scene</button>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[0.08em] text-white">Impostazioni</h3>
+                  <p className="text-xs text-white/40 mt-1">Tema e pulizia chat</p>
+                </div>
+                {settingsMounted && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      { id: "default", name: "Default", desc: "Oscuro elegante" },
+                      { id: "draconic", name: "Draconic", desc: "Rosso drago" },
+                      { id: "arcane", name: "Arcane", desc: "Magia viola" },
+                      { id: "nature", name: "Nature", desc: "Foresta verde" },
+                      { id: "shadowfell", name: "Shadowfell", desc: "Ombra e tenebra" },
+                      { id: "celestial", name: "Celestial", desc: "Chiaro sacro" },
+                      { id: "infernal", name: "Infernal", desc: "Inferno rossastro" },
+                      { id: "ocean", name: "Ocean", desc: "Abisso marino" },
+                    ].map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => changeSettingsTheme(t.id)}
+                        className={`rounded-2xl border p-4 text-left transition ${settingsTheme === t.id ? "border-veil-gold/30 bg-veil-gold/10" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12]"}`}
+                      >
+                        <span className="text-xs uppercase tracking-wider text-veil-gold/60">{t.name}</span>
+                        <p className="mt-1 text-xs text-white/50">{t.desc}</p>
+                        {settingsTheme === t.id && <span className="mt-1 inline-block text-xs text-veil-gold">✓ Attivo</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-white/70">Pulisci chat</p>
+                    <p className="text-[11px] text-white/30">Elimina tutti i messaggi di gruppo</p>
+                  </div>
+                  <button onClick={async()=>{ const sid=viewSessionId||sessionId; if(!sid) return; if(!window.confirm("Eliminare tutti i messaggi della chat di gruppo?")) return; await fetch(`/api/roleplay?sessionId=${sid}`, { method: "DELETE" }); }} className="rounded-xl border border-red-500/20 bg-red-900/20 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/30">✕ Pulisci</button>
+                </div>
               </div>
             )}
             {centralView === "campaign" && (
