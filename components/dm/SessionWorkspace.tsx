@@ -87,16 +87,46 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
     fetch("/api/session?list=1").then(r=>r.json()).then(d=> setCampaigns(d.sessions || [])).catch(()=>{});
   }, []);
 
+  const skipSaveRef = useRef(false);
   useEffect(() => {
     if (!activePackId) { setNotes(""); setPackImages([]); return; }
+    const pack = sessionPacks.find(p => p.id === activePackId);
+    const serverNotes = (pack?.data as any)?.notes;
     const saved = localStorage.getItem(`veil-session-notes-${activePackId}`);
-    setNotes(saved || "");
+    const toSet = serverNotes !== undefined ? serverNotes : (saved || "");
+    skipSaveRef.current = true;
+    setNotes(toSet);
+    setTimeout(() => { skipSaveRef.current = false; }, 600);
     fetch(`/api/gallery?sessionId=${viewSessionId}&sessionPackId=${activePackId}`).then(r=>r.json()).then(d=> setPackImages(d.items||[])).catch(()=>setPackImages([]));
   }, [activePackId, viewSessionId]);
 
+  // quando cambia la lista pack (es. dopo load), se il pack attivo ha notes sul server e local è diverso, sincronizza
   useEffect(() => {
     if (!activePackId) return;
-    const t = setTimeout(() => localStorage.setItem(`veil-session-notes-${activePackId}`, notes), 400);
+    const pack = sessionPacks.find(p => p.id === activePackId);
+    const serverNotes = (pack?.data as any)?.notes;
+    if (serverNotes !== undefined && serverNotes !== notes) {
+      const saved = localStorage.getItem(`veil-session-notes-${activePackId}`);
+      if (serverNotes !== saved) {
+        skipSaveRef.current = true;
+        setNotes(serverNotes);
+        localStorage.setItem(`veil-session-notes-${activePackId}`, serverNotes);
+        setTimeout(() => { skipSaveRef.current = false; }, 600);
+      }
+    }
+  }, [sessionPacks]);
+
+  useEffect(() => {
+    if (!activePackId || skipSaveRef.current) return;
+    const t = setTimeout(async () => {
+      localStorage.setItem(`veil-session-notes-${activePackId}`, notes);
+      const pack = sessionPacks.find(p => p.id === activePackId);
+      const newData = { ...(pack?.data || {}), notes };
+      try {
+        await fetch("/api/session-packs", { method: "PATCH", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ id: activePackId, data: newData }) });
+        setSessionPacks(prev => prev.map(p => p.id === activePackId ? { ...p, data: newData } : p));
+      } catch {}
+    }, 600);
     return () => clearTimeout(t);
   }, [notes, activePackId]);
 
