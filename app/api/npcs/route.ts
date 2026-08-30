@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     faction_id: factionId,
     location_id: locationId,
     is_dead: body.is_dead ?? false,
+    data: body.data || null,
   }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ item: data });
