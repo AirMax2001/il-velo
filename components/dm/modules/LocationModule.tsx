@@ -76,6 +76,7 @@ export function LocationModule({ sessionId }: { sessionId: string }) {
   const [selected, setSelected] = useState<any>(null);
   const [note, setNote] = useState("");
   const noteKey = selected ? `veil-location-note-${selected.id}` : "";
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => { if (sessionId) { loadLocations(); loadNpcs(); } }, [sessionId]);
 
@@ -113,9 +114,14 @@ export function LocationModule({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Luoghi</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Luoghi</h2>
+        <button onClick={() => setShowMap(v=>!v)} className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-3 py-1.5 text-xs text-veil-gold hover:bg-veil-gold/20">
+          {showMap ? "✕ Chiudi mappa" : "🗺 Mostra mappa"}
+        </button>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr] h-[calc(100vh-140px)]">
+      <div className={`grid gap-6 ${showMap ? "lg:grid-cols-[360px_1fr]" : ""} h-[calc(100vh-140px)]`}>
         {/* Sinistra: elenco + descrizione sotto */}
         <div className="flex flex-col gap-4 overflow-hidden">
           <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-2 max-h-[45vh] overflow-y-auto shrink-0">
@@ -253,18 +259,20 @@ export function LocationModule({ sessionId }: { sessionId: string }) {
           )}
         </div>
 
-        {/* Destra: mappa immagine cliccabile da Tavolo (Mostra mappa → WorldMap) */}
-        <div className="rounded-2xl border border-white/[0.08] bg-[#07090f] overflow-hidden flex flex-col min-h-[600px]">
-          <WorldMap
-            sessionId={sessionId}
-            onExitMap={(loc) => {
-              if (loc?.name) {
-                const found = locations.find((l:any) => l.name.toLowerCase() === loc.name.toLowerCase());
-                if (found) setSelected(found);
-              }
-            }}
-          />
-        </div>
+        {/* Destra: mappa immagine cliccabile — aperta con bottone sopra */}
+        {showMap && (
+          <div className="rounded-2xl border border-white/[0.08] bg-[#07090f] overflow-hidden flex flex-col min-h-[600px]">
+            <WorldMap
+              sessionId={sessionId}
+              onExitMap={(loc) => {
+                if (loc?.name) {
+                  const found = locations.find((l:any) => l.name.toLowerCase() === loc.name.toLowerCase());
+                  if (found) setSelected(found);
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
