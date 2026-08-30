@@ -131,10 +131,9 @@ function DMPanelInner() {
         {tab !== "session" && (
           <div className="flex items-center gap-2 p-4 pb-0">
             <button onClick={() => setTab("session")} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/50 hover:text-white hover:border-white/15">← Scene</button>
-            <div className="ml-auto flex items-center gap-2">
-              <button onClick={() => setShowGlobalSearch(true)} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-white">⌕ Cerca</button>
-              <button onClick={logout} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-red-300">⊘ Esci</button>
-            </div>
+          <div className="ml-auto">
+            <button onClick={logout} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-white/30 hover:text-red-300">⊘ Esci</button>
+          </div>
           </div>
         )}
         <div className={tab === "campaign" ? "" : "hidden"}><CampaignWorkspace session={session} campaigns={campaigns} onSelect={(s: any) => { localStorage.setItem("veil_session", JSON.stringify(s)); setSession(s); }} /></div>

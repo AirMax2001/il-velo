@@ -24,6 +24,7 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
   const noteKey = selected ? `veil-object-note-${selected.id}` : "";
   const [createForm, setCreateForm] = useState({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -71,6 +72,18 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
 
   async function createItem() {
     if (!createForm.name.trim()) return;
+    if (editingId) {
+      const res = await fetch("/api/inventory", { method: "PATCH", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ id: editingId, ...createForm, weight: createForm.weight ? Number(createForm.weight) : 0, value: createForm.value ? Number(createForm.value) : 0 }) });
+      const d = await res.json();
+      if (!res.ok || (d as any).error) { alert((d as any).error || "Errore aggiornamento"); return; }
+      const updated = { ...createForm, weight: Number(createForm.weight)||0, value: Number(createForm.value)||0 };
+      setItems(prev => prev.map(i => i.id === editingId ? { ...i, ...updated } : i));
+      if (selected?.id === editingId) setSelected((prev:any) => ({ ...prev, ...updated }));
+      setEditingId(null);
+      setCreateForm({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" });
+      setShowCreate(false);
+      return;
+    }
     const sid = pendingSessionId || sessionId;
     const res = await fetch("/api/inventory", {
       method: "POST",
@@ -115,14 +128,14 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
     <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold tracking-[0.1em] text-white">Oggetti</h2>
-        <button onClick={() => setShowCreate(!showCreate)} className="rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 transition">
+        <button onClick={() => { if (showCreate) { setEditingId(null); setCreateForm({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" }); } setShowCreate(!showCreate); }} className="rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 transition">
           {showCreate ? "Annulla" : "+ Crea oggetto"}
         </button>
       </div>
 
       {showCreate && (
         <div className="mb-6 rounded-2xl border border-white/[0.06] bg-black/30 p-5">
-          <h3 className="text-sm font-semibold text-veil-gold mb-4">Nuovo oggetto</h3>
+          <h3 className="text-sm font-semibold text-veil-gold mb-4">{editingId ? "Modifica oggetto" : "Nuovo oggetto"}</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="text-[10px] uppercase tracking-[0.1em] text-white/30">Nome *</label>
@@ -166,8 +179,9 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
             </div>
           </div>
           <button onClick={createItem} disabled={!createForm.name.trim()} className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-900/30 transition disabled:opacity-40">
-            Salva oggetto
+            {editingId ? "Aggiorna" : "Salva oggetto"}
           </button>
+          {editingId && <button onClick={() => { setEditingId(null); setCreateForm({ name: "", description: "", rarity: "common", item_type: "other", category: "general", weight: "", value: "" }); setShowCreate(false); }} className="mt-4 ml-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-white/40 hover:text-white transition">Annulla modifica</button>}
         </div>
       )}
 
@@ -266,6 +280,20 @@ export function ObjectsModule({ sessionId }: { sessionId: string }) {
               <h3 className="text-xl text-veil-gold">{selected.name}</h3>
               <p className={`text-xs uppercase tracking-wider ${RARITY_COLORS[selected.rarity]?.text || "text-white/50"}`}>{RARITY_COLORS[selected.rarity]?.label || selected.rarity || "—"}</p>
             </div>
+            <button onClick={() => {
+              setCreateForm({
+                name: selected.name || "",
+                description: selected.description || "",
+                rarity: selected.rarity || "common",
+                item_type: selected.item_type || "other",
+                category: selected.category || "general",
+                weight: String(selected.weight || ""),
+                value: String(selected.value || ""),
+              });
+              setEditingId(selected.id);
+              setShowCreate(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }} className="rounded-lg border border-veil-gold/20 bg-veil-gold/10 px-3 py-1 text-xs text-veil-gold hover:bg-veil-gold/20 transition">Modifica</button>
             <button onClick={() => deleteItem(selected.id)} className="text-xs text-white/30 hover:text-red-300 transition">Elimina</button>
           </div>
           <div className="grid gap-6 md:grid-cols-[1fr_1fr]">

@@ -41,7 +41,10 @@ export async function PATCH(req: NextRequest) {
     // DM/player non si sovrascrivono a vicenda (il marker "_merge" è accettato
     // per retro-compatibilità ma non è più necessario).
     const { data: updated, error } = await updatePlayerWithMerge(db, id, fields);
-    if (error) return NextResponse.json({ error: explainPlayerError(error.message) }, { status: 500 });
+    if (error) {
+      console.error("PATCH /api/players error:", error, "fields:", fields);
+      return NextResponse.json({ error: explainPlayerError(error.message) }, { status: 500 });
+    }
     return NextResponse.json({ ok: true, player: updated });
   } catch (error: any) {
     return NextResponse.json({ error: explainPlayerError(error.message || "Errore nel salvataggio della scheda") }, { status: 500 });

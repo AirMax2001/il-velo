@@ -224,18 +224,38 @@ export const CONDITIONS_LIST = [
   "Stordito", "Trattenuto",
 ];
 
+export const CONDITION_DETAILS: Record<string, string> = {
+  Accecato: "Non vedi. Fallisci le prove che richiedono vista. Tiri per colpire con svantaggio, i nemici hanno vantaggio contro di te.",
+  Affascinato: "Non puoi attaccare chi ti ha affascinato e lui ha vantaggio alle prove sociali contro di te.",
+  Assordato: "Non senti. Fallisci automaticamente le prove che richiedono udito.",
+  Atterrito: "Svantaggio a prove e tiri per colpire mentre vedi la fonte della paura. Non puoi avvicinarti volontariamente.",
+  Avvelenato: "Svantaggio ai tiri per colpire e alle prove di caratteristica.",
+  Esausto: "Livelli di esaurimento (1-6): svantaggio, velocità dimezzata, poi svantaggio a tiri salvezza, PF dimezzati, velocità 0, morte.",
+  Grappling: "Velocità 0. Finisce se il grappler è incapacitato o ti allontana.",
+  Incapacitato: "Non puoi compiere azioni o reazioni.",
+  Inconscio: "Incapacitato, non ti muovi, fallisci TS su FOR e DES, i tiri per colpire contro di te hanno vantaggio, ogni colpo entro 1,5m è critico.",
+  Invisibile: "Non puoi essere visto senza magia/sensi speciali. Tiri per colpire contro di te con svantaggio, i tuoi con vantaggio.",
+  Paralizzato: "Incapacitato, non ti muovi, fallisci TS FOR/DES, i tiri contro di te hanno vantaggio, ogni colpo entro 1,5m è critico.",
+  Pietrificato: "Trasformato in pietra, incapacitato, non invecchi, peso x10, fallisci TS, resistenza a tutti i danni, immune al veleno/malattia.",
+  Prono: "Puoi solo strisciare. Hai svantaggio ai tiri per colpire, i nemici entro 1,5m hanno vantaggio, gli altri svantaggio.",
+  Rallentato: "Velocità dimezzata, -2 alla CA, svantaggio a TS su DES, non puoi fare reazioni, un'azione o bonus a turno.",
+  Spaventato: "Come Atterrito (paura).",
+  Stordito: "Incapacitato, non ti muovi, fallisci TS FOR/DES, i tiri contro di te hanno vantaggio.",
+  Trattenuto: "Velocità 0, svantaggio ai tiri per colpire e ai TS su DES, i tiri contro di te hanno vantaggio.",
+};
+
 export function parseConditions(raw: any): string[] {
   if (Array.isArray(raw)) return raw;
   if (typeof raw === "string") {
     if (raw.trim().startsWith("[")) {
-      try { return JSON.parse(raw); } catch { /* fallthrough */ }
+      try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) return parsed; } catch { /* fallthrough */ }
     }
     return raw.split(",").map(s => s.trim()).filter(Boolean);
   }
   return [];
 }
-export function serializeConditions(list: string[]): string {
-  return JSON.stringify(list);
+export function serializeConditions(list: string[]): string[] {
+  return list as unknown as string[];
 }
 
 // Incantesimi preparati (PHB): paladino metà livello, gli altri livello + mod.

@@ -149,139 +149,132 @@ export function PlayerCards({ sessionId }: PlayerCardsProps) {
         <p className="text-sm text-white/40">Nessun giocatore in questa campagna.</p>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {players.map(p => (
-          <div
-            key={p.id}
-            className={`group relative cursor-pointer rounded-2xl border p-5 transition ${
-              selected?.id === p.id
-                ? "border-veil-gold/30 bg-[linear-gradient(135deg,rgba(201,164,76,0.06),transparent)]"
-                : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"
-            }`}
-            onClick={() => setSelected(selected?.id === p.id ? null : p)}
-          >
-            <button
-              onClick={e => { e.stopPropagation(); deletePlayer(p.id); }}
-              className="absolute right-3 top-3 text-xs text-white/15 hover:text-red-300 transition z-10"
+      <div className="grid gap-6 md:grid-cols-2">
+        {players.map(p => {
+          const isSelected = selected?.id === p.id;
+          return (
+            <div
+              key={p.id}
+              className={`group relative cursor-pointer rounded-2xl border p-6 transition ${isSelected ? "border-veil-gold/30 bg-[linear-gradient(135deg,rgba(201,164,76,0.08),rgba(201,164,76,0.03))] shadow-[0_0_30px_rgba(201,164,76,0.08)] md:col-span-2" : "border-white/[0.06] bg-black/20 hover:border-white/[0.12] hover:bg-white/[0.02]"}`}
+              onClick={() => setSelected(isSelected ? null : p)}
             >
-              ×
-            </button>
-
-            <div className="flex items-start gap-4">
-              <PlayerAvatar url={p.avatar_url} name={p.character_name} size="lg" />
-
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-white truncate">{p.character_name}</p>
-                <p className="mt-0.5 text-xs text-white/45">
-                  {p.race || "—"} · {p.class || "—"} · {p.age || "—"} · Liv. {p.level || 1}
-                </p>
-
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/40">HP</span>
-                    <span className="text-veil-gold">{p.hp_current ?? 0}/{p.hp_max ?? 0}</span>
-                  </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/8">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
-                      style={{ width: `${Math.min(100, ((p.hp_current ?? 0) / Math.max(1, p.hp_max ?? 1)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {(parseConditions(p.conditions)).slice(0, 2).map((c: string) => (
-                    <span key={c} className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] text-rose-200">{c}</span>
-                  ))}
-                  {p.coins > 0 && (
-                    <span className="rounded bg-veil-gold/8 px-1.5 py-0.5 text-[10px] text-veil-gold">{p.coins} ◎</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <span className="text-[10px] text-emerald-400/70">Online</span>
               <button
-                onClick={e => { e.stopPropagation(); const v = !p.character_data?.inspiration; save(p.id, { inspiration: v }); }}
-                className={`rounded-lg border px-2 py-0.5 text-[10px] transition ${p.character_data?.inspiration ? "border-veil-gold/30 bg-veil-gold/15 text-veil-gold" : "border-white/10 bg-white/[0.03] text-white/40 hover:border-veil-gold/20 hover:text-veil-gold/70"}`}
-                title={p.character_data?.inspiration ? "Rimuovi ispirazione" : "Assegna ispirazione (il giocatore vedrà i bordi oro)"}>
-                {p.character_data?.inspiration ? "★ Ispirato" : "☆ Assegna ispirazione"}
+                onClick={e => { e.stopPropagation(); deletePlayer(p.id); }}
+                className="absolute right-4 top-4 text-xs text-white/15 hover:text-red-300 transition z-10"
+              >
+                ×
               </button>
-              <span className="text-[10px] text-white/20 ml-auto">XP {p.xp ?? 0}</span>
-              <button
-                onClick={e => { e.stopPropagation(); setSheetPlayer(p); }}
-                className="rounded-lg border border-veil-gold/20 bg-veil-gold/[0.06] px-2 py-0.5 text-[10px] text-veil-gold/80 hover:border-veil-gold/40 hover:text-veil-gold transition"
-                title="Apri la scheda completa come vista giocatore">
-                🧝 Entra nella scheda
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      <div className={`${selected ? "" : "hidden"} lg:sticky lg:top-6`}>
-        {selected && (
-          <div className="rounded-2xl border border-white/[0.06] bg-black/30 max-h-[calc(100vh-4.5rem)] overflow-y-auto">
-            <div className="flex flex-col gap-4 border-b border-white/[0.06] p-5">
-              <div className="flex items-center gap-4">
-                <PlayerAvatar url={selected.avatar_url} name={selected.character_name} size="lg" />
-                <div className="min-w-0">
-                  <h3 className="text-lg text-veil-gold truncate">{selected.character_name}</h3>
-                  <p className="mt-0.5 text-xs text-white/50">
-                    {selected.race || "—"} · {selected.class || "—"} · Liv. {selected.level || 1}
+              <div className="flex items-start gap-5">
+                <PlayerAvatar url={p.avatar_url} name={p.character_name} size="lg" />
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-medium text-white truncate">{p.character_name}</p>
+                  <p className="mt-0.5 text-xs text-white/45">
+                    {p.race || "—"} · {p.class || "—"} · {p.age || "—"} · Liv. {p.level || 1}
                   </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 rounded-xl border border-emerald-400/15 bg-emerald-900/10 px-3 py-1.5 text-center">
-                  <p className="text-[9px] uppercase text-white/30">HP</p>
-                  <p className="text-sm text-emerald-400">{selected.hp_current ?? 0}/{selected.hp_max ?? 0}</p>
-                </div>
-                <div className="flex-1 rounded-xl border border-veil-gold/20 bg-veil-gold/[0.06] px-3 py-1.5 text-center">
-                  <p className="text-[9px] uppercase text-white/30">XP</p>
-                  <p className="text-sm text-veil-gold">{selected.xp ?? 0}</p>
-                </div>
-                <div className="flex-1 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-center">
-                  <p className="text-[9px] uppercase text-white/30">◎</p>
-                  <p className="text-sm text-white/80">{selected.coins ?? 0}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSheetPlayer(selected)}
-                className="rounded-xl border border-veil-gold/30 bg-veil-gold/10 px-4 py-2 text-xs text-veil-gold hover:bg-veil-gold/20 transition"
-                title="Apri la scheda del giocatore come la vede lui (modifiche in tempo reale)">
-                🧝 Entra nella scheda del giocatore
-              </button>
-            </div>
 
-            <div className="flex gap-1 border-b border-white/[0.06] px-6">
-              {tabs.map(t => (
-                <button key={t.id} onClick={() => setDetailTab(t.id)}
-                  className={`px-4 py-3 text-xs tracking-[0.05em] border-b-2 transition ${
-                    detailTab === t.id ? "border-veil-gold/50 text-veil-gold" : "border-transparent text-white/30 hover:text-white/60"
-                  }`}>
-                  {t.label}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-white/40">HP</span>
+                      <span className="text-veil-gold font-medium">{p.hp_current ?? 0}/{p.hp_max ?? 0}</span>
+                    </div>
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/8">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
+                        style={{ width: `${Math.min(100, ((p.hp_current ?? 0) / Math.max(1, p.hp_max ?? 1)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {(parseConditions(p.conditions)).map((c: string) => (
+                      <span key={c} className="rounded-full border border-red-500/30 bg-red-900/20 px-2 py-0.5 text-[11px] text-red-200 flex items-center gap-1">{c} <button onClick={e => { e.stopPropagation(); const list = parseConditions(p.conditions).filter((x: string) => x !== c); save(p.id, { conditions: serializeConditions(list) }); }} className="text-red-300/60 hover:text-red-300">×</button></span>
+                    ))}
+                    {p.coins > 0 && (
+                      <span className="rounded-full border border-veil-gold/20 bg-veil-gold/10 px-2 py-0.5 text-[11px] text-veil-gold">{p.coins} ◎</span>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-[9px] uppercase tracking-wider text-white/25 mb-1">Imposta condizione (immediato)</p>
+                    <div className="flex flex-wrap gap-1">
+                      {CONDITIONS_LIST.map(c => {
+                        const active = parseConditions(p.conditions).includes(c);
+                        return (
+                          <button key={c} onClick={e => { e.stopPropagation(); const list = parseConditions(p.conditions); const next = active ? list.filter((x: string) => x !== c) : [...list, c]; save(p.id, { conditions: serializeConditions(next) }); }} className={`rounded-full border px-2 py-0.5 text-[10px] transition ${active ? "border-red-500/40 bg-red-900/30 text-red-300" : "border-white/10 bg-white/[0.03] text-white/30 hover:border-red-400/20 hover:text-red-300/50"}`}>{c}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="text-xs text-emerald-400/70">Online</span>
+                <button
+                  onClick={e => { e.stopPropagation(); const v = !p.character_data?.inspiration; save(p.id, { inspiration: v }); }}
+                  className={`rounded-lg border px-2.5 py-1 text-xs transition ${p.character_data?.inspiration ? "border-veil-gold/30 bg-veil-gold/15 text-veil-gold" : "border-white/10 bg-white/[0.03] text-white/40 hover:border-veil-gold/20 hover:text-veil-gold/70"}`}
+                  title={p.character_data?.inspiration ? "Rimuovi ispirazione" : "Assegna ispirazione (il giocatore vedrà i bordi oro)"}>
+                  {p.character_data?.inspiration ? "★ Ispirato" : "☆ Assegna ispirazione"}
                 </button>
-              ))}
-            </div>
+                <span className="text-xs text-white/30 ml-auto">XP {p.xp ?? 0}</span>
+                <button
+                  onClick={e => { e.stopPropagation(); setSheetPlayer(p); }}
+                  className="rounded-lg border border-veil-gold/20 bg-veil-gold/[0.06] px-2.5 py-1 text-xs text-veil-gold/80 hover:border-veil-gold/40 hover:text-veil-gold transition"
+                  title="Apri la scheda completa come vista giocatore">
+                  🧝 Entra nella scheda
+                </button>
+              </div>
 
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
-              {detailTab === "character" && selected && (
-                <PlayerDetailSheet player={selected} onSave={(f: any) => save(selected.id, f)} />
+              {isSelected && (
+                <div className="mt-6 border-t border-white/[0.06] pt-6" onClick={e => e.stopPropagation()}>
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-white/50">Dettaglio</span>
+                      <span className="h-1 w-1 rounded-full bg-white/20" />
+                      <span className="text-xs text-veil-gold/60">{p.character_name}</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                      <div className="rounded-xl border border-emerald-400/15 bg-emerald-900/10 px-3 py-1 text-center">
+                        <p className="text-[9px] uppercase text-white/30">HP</p>
+                        <p className="text-xs font-bold text-emerald-400">{p.hp_current ?? 0}/{p.hp_max ?? 0}</p>
+                      </div>
+                      <div className="rounded-xl border border-veil-gold/20 bg-veil-gold/[0.06] px-3 py-1 text-center">
+                        <p className="text-[9px] uppercase text-white/30">XP</p>
+                        <p className="text-xs font-bold text-veil-gold">{p.xp ?? 0}</p>
+                      </div>
+                      <div className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-1 text-center">
+                        <p className="text-[9px] uppercase text-white/30">◎</p>
+                        <p className="text-xs font-bold text-white/80">{p.coins ?? 0}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-1 border-b border-white/[0.06] mb-4">
+                    {tabs.map(t => (
+                      <button key={t.id} onClick={(e) => { e.stopPropagation(); setDetailTab(t.id); }}
+                        className={`px-4 py-2.5 text-xs tracking-[0.05em] border-b-2 transition ${detailTab === t.id ? "border-veil-gold/50 text-veil-gold" : "border-transparent text-white/30 hover:text-white/60"}`}>
+                        {t.label}
+                      </button>
+                    ))}
+                    <button onClick={(e) => { e.stopPropagation(); setSheetPlayer(p); }} className="ml-auto rounded-lg border border-veil-gold/20 bg-veil-gold/10 px-3 py-1.5 text-xs text-veil-gold hover:bg-veil-gold/20">🧝 Scheda completa</button>
+                  </div>
+
+                  <div className="max-h-[60vh] overflow-y-auto pr-1">
+                    {detailTab === "character" && <PlayerDetailSheet player={p} onSave={(f: any) => save(p.id, f)} />}
+                    {detailTab === "secrets" && <PlayerSecrets sessionId={sessionId} playerId={p.id} />}
+                  </div>
+                </div>
               )}
-              {detailTab === "secrets" && <PlayerSecrets sessionId={sessionId} playerId={selected.id} />}
             </div>
-          </div>
-        )}
+          );
+        })}
       </div>
 
       {sheetPlayer && (
         <PlayerSheetOverlay player={sheetPlayer} sessionId={sessionId} onClose={() => setSheetPlayer(null)} />
       )}
-      </div>
     </div>
   );
 }
@@ -389,23 +382,7 @@ function PlayerDetailSheet({ player, onSave }: { player: any; onSave: (f: any) =
         </div>
       </Section>
 
-      <Section title="🩸 Condizioni (solo DM — appaiono in rosso sopra in Combattimento)">
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {parseConditions(player.conditions).map((c: string) => (
-            <span key={c} className="rounded-full border border-red-500/40 bg-red-900/30 px-2.5 py-1 text-xs font-bold text-red-300 flex items-center gap-1">
-              {c}
-              <button onClick={() => onSave({ conditions: serializeConditions(parseConditions(player.conditions).filter((x: string) => x !== c)) })} className="text-red-300/60 hover:text-red-300">×</button>
-            </span>
-          ))}
-          {parseConditions(player.conditions).length === 0 && <span className="text-xs text-white/25">Nessuna condizione attiva</span>}
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {CONDITIONS_LIST.filter(c => !parseConditions(player.conditions).includes(c)).map(c => (
-            <button key={c} onClick={() => onSave({ conditions: serializeConditions([...parseConditions(player.conditions), c]) })} className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/35 hover:border-red-400/30 hover:text-red-300/70 transition">+ {c}</button>
-          ))}
-        </div>
-        <p className="text-[9px] text-white/20 mt-2">Le condizioni appaiono in rosso sopra in Combattimento del giocatore.</p>
-      </Section>
+      {/* Condizioni rimosse da qui — ora gestite direttamente sul quadrato con toggle immediato (vedi sopra) per evitare duplicati */}
 
     </div>
   );

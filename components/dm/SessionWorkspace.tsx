@@ -306,7 +306,7 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
         ) : (
           <>
             {/* Selettore campagna + appunti + sessioni — vista Scene */}
-        {/* Selettore campagna — con cerca/esci alla stessa altezza per far toccare il blocco centrale sopra */}
+        {/* Selettore campagna */}
         <div className="rounded-2xl border border-veil-gold/15 bg-veil-gold/[0.03] p-3 flex items-center gap-3">
           <span className="text-xs font-medium text-veil-gold/70">📜 Campagna</span>
           <select value={viewSessionId} onChange={e=>{ setViewSessionId(e.target.value); setActivePackId(null); }} className="flex-1 rounded-xl border border-white/[0.06] bg-black/40 px-3 py-2 text-sm text-white/80">
@@ -314,8 +314,7 @@ export function SessionWorkspace({ sessionId, onNavigate, onSearch, onLogout }: 
             {campaigns.map((c:any)=><option key={c.id} value={c.id}>{c.name} — {c.code}</option>)}
           </select>
           {campaigns.length===0 && <span className="text-[10px] text-white/30">nessuna</span>}
-          <button onClick={onSearch} title="Cerca (⌘K)" className="shrink-0 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-white/30 hover:text-white hover:border-white/15">⌕</button>
-          <button onClick={onLogout} title="Esci" className="shrink-0 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-white/30 hover:text-red-300 hover:border-red-400/20">⊘</button>
+          <button onClick={onLogout} title="Esci" className="shrink-0 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-white/30 hover:text-red-300 hover:border-red-400/20">⊘ Esci</button>
         </div>
         {/* Casella di testo per scrivere la sessione */}
         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-4">

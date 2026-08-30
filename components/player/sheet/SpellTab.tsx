@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { LabelWithGuide } from "@/components/shared/FieldGuide";
 import {
-  CONDITIONS_LIST, parseConditions, serializeConditions,
+  CONDITIONS_LIST, parseConditions, serializeConditions, CONDITION_DETAILS,
   getModifier, ALL_SKILLS, SKILL_ABILITY, ABILITY_SHORT, SKILL_LABELS,
 } from "@/lib/characterEngine";
 import { getSpellsForClass } from "@/lib/data/spells";
@@ -40,6 +40,7 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const [profInfoOpen, setProfInfoOpen] = useState(false);
   const [showCantrips, setShowCantrips] = useState(true);
   const [showResAbilities, setShowResAbilities] = useState(true);
+  const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
   const cantrips = ((cd.cantrips || []) as string[]).slice(0, cantripLimit || undefined);
@@ -130,6 +131,23 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
 
   return (
     <div className="space-y-4">
+      {/* Condizione sopra PF — ovale cliccabile con descrizione sotto */}
+      {conditions.length > 0 && (
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
+            {conditions.map(c => (
+              <button key={c} onClick={() => setSelectedCondition(selectedCondition === c ? null : c)} className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${selectedCondition === c ? "border-red-400 bg-red-500/20 text-red-200" : "border-red-500/40 bg-red-900/30 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.15)]"}`}>{c}</button>
+            ))}
+          </div>
+          {selectedCondition && (
+            <div className="w-full max-w-md rounded-xl border border-white/[0.06] bg-black/30 p-3 text-center">
+              <p className="text-xs font-bold text-red-300">{selectedCondition}</p>
+              <p className="text-xs text-white/60 mt-1 leading-relaxed">{CONDITION_DETAILS[selectedCondition] || "Nessuna descrizione disponibile."}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Punti Ferita - Always at top */}
       <div className="veil-panel p-4">
         <h3 className="text-sm text-veil-gold/80 font-medium mb-3">Punti Ferita</h3>
@@ -342,13 +360,6 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
       {/* Resto del contenuto solo se non morto */}
       {!isTrulyDead && (
         <>
-          {conditions.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {conditions.map(c => (
-                <span key={c} className="rounded-full border border-red-500/40 bg-red-900/30 px-3 py-1 text-xs font-bold text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.15)]">{c}</span>
-              ))}
-            </div>
-          )}
 
           {resources.length > 0 && (
             <div className="veil-panel p-4">

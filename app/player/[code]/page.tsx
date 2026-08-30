@@ -45,11 +45,12 @@ function PlayerView() {
   // Sync live via Supabase Realtime: le modifiche del DM (condizioni, HP,
   // note) arrivano subito. Il polling resta come rete di sicurezza (30s).
   useEffect(() => {
-    if (!sessionId) return;
-    const unsubscribe = subscribeToTable("players", sessionId, loadPlayer);
-    const t = setInterval(loadPlayer, 30000);
+    const sid = (player as any)?.session_id || sessionId;
+    if (!sid) return;
+    const unsubscribe = subscribeToTable("players", sid, loadPlayer);
+    const t = setInterval(loadPlayer, 15000);
     return () => { unsubscribe(); clearInterval(t); };
-  }, [token, sessionId]);
+  }, [player?.session_id, sessionId, token]);
 
   useEffect(() => {
     const saved = localStorage.getItem("veil_theme");
