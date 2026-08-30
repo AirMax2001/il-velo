@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { WorldMap } from "@/components/WorldMap/WorldMap";
 
 function LocationTreeItem({
   location,
@@ -114,134 +115,134 @@ export function LocationModule({ sessionId }: { sessionId: string }) {
     <div className="mx-auto max-w-7xl">
       <h2 className="text-2xl font-semibold tracking-[0.1em] text-white mb-6">Luoghi</h2>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-2 max-h-[70vh] overflow-y-auto">
-          {roots.length === 0 && (
-            <p className="text-sm text-white/30 p-4">Nessuna location importata.</p>
-          )}
-          {roots.map((root: any) => (
-            <LocationTreeItem
-              key={root.id}
-              location={root}
-              allLocations={locations}
-              npcs={npcs}
-              depth={0}
-              onSelect={setSelected}
-              selectedId={selected?.id}
-            />
-          ))}
-        </div>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr] h-[calc(100vh-140px)]">
+        {/* Sinistra: elenco + descrizione sotto */}
+        <div className="flex flex-col gap-4 overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-2 max-h-[45vh] overflow-y-auto shrink-0">
+            {roots.length === 0 && (
+              <p className="text-sm text-white/30 p-4">Nessuna location importata.</p>
+            )}
+            {roots.map((root: any) => (
+              <LocationTreeItem
+                key={root.id}
+                location={root}
+                allLocations={locations}
+                npcs={npcs}
+                depth={0}
+                onSelect={setSelected}
+                selectedId={selected?.id}
+              />
+            ))}
+          </div>
 
-        <div>
           {!selected ? (
-            <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-8 text-center">
+            <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-8 text-center flex-1">
               <p className="text-sm text-white/30">Seleziona un luogo dall'albero</p>
+              <p className="text-xs text-white/20 mt-1">la descrizione apparirà qui sotto</p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/[0.06] bg-black/30">
-              <div className="border-b border-white/[0.06] p-6">
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl">{iconMap[selected.location_type] || "📍"}</span>
+            <div className="rounded-2xl border border-white/[0.06] bg-black/30 flex-1 overflow-y-auto">
+              <div className="border-b border-white/[0.06] p-5">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{iconMap[selected.location_type] || "📍"}</span>
                   <div>
-                    <h3 className="text-xl text-veil-gold">{selected.name}</h3>
-                    <p className="mt-1 text-sm text-white/50 capitalize">{selected.location_type || "—"}</p>
+                    <h3 className="text-lg text-veil-gold">{selected.name}</h3>
+                    <p className="text-xs text-white/50 capitalize">{selected.location_type || "—"}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-6 p-6 md:grid-cols-[1.2fr_0.8fr]">
-                <div className="space-y-4">
-                  {/* Map coordinates */}
+              <div className="p-5 space-y-4">
+                {/* Map coordinates */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Coordinate mappa</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-white/30">X</span>
+                      <input
+                        className="w-20 rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70 focus:outline-none focus:border-veil-gold/30"
+                        type="number" min={0} max={100} step={0.5}
+                        value={selected.map_x ?? ""}
+                        onChange={e => updateLocation(selected.id, { map_x: e.target.value ? Number(e.target.value) : null })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-white/30">Y</span>
+                      <input
+                        className="w-20 rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70 focus:outline-none focus:border-veil-gold/30"
+                        type="number" min={0} max={100} step={0.5}
+                        value={selected.map_y ?? ""}
+                        onChange={e => updateLocation(selected.id, { map_y: e.target.value ? Number(e.target.value) : null })}
+                      />
+                    </div>
+                    <span className="text-[10px] text-white/20">(% sulla mappa)</span>
+                  </div>
+                </div>
+
+                {selected.ambient_description && (
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Coordinate mappa</p>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-white/30">X</span>
-                        <input
-                          className="w-20 rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70 focus:outline-none focus:border-veil-gold/30"
-                          type="number" min={0} max={100} step={0.5}
-                          value={selected.map_x ?? ""}
-                          onChange={e => updateLocation(selected.id, { map_x: e.target.value ? Number(e.target.value) : null })}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-white/30">Y</span>
-                        <input
-                          className="w-20 rounded-lg border border-white/[0.06] bg-black/30 px-2 py-1.5 text-xs text-white/70 focus:outline-none focus:border-veil-gold/30"
-                          type="number" min={0} max={100} step={0.5}
-                          value={selected.map_y ?? ""}
-                          onChange={e => updateLocation(selected.id, { map_y: e.target.value ? Number(e.target.value) : null })}
-                        />
-                      </div>
-                      <span className="text-[10px] text-white/20">(% sulla mappa)</span>
-                    </div>
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Descrizione</p>
+                    <p className="text-sm text-white/60 leading-relaxed">{selected.ambient_description}</p>
                   </div>
+                )}
 
-                  {selected.ambient_description && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Descrizione</p>
-                      <p className="text-sm text-white/60 leading-relaxed">{selected.ambient_description}</p>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  {selected.atmosphere && (
+                    <span className={`rounded-lg border px-2.5 py-1 text-xs ${
+                      selected.atmosphere === "calm"
+                        ? "border-emerald-500/20 bg-emerald-900/20 text-emerald-300"
+                        : selected.atmosphere === "disturbed"
+                        ? "border-red-500/20 bg-red-900/20 text-red-300"
+                        : "border-violet-500/20 bg-violet-900/20 text-violet-300"
+                    }`}>
+                      {selected.atmosphere}
+                    </span>
                   )}
+                  {selected.is_current && (
+                    <span className="rounded-lg border border-veil-gold/20 bg-veil-gold/10 px-2.5 py-1 text-xs text-veil-gold">
+                      Luogo corrente
+                    </span>
+                  )}
+                </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {selected.atmosphere && (
-                      <span className={`rounded-lg border px-2.5 py-1 text-xs ${
-                        selected.atmosphere === "calm"
-                          ? "border-emerald-500/20 bg-emerald-900/20 text-emerald-300"
-                          : selected.atmosphere === "disturbed"
-                          ? "border-red-500/20 bg-red-900/20 text-red-300"
-                          : "border-violet-500/20 bg-violet-900/20 text-violet-300"
-                      }`}>
-                        {selected.atmosphere}
-                      </span>
-                    )}
-                    {selected.is_current && (
-                      <span className="rounded-lg border border-veil-gold/20 bg-veil-gold/10 px-2.5 py-1 text-xs text-veil-gold">
-                        Luogo corrente
-                      </span>
-                    )}
+                {locationNpcs.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">NPC presenti</p>
+                    <div className="flex flex-wrap gap-2">
+                      {locationNpcs.map((n: any) => (
+                        <span key={n.id} className="rounded-lg border border-stone-500/20 bg-stone-900/30 px-3 py-1.5 text-xs text-stone-300/70">○ {n.name}</span>
+                      ))}
+                    </div>
                   </div>
+                )}
 
-                  {locationNpcs.length > 0 && (
+                {/* Sub-locations */}
+                {(() => {
+                  const subLocs = locations.filter((l: any) => l.parent_id === selected.id);
+                  if (subLocs.length === 0) return null;
+                  return (
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">NPC presenti</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Sotto-luoghi</p>
                       <div className="flex flex-wrap gap-2">
-                        {locationNpcs.map((n: any) => (
-                          <span key={n.id} className="rounded-lg border border-stone-500/20 bg-stone-900/30 px-3 py-1.5 text-xs text-stone-300/70">○ {n.name}</span>
+                        {subLocs.map((sl: any) => (
+                          <button
+                            key={sl.id}
+                            onClick={() => setSelected(sl)}
+                            className="rounded-lg border border-white/[0.06] bg-black/30 px-3 py-1.5 text-xs text-white/50 hover:border-veil-gold/20 hover:text-veil-gold/70 transition"
+                          >
+                            {iconMap[sl.location_type] || "📍"} {sl.name}
+                          </button>
                         ))}
                       </div>
                     </div>
-                  )}
-
-                  {/* Sub-locations */}
-                  {(() => {
-                    const subLocs = locations.filter((l: any) => l.parent_id === selected.id);
-                    if (subLocs.length === 0) return null;
-                    return (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Sotto-luoghi</p>
-                        <div className="flex flex-wrap gap-2">
-                          {subLocs.map((sl: any) => (
-                            <button
-                              key={sl.id}
-                              onClick={() => setSelected(sl)}
-                              className="rounded-lg border border-white/[0.06] bg-black/30 px-3 py-1.5 text-xs text-white/50 hover:border-veil-gold/20 hover:text-veil-gold/70 transition"
-                            >
-                              {iconMap[sl.location_type] || "📍"} {sl.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
+                  );
+                })()}
 
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-2">Note DM</p>
                   <textarea
                     className="w-full rounded-xl border border-white/[0.06] bg-black/30 p-3 text-sm text-white/60 resize-none focus:outline-none"
-                    rows={8}
+                    rows={6}
                     placeholder="Note private per questo luogo..."
                     value={note}
                     onChange={e => setNote(e.target.value)}
@@ -250,6 +251,19 @@ export function LocationModule({ sessionId }: { sessionId: string }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Destra: mappa immagine cliccabile da Tavolo (Mostra mappa → WorldMap) */}
+        <div className="rounded-2xl border border-white/[0.08] bg-[#07090f] overflow-hidden flex flex-col min-h-[600px]">
+          <WorldMap
+            sessionId={sessionId}
+            onExitMap={(loc) => {
+              if (loc?.name) {
+                const found = locations.find((l:any) => l.name.toLowerCase() === loc.name.toLowerCase());
+                if (found) setSelected(found);
+              }
+            }}
+          />
         </div>
       </div>
     </div>
