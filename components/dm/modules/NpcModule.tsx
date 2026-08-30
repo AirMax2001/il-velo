@@ -143,9 +143,8 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
     }
     // background di default se non scelto
     if (!next.background && classKey) {
-      // suggerisci background legato alla classe: prendi il primo disponibile
-      const bgs = Object.values(backgrounds as any) as any[];
-      if (bgs[0]) next.background = bgs[0].name;
+      const firstBgKey = Object.keys(backgrounds as any)[0];
+      if (firstBgKey) next.background = firstBgKey;
     }
     // Caratteristiche consigliate: STANDARD_ARRAY assegnato alle primaryAbility della classe
     if (cls && (!next.FOR && !next.DES && !next.COS && !next.INT && !next.SAG && !next.CAR)) {
@@ -185,7 +184,14 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
     if (!createForm.name.trim()) return;
     const sid = pendingSessionId || sessionId;
     const data:any = {};
-    for (const k of ["race","class","background","alignment","hp","ac","speed","resistances","immunities","vulnerabilities","languages","senses"]) if ((createForm as any)[k]) data[k]=(createForm as any)[k];
+    for (const k of ["race","class","background","alignment","hp","ac","speed","resistances","immunities","vulnerabilities","languages","senses"]) {
+      const v = (createForm as any)[k];
+      if (!v) continue;
+      if (k === "race") data[k] = (races as any)[v]?.name || v;
+      else if (k === "class") data[k] = (classes as any)[v]?.name || v;
+      else if (k === "background") data[k] = (backgrounds as any)[v]?.name || v;
+      else data[k] = v;
+    }
     for (const ab of ["FOR","DES","COS","INT","SAG","CAR"]) if ((createForm as any)[ab]) data["ability_"+ab]=(createForm as any)[ab];
     const res = await fetch("/api/npcs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ session_id: sid, name: createForm.name.trim(), role: createForm.role || data.class || null, description: createForm.description || "", data }) });
     const j = await res.json();
@@ -238,21 +244,21 @@ export function NpcModule({ sessionId }: { sessionId: string }) {
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Razza</label>
-              <select value={createForm.race} onChange={e=>{ const v=e.target.value; let next={...createForm, race: (races as any)[v]?.name || v}; next=applyRecommended(next, v, (classes as any)[createForm.class] ? Object.keys(classes as any).find(k=>(classes as any)[k].name===createForm.class) || "" : ""); setCreateForm(next); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+              <select value={createForm.race} onChange={e=>{ const v=e.target.value; let next={...createForm, race: v}; next=applyRecommended(next, v, createForm.class); setCreateForm(next); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
                 <option value="">— Seleziona razza —</option>
                 {Object.entries(races as any).map(([k,r]:any)=><option key={k} value={k}>{r.name}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Classe</label>
-              <select value={Object.keys(classes as any).find(k=>(classes as any)[k].name===createForm.class) || createForm.class} onChange={e=>{ const v=e.target.value; const clsName=(classes as any)[v]?.name || v; let next={...createForm, class: clsName, role: clsName}; const raceKey=Object.keys(races as any).find(k=>(races as any)[k].name===createForm.race) || createForm.race; next=applyRecommended(next, raceKey, v); setCreateForm(next); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+              <select value={createForm.class} onChange={e=>{ const v=e.target.value; let next={...createForm, class: v, role: (classes as any)[v]?.name || v}; next=applyRecommended(next, createForm.race, v); setCreateForm(next); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
                 <option value="">— Seleziona classe —</option>
                 {Object.entries(classes as any).map(([k,c]:any)=><option key={k} value={k}>{c.name}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-wider text-white/30">Background</label>
-              <select value={Object.keys(backgrounds as any).find(k=>(backgrounds as any)[k].name===createForm.background) || createForm.background} onChange={e=>{ const v=e.target.value; const bgName=(backgrounds as any)[v]?.name || v; setCreateForm({...createForm, background: bgName}); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
+              <select value={createForm.background} onChange={e=>{ const v=e.target.value; setCreateForm({...createForm, background: v}); }} className="mt-1 w-full rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2 text-xs text-white/70">
                 <option value="">— Seleziona background —</option>
                 {Object.entries(backgrounds as any).map(([k,b]:any)=><option key={k} value={k}>{b.name}</option>)}
               </select>
