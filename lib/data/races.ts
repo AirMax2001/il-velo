@@ -330,3 +330,36 @@ export function getSubRaceData(raceKey: string, subRaceKey: string): SubRace | u
   if (!race?.subRaces) return undefined;
   return race.subRaces.find(sr => sr.key === subRaceKey);
 }
+
+/* ── Magie razziali sbloccate per livello (PHB) ───────────── */
+export type RaceSpell = { level: number; spell: string; spellLevel: number; ability: string };
+
+export const RACE_SPELLS: Record<string, RaceSpell[]> = {
+  elfo_alto: [
+    { level: 1, spell: "Trucchetto a scelta (Mago)", spellLevel: 0, ability: "intelligence" },
+  ],
+  elfo_oscuro_drow: [
+    { level: 1, spell: "Luci danzanti", spellLevel: 0, ability: "charisma" },
+    { level: 3, spell: "Bagliore fatato", spellLevel: 1, ability: "charisma" },
+    { level: 5, spell: "Tenebre", spellLevel: 2, ability: "charisma" },
+  ],
+  gnomo_delle_foreste: [
+    { level: 1, spell: "Immagine minore", spellLevel: 0, ability: "intelligence" },
+  ],
+  tiefling: [
+    { level: 1, spell: "Taumaturgia", spellLevel: 0, ability: "charisma" },
+    { level: 3, spell: "Mano rovente", spellLevel: 1, ability: "charisma" },
+    { level: 5, spell: "Tenebre", spellLevel: 2, ability: "charisma" },
+  ],
+  fata: [
+    { level: 1, spell: "Simbolo druidico", spellLevel: 0, ability: "charisma" },
+    { level: 3, spell: "Bagliore fatato", spellLevel: 1, ability: "charisma" },
+    { level: 5, spell: "Ingrandire/Rimpicciolire", spellLevel: 2, ability: "charisma" },
+  ],
+};
+
+export function getRaceSpells(raceKey: string, subRaceKey: string | undefined, level: number): RaceSpell[] {
+  const key = subRaceKey || raceKey;
+  const list = RACE_SPELLS[key] || RACE_SPELLS[raceKey] || [];
+  return list.filter(s => s.level <= level);
+}

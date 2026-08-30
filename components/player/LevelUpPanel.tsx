@@ -6,6 +6,8 @@ import { levelFromXp, xpForLevel, getFeaturesAtLevel, getSpellSlotsAtLevel, getC
 import { getArchetypeForClass, getArchetypeAbilities, getArchetypeCasting, getClassResources } from "@/lib/data/classAbilities";
 import { getSpellsForClass } from "@/lib/data/spells";
 import { getModifier, getProficiencyBonus } from "@/lib/characterEngine";
+import { getRaceSpells } from "@/lib/data/races";
+import { findRaceKey } from "@/lib/data/races";
 
 type Props = { player: Player; onApply: (updates: Record<string, any>) => void; };
 
@@ -80,6 +82,11 @@ export function LevelUpPanel({ player, onApply }: Props){
 
   // For wizard: 2 spells added to spellbook per level
   const wizardSpellbookDelta = clsKey === "wizard" ? (derivedLevel - currentLevel) * 2 : 0;
+
+  const raceKey = findRaceKey(player.race || "");
+  const oldRaceSpells = raceKey ? getRaceSpells(raceKey, (cd.subRaceKey || ""), currentLevel) : [];
+  const newRaceSpells = raceKey ? getRaceSpells(raceKey, (cd.subRaceKey || ""), derivedLevel) : [];
+  const newlyUnlockedRaceSpells = newRaceSpells.filter(rs => !oldRaceSpells.some(o => o.spell === rs.spell));
 
   const slotOld = getSpellSlotsAtLevel(clsKey||"", currentLevel);
   const slotNew = getSpellSlotsAtLevel(clsKey||"", derivedLevel);
@@ -170,6 +177,27 @@ export function LevelUpPanel({ player, onApply }: Props){
       // assicurati di inviare anche i livelli toccati
       for(let lv=1; lv<=9; lv++) if(tmp[`spells${lv}`].some((n:string)=> newSpells.includes(n))) cdUpdates[`spells${lv}`]=tmp[`spells${lv}`];
     }
+    // Magie razziali sbloccate automaticamente (non contano nei limiti di classe)
+    if (newlyUnlockedRaceSpells.length > 0) {
+      const tmp: Record<string,string[]> = {};
+      for(let lv=1; lv<=9; lv++) tmp[`spells${lv}`] = [...((cd as any)[`spells${lv}`]||[])];
+      let newCantripsWithRace = [...(cd.cantrips||[]), ...newCantrips];
+      for (const rs of newlyUnlockedRaceSpells) {
+        if (rs.spell.includes("Trucchetto a scelta")) continue;
+        if (rs.spellLevel === 0) {
+          if (!newCantripsWithRace.includes(rs.spell) && !((cd.cantrips||[]).includes(rs.spell))) newCantripsWithRace.push(rs.spell);
+        } else {
+          const key = `spells${rs.spellLevel}`;
+          if (!tmp[key].includes(rs.spell)) tmp[key].push(rs.spell);
+        }
+      }
+      if (newCantripsWithRace.length !== (cd.cantrips||[]).length) cdUpdates.cantrips = newCantripsWithRace;
+      for(let lv=1; lv<=9; lv++) {
+        const k=`spells${lv}`;
+        if(tmp[k].length !== ((cd as any)[k]||[]).length) cdUpdates[k]=tmp[k];
+      }
+    }
+
     const prevSlots = (cd.spellSlots||{}) as Record<number,{total?:number;expended?:number}>;
     const newSlotObj: Record<number,{total:number;expended:number}> = {};
     for(const [k,v] of Object.entries(slotNew)) newSlotObj[Number(k)]={ total: v, expended: prevSlots[Number(k)]?.expended ?? 0 };

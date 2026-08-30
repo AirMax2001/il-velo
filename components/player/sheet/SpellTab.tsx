@@ -8,6 +8,8 @@ import {
 import { getSpellsForClass } from "@/lib/data/spells";
 import { CLASS_ABILITIES, getArchetypeAbilities, getArchetypeForClass, getClassResources } from "@/lib/data/classAbilities";
 import { getFeaturesAtLevel } from "@/lib/data/leveling";
+import { getRaceSpells } from "@/lib/data/races";
+import { findRaceKey } from "@/lib/data/races";
 import { SKILL_DESCRIPTIONS } from "@/components/shared/AbilityReferenceTables";
 import { CollapseSection } from "./ui";
 import { ResourceBar } from "./ResourceBar";
@@ -67,6 +69,8 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
   const chosenSkills = SKILL_LIST.filter(s => (cd as any)[s.key]);
 
   const resources = clsKey ? getClassResources(clsKey) : [];
+  const raceKey = findRaceKey(form?.race || "");
+  const raceSpells = raceKey ? getRaceSpells(raceKey, (cd as any).subRaceKey, level) : [];
   const spent = (cd.resources || {}) as Record<string, { total?: number; expended?: number }>;
 
   function toggleResource(key: string, i: number, total: number) {
@@ -379,18 +383,18 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
                     const allAbilities = [...abilities, ...archetypeAbilities];
 
                     const resourceAbilityMap: Record<string, string[]> = {
-                      bard: ["bard_ispirazione", "bard_canto_riposo"],
-                      monk: ["monk_raffica_colpi", "monk_presa_difensiva", "monk_passo_vento", "monk_deflessione_missili", "monk_colpo_stordente", "monk_evasione"],
-                      barbarian: ["barbarian_ira", "barbarian_attacco_avventato"],
-                      cleric: ["cleric_incanalare"],
-                      druid: ["druid_forma_selvatica"],
-                      fighter: ["fighter_secondo_soffio", "fighter_azione_impetuosa", "fighter_indomito"],
-                      paladin: ["paladin_percezione_divino", "paladin_imposizione_mani", "paladin_colpo_divino"],
-                      ranger: ["ranger_nemico_prescelto", "ranger_esploratore_nativo", "ranger_azione_aggigliata"],
-                      rogue: ["rogue_attacco_furtivo", "rogue_azione_furba"],
-                      sorcerer: ["sorcerer_punti_stregoneria", "sorcerer_meta_incantamento_distant", "sorcerer_meta_incantamento_empowered", "sorcerer_meta_incantamento_extended", "sorcerer_meta_incantamento_heightened", "sorcerer_meta_incantamento_quickened", "sorcerer_meta_incantamento_subtle", "sorcerer_meta_incantamento_twinned"],
-                      warlock: ["warlock_invocazioni"],
-                      wizard: ["wizard_recupero_arcano"],
+                      barbarian: ["barbarian_ira","barbarian_attacco_avventato","berserker_furia","totem_spirito","ancestrali_guardiani"],
+                      bard: ["bard_ispirazione","bard_canto_riposo","sapere_ispirazione_taglio","valore_ispirazione_combattiva","spade_stile_duello","spade_bravura"],
+                      cleric: ["cleric_incanalare","vita_preservare_vita","luce_radianza_alba","guerra_colpo_guidato","inganno_duplicato","conoscenza_eoni","natura_incanto","tempesta_ira"],
+                      druid: ["druid_forma_selvatica","luna_forma_combattiva","terra_recupero_naturale","sogni_guarigione_distante"],
+                      fighter: ["fighter_secondo_soffio","fighter_azione_impetuosa","fighter_indomito","campione_critico","maestro_manovre","cavaliere_sfida"],
+                      monk: ["monk_raffica_colpi","monk_presa_difensiva","monk_passo_vento","monk_deflessione_missili","monk_colpo_stordente","monk_evasione","via_aperta_onda_ki","ombra_passo_ombroso","elementi_ondata_acqua","elementi_pugno_pietra","elementi_manto_fuoco","elementi_alito_ghiaccio"],
+                      paladin: ["paladin_percezione_divino","paladin_imposizione_mani","paladin_colpo_divino","devozione_arma_radiosa","antichi_presenza","vendetta_nemico_giurato"],
+                      ranger: ["ranger_nemico_prescelto","ranger_esploratore_nativo","ranger_azione_aggigliata","cacciatore_difesa","bestie_comando"],
+                      rogue: ["rogue_attacco_furtivo","rogue_azione_furba","ladro_mano_veloce","assassino_colpo_mortale","truffatore_mano_magica"],
+                      sorcerer: ["sorcerer_punti_stregoneria","sorcerer_meta_incantamento_distant","sorcerer_meta_incantamento_empowered","sorcerer_meta_incantamento_extended","sorcerer_meta_incantamento_heightened","sorcerer_meta_incantamento_quickened","sorcerer_meta_incantamento_subtle","sorcerer_meta_incantamento_twinned","draconica_squame","selvaggia_ondata"],
+                      warlock: ["warlock_invocazioni","arcano_colpo_oscuro","fatato_ferocia","antico_telepatia"],
+                      wizard: ["wizard_recupero_arcano","abiurazione_scudo_arcano","congiurazione_evocazione_minore","divinazione_portento","ammaliamento_sguardo","evocazione_scultore","illusione_migliorata","necromanzia_recupero","trasmutazione_alchimia"],
                     };
 
                     const resourceAbilityKeys = resourceAbilityMap[clsKey || ""] || [];
@@ -435,6 +439,25 @@ export function SpellTab({ ctx }: { ctx: SheetCtx }) {
                   })()}
                 </>
               )}
+            </div>
+          )}
+
+          {/* Magie Razziali (PHB) — non contano nei limiti di classe */}
+          {raceSpells.length > 0 && (
+            <div className="veil-panel p-4">
+              <h3 className="text-sm text-veil-gold/80 font-medium">✨ Magie Razziali</h3>
+              <p className="text-[11px] text-white/30 mt-1">Sbloccate dalla razza al livello indicato, lancia 1 volta al giorno senza slot (trucchetti a volontà).</p>
+              <div className="mt-3 space-y-2">
+                {raceSpells.map(rs => (
+                  <div key={rs.spell + rs.level} className="rounded-lg bg-black/20 border border-white/[0.06] p-2.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-veil-gold/80 font-medium">{rs.spell}</p>
+                      <span className="text-[10px] text-white/30 rounded-full bg-white/[0.04] px-2 py-0.5">{rs.spellLevel === 0 ? "trucchetto" : `${rs.spellLevel}° livello`} · liv. {rs.level}</span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-1">Caratteristica: {rs.ability}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

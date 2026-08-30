@@ -34,10 +34,12 @@ export function ResourceBar({ clsKey, level, pb, cd, updCdAll, save, compact }: 
     save({ resources: next });
   }
 
+  const visibleResources = resources.filter(r => r.max(level, cd as any, pb) > 0);
+  if (visibleResources.length === 0) return null;
   return (
     <div className={compact ? "flex flex-wrap items-center gap-x-4 gap-y-1.5" : "flex flex-wrap justify-center gap-4"}>
-      {resources.map(r => {
-        const total = r.max(level, cd, pb);
+      {visibleResources.map(r => {
+        const total = r.max(level, cd as any, pb);
         const used = spent[r.key]?.expended ?? 0;
         const available = Math.max(0, total - used);
         return (

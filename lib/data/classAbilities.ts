@@ -612,6 +612,8 @@ export const CLASS_RESOURCES: Record<string, ClassResourceDef[]> = {
       restore: "riposo breve/lungo", max: (_lv, _cd, _pb) => 1 },
     { key: "azione_impetuosa", name: "Azioni Impetuose", icon: "⚡", color: "bg-cyan-500/40 border-cyan-400/50",
       restore: "riposo breve/lungo", max: (lv, _cd, _pb) => lv >= 17 ? 2 : 1 },
+    { key: "dadi_manovra", name: "Dadi Manovra", icon: "🎲", color: "bg-red-500/40 border-red-400/50",
+      restore: "riposo breve/lungo", max: (lv, cd: any, _pb) => (cd?.archetype === "maestro_armi" ? (lv >= 15 ? 6 : lv >= 7 ? 5 : 4) : 0) },
   ],
   monk: [
     { key: "ki", name: "Punti Ki", icon: "☯", color: "bg-indigo-500/40 border-indigo-400/50",
